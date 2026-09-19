@@ -1,0 +1,43 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "MCC_ZONE_3",
+        "name": "MCC Zone 3"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [76.6200, 12.2800],
+            [76.6600, 12.2800],
+            [76.6600, 12.3100],
+            [76.6200, 12.3100],
+            [76.6200, 12.2800]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_id": "TP_BOGADI",
+        "name": "Bogadi Town Panchayat"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [76.5900, 12.2900],
+            [76.6200, 12.2900],
+            [76.6200, 12.3200],
+            [76.5900, 12.3200],
+            [76.5900, 12.2900]
+          ]
+        ]
+      }
+    }
+  ]
+}
