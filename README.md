@@ -1,7 +1,7 @@
 # `<Project Name>` — `<one-line tagline>`
 
 > HackMysuru 1.0 · Phase 1 · Civic Governance & Clean Mysuru
-> Team `<Team Name>` (`<Team ID>`)
+> Team `SyntaxError-404` (`HM26-2F61`)
 
 | 📎 Submission links | 📋 Templates | 🏗️ Architecture | 🛡️ Hard constraints | ⚙️ Setup | 🤖 AI usage | ⚠️ Limitations |
 |---|---|---|---|---|---|---|
