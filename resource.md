@@ -20,18 +20,16 @@ HOW TO FILL THIS FILE
 
 | Field | Value |
 |---|---|
-| Team ID (from dashboard) | `<HM1-XXXX>` |
-| Team Name | `<team name>` |
-| College(s) | `<college name(s)>` |
-| Team Leader | `<name>` · `<email>` · `<phone>` |
-| Repository | `<https://github.com/org-or-user/repo>` |
+| Team ID (from dashboard) | `HM26-2F61` |
+| Team Name | `SyntaxError-404` |
+| School | `10X International School>` |
+| Team Leader | `Panav K Bysani` · `panavkbysani2011@gmail.com` · `9036378191` |
+| Repository | `https://github.com/panavkbysani2011-jpg/HM26-2F61Submission` |
 
 | # | Member | Program & Year | GitHub Handle | Primary Role |
 |---|---|---|---|---|
-| 1 | `<name>` (Lead) | `<B.E. CSE, 3rd yr>` | `@<handle>` | `<backend / ML / frontend / ...>` |
-| 2 | `<name>` | `<...>` | `@<handle>` | `<...>` |
-| 3 | `<name>` | `<...>` | `@<handle>` | `<...>` |
-| 4 | `<name>` | `<...>` | `@<handle>` | `<...>` |
+| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg>` | `<backend / ML / frontend / ...>` |
+| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `<...>` |
 
 ---
 
@@ -123,4 +121,4 @@ Paste the first 16 characters.
 - [ ] No code specific to this challenge was written before 18 Sept 2026, 00:00 IST.
 - [ ] We will not modify or replace any linked file after 20 Sept 2026, 23:59 IST.
 
-**Submitted by:** `<Team Leader name>` · **Date/Time (IST):** `<20-09-2026 21:40>`
+**Submitted by:** `Panav K Bysani` · **Date/Time (IST):** `<20-09-2026 21:40>`
