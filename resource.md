@@ -35,9 +35,9 @@ HOW TO FILL THIS FILE
 
 ## 2. What We Built (one-liner)
 
-**Sub-problem:** `<Routing | Follow-through | Visibility | Verification | Detection without reporting | Segregation drift | Hotspot pattern-finding | Field worker feedback loop | Own: ____>`
+**Sub-problem:** `Combination of Sub-Problem 1 (Routing), Sub-Problem 2 (Follow-through), and Sub-Problem 4 (Verification).`
 
-**In one sentence:** `<e.g. "An offline-first reporting app that auto-routes complaints to MCC, town panchayat or gram panchayat using ward boundaries and issue type, with a confidence score for boundary cases.">`
+**In one sentence:** `A geo-elastic grievance platform that overcomes jurisdictional disputes by routing complaints based on real-time fleet capacity and automating inter-agency cost clearing.`
 
 ---
 
