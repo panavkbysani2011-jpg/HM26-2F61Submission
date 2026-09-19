@@ -4,72 +4,73 @@
 
 ## System Diagram
 
-<!-- Required: a diagram, not just text. Mermaid renders natively on GitHub.
-An exported PNG under docs/images/ is also fine. -->
-
 ```mermaid
-flowchart LR
-    A[Citizen App<br/>PWA · offline queue] -->|sync when online| B[API Server]
-    W[Field Worker App] --> B
-    B --> C[(Database)]
-    B --> D[Routing / Scoring Service]
-    D --> E[(Ward & Panchayat<br/>Boundary Data)]
-    B --> F[Public Status Dashboard]
+flowchart TD
+    A[Citizen Intake Portal<br/>React + Leaflet] -->|Submit complaint| B[API Server<br/>FastAPI]
+    W[Panchayat Field Desk<br/>React] -->|Upload verification & close| B
+    B --> C[(Database<br/>PostgreSQL + PostGIS)]
+    B --> D[Geo-Elastic Routing Engine]
+    D --> E[(Operational Capacity & Boundary Data)]
+    B --> F[Central Dispatch & Load-Balancing Hub]
+    D --> G[Inter-Agency Clearing Ledger]
 ```
 
 ## Request Walkthrough
 
-<!-- Trace ONE real request end-to-end, e.g. "citizen files a complaint". -->
-
-1. `<Client captures photo + GPS, stores in local queue>`
-2. `<On reconnect, POST /api/complaints>`
-3. `<Server checks duplicates within 50 m / 7 days>`
-4. `<Routing service resolves jurisdiction + confidence>`
-5. `<Complaint lands in the right queue; citizen sees status>`
+1. Citizen drops a pin, selects an issue category, and submits a photo on the Citizen Intake Portal.
+2. The system auto-calculates an objective severity rank (1 to 5) based on the category and location.
+3. The Geo-Elastic Routing Engine evaluates if the pin falls within a fuzzy border zone and checks the home zone's real-time capacity.
+4. If the home zone is overloaded (over 100 percent capacity), the system spillover-routes the ticket to the nearest underloaded depot and logs a financial transaction in the Inter-Agency Clearing Ledger.
+5. The assigned field worker receives a map-free, distraction-free task in their queue, travels to the site, and closes the ticket using a GPS-locked native camera capture within a 50 meter radius.
 
 ## Components
 
 | Component | Responsibility | Tech | Code location |
 |---|---|---|---|
-| `<Client>` | `<...>` | `<...>` | `src/<...>` |
-| `<API>` | `<...>` | `<...>` | `src/<...>` |
-| `<Data store>` | `<...>` | `<...>` | `src/<...>` |
-| `<ML / rules engine>` | `<...>` | `<...>` | `src/<...>` |
+| Citizen Intake Portal | Clean mapping interface for citizens to drop pins and submit issues | React, Tailwind CSS, Leaflet.js | `src/frontend/citizen` |
+| Central Dispatch Hub | Zonal capacity visualization, dynamic routing engine, inter-agency ledger | React, Tailwind CSS, Leaflet.js | `src/frontend/dispatch` |
+| Panchayat Field Desk | Actionable task queue without maps, GPS-locked photo verification | React, Tailwind CSS | `src/frontend/worker` |
+| API Server | Handles all requests, processes logic, manages database | FastAPI (Python) | `src/backend/api` |
+| Routing Service | Geo-Elastic routing, capacity engine, severity calculations | Python | `src/backend/services/routing` |
+| Data Store | Stores incidents, zone data, ledgers, verification logs | PostgreSQL + PostGIS | `src/backend/db` |
 
 ## Data Model
 
 ```mermaid
 erDiagram
-    COMPLAINT ||--o{ STATUS_UPDATE : has
-    COMPLAINT }o--|| JURISDICTION : routed_to
-    COMPLAINT }o--o| HOTSPOT : grouped_into
-    USER ||--o{ COMPLAINT : files
+    INCIDENTS ||--o{ VERIFICATION_LOGS : has
+    INCIDENTS }o--|| OPERATIONAL_ZONES : routed_to
+    INCIDENTS ||--o{ INTER_AGENCY_CLEARING_LEDGER : generates
 ```
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| `<Complaint>` | `<id, type, lat, lng, photo_url, trust_score, status>` | `<...>` |
-| `<...>` | `<...>` | `<...>` |
+| `incidents` | `id, tracking_code, latitude, longitude, category, severity_rank, status` | Core grievance data |
+| `operational_zones` | `zone_id, name, tipper_trucks_active, current_capacity_pct` | Tracks capacity and fleet |
+| `inter_agency_clearing_ledger` | `entry_id, debtor_zone_id, creditor_zone_id, clearing_cost_inr` | Inter-agency cost sharing |
+| `verification_logs` | `log_id, worker_id, closure_latitude, distance_from_origin_meters` | Worker closure records |
 
 ## Key APIs
 
 | Method | Endpoint | Purpose | Auth |
 |---|---|---|---|
-| `POST` | `/api/complaints` | `<...>` | `<anonymous / token>` |
-| `GET` | `/api/wards/:id/status` | `<...>` | `<public>` |
+| `POST` | `/api/complaints` | Submit a new grievance | Anonymous / Token |
+| `GET` | `/api/zones/capacity` | Fetch real-time workload data | Admin |
+| `POST` | `/api/complaints/:id/resolve` | Close a task with GPS and photo | Worker |
+| `GET` | `/api/ledger/transactions` | View inter-agency cost transfers | Admin |
 
 ## Tech Stack
 
 | Layer | Choice | Why this over alternatives |
 |---|---|---|
-| Frontend | `<...>` | `<...>` |
-| Backend | `<...>` | `<...>` |
-| Database | `<...>` | `<...>` |
-| ML / AI | `<...>` (details in [ai.md](../ai.md#3-ai-inside-the-product-runtime)) | `<...>` |
-| Hosting | `<...>` | `<...>` |
+| Frontend | React + Vite + Tailwind CSS | Fast compilation, reusable components, and responsive design for three different portals. |
+| Backend | FastAPI (Python) | High performance, simple integration with complex routing and ML logic, rapid development. |
+| Database | PostgreSQL + PostGIS | Robust relational data with powerful spatial querying for our buffer zones and distance calculations. |
+| ML / AI | Python Services | Custom algorithms for severity and routing to handle administrative rules rather than complex machine learning models. |
 
 ## Data Sources
 
 | Dataset | Source & licence | Real or synthetic | Used for |
 |---|---|---|---|
-| `<Ward boundaries>` | `<...>` | `<...>` | `<...>` |
+| Ward boundaries | MCC Gazette updates | Real | Creating the fuzzy buffer zones and mapping contested territories. |
+| Road networks | OpenStreetMap | Real | Visualizing streets and calculating distances. |

@@ -1,4 +1,4 @@
-# HackMysuru 1.0 — Phase 1 Submission Index
+# HackMysuru 1.0 - Phase 1 Submission Index
 
 > **This is the landing file for your submission.** Reviewers open this file first.
 > Every evaluation artifact is uploaded to **Google Drive** and linked below. No files in the repo, no other platforms.
@@ -22,14 +22,14 @@ HOW TO FILL THIS FILE
 |---|---|
 | Team ID (from dashboard) | `HM26-2F61` |
 | Team Name | `SyntaxError-404` |
-| School | `10X International School>` |
+| School | `10X International School` |
 | Team Leader | `Panav K Bysani` · `panavkbysani2011@gmail.com` · `9036378191` |
 | Repository | `https://github.com/panavkbysani2011-jpg/HM26-2F61Submission` |
 
 | # | Member | Program & Year | GitHub Handle | Primary Role |
 |---|---|---|---|---|
-| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg>` | `<backend / ML / frontend / ...>` |
-| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `<...>` |
+| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg` | `Full-Stack / API / Routing Engine` |
+| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `Frontend / User Experience / UI` |
 
 ---
 
@@ -94,7 +94,7 @@ Paste the first 16 characters.
 | Live URL | `<https://...>` |
 | Platform | `<Web / PWA / Android APK link on Drive / ...>` |
 | Test login (if any) | Citizen: `<user / pass>` · Staff: `<user / pass>` · Admin: `<user / pass>` |
-| Sample data loaded? | `<Yes — 120 synthetic complaints across 6 wards>` |
+| Sample data loaded? | `<Yes - 120 synthetic complaints across 6 wards>` |
 | How to test offline mode | `<one line>`. Full steps in [docs/setup.md](./docs/setup.md#testing-offline-mode) |
 | If the live link is down | Follow [docs/setup.md](./docs/setup.md) |
 

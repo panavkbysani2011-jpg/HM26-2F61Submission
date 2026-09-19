@@ -1,23 +1,23 @@
-# Setup & Run Instructions
+# Setup & Run
 
 [← Back to README](../README.md)
 
-<!-- A reviewer should get this running in under 10 minutes if the live link is down. -->
-
-## Prerequisites
+### Prerequisites
 
 | Tool | Version |
 |---|---|
-| `<Node.js / Python / Docker>` | `<20.x / 3.11 / 24+>` |
+| Node.js | 20.x+ |
+| Python | 3.11+ |
+| PostgreSQL | 15+ (with PostGIS extension enabled) |
 
-## 1. Clone
+### 1. Clone
 
 ```bash
 git clone <repo-url>
-cd <repo>
+cd civic-mesh
 ```
 
-## 2. Environment Variables
+### 2. Environment Variables
 
 ```bash
 cp .env.example .env
@@ -25,36 +25,65 @@ cp .env.example .env
 
 | Variable | Required | Example | Purpose |
 |---|---|---|---|
-| `DATABASE_URL` | Yes | `<...>` | `<...>` |
-| `<API_KEY>` | `<No>` | `<...>` | `<...>` |
+| `DATABASE_URL` | Yes | `postgresql://user:password@localhost:5432/civicmesh` | Connects the FastAPI backend to the PostgreSQL/PostGIS database |
+| `VITE_API_BASE_URL` | Yes | `http://localhost:8000/api` | Tells the React frontend where to send API requests |
 
-> Never commit real secrets. Commit only `.env.example`.
+*(Never commit real secrets. Commit only `.env.example`.)*
 
-## 3. Install & Seed Demo Data
+### 3. Install & Seed Demo Data
 
-```bash
-<install command>
-<migration command>
-<seed command>          # loads <N> sample complaints across <N> wards
-```
-
-## 4. Run
+Backend (FastAPI):
 
 ```bash
-<run command>
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Run migrations and seed data
+alembic upgrade head
+python scripts/seed_demo_data.py  # Loads 120 sample complaints across Bogadi and MCC zones
 ```
 
-Open `http://localhost:<port>`. Test accounts are listed in [resource.md](../resource.md#5-live-mvp).
+Frontend (React/Vite):
 
-## Testing Offline Mode
+```bash
+cd ../frontend
+npm install
+```
 
-1. `<Open the app and log in>`
-2. `<Chrome DevTools → Network → Offline, or phone airplane mode>`
-3. `<File a complaint → it shows "queued">`
-4. `<Go back online → it syncs and shows "submitted">`
+### 4. Run
 
-## Troubleshooting
+Open two terminal windows:
+
+Terminal 1 (Backend):
+
+```bash
+cd backend
+source venv/bin/activate
+uvicorn main:app --reload --port 8000
+```
+
+Terminal 2 (Frontend):
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:5173` in your browser. Test accounts are listed in resource.md.
+
+### Testing Offline Mode
+
+Status: Not Applicable (Scoped out for HackMysuru Phase 1 MVP)
+
+As documented in [docs/constraints.md](./constraints.md), we made a strategic decision to allocate our 48-hour build time exclusively to the Geo-Elastic Routing Engine and the inter-agency capacity balancer.
+
+Attempting to throttle the network to "Offline" in Chrome DevTools will currently break the application flow. Please test the routing and load-balancing features with an active internet connection.
+
+### Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `<Port already in use>` | `<...>` |
+| Port 8000 / 5173 already in use | Run `lsof -i :8000` (Mac/Linux) or `netstat -ano` |
+| PostGIS extension error during migration | Ensure you have connected to your PostgreSQL instance and run `CREATE EXTENSION postgis;` on the civicmesh database before running migrations. |

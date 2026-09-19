@@ -1,56 +1,36 @@
-# Decision Log — Template (25% of total score)
+# Decision Log - Template (25% of total score)
 
 [← Back to README](../README.md)
 
-> **Output:** 1-page PDF, A4, ≥ 10 pt font, named `<TeamID>_decision-log.pdf`, uploaded to Google Drive and linked in [`resource.md`](../resource.md).
-> **Length:** 400–550 words. If it spills onto page 2, cut. Reviewers stop at page 1.
-> **Voice:** Your own words, first person plural ("we"). No marketing. No generic AI prose.
-> Delete everything in *italics* and all blockquotes before exporting.
+Team: SyntaxError-404 (HM26-2F61)
+Sub-problem: Routing, Follow-through, and Verification
+Date: 20 Sept 2026
 
----
+Q1. What approach did we take, and what did we reject?
 
-**Team:** `<Team Name>` (`<Team ID>`)  **Sub-problem:** `<e.g. Verification>`  **Date:** `20 Sept 2026`
+Our approach is a capacity-based routing engine that does not stick to hard borders. It assigns tasks by looking at real-time equipment availability. The inputs are the citizens GPS coordinates, the issue category and the current fleet status of depots. The engine first checks whether the GPS pin sits inside a contested border buffer zone. If it does it looks at the workload of the home office. If the home office is over one hundred percent capacity the ticket is automatically sent to the depot that is underloaded and a financial credit is logged for that depot in an inter-agency ledger. The final result is a confirmed task assignment to the available depot and a cost-clearing entry. We used standard Mysore ward maps. Added a 500-meter fuzzy buffer zone, over the borders to make this happen.
 
-## Q1. What approach did we take, and what did we reject? (~150 words)
+We also considered a point-in-polygon mapping, where every GPS pin is locked to whatever ward boundary it falls inside. That idea seemed appealing at first because it is mathematically simple, easy to code in a short hackathon and matches how the government currently draws its administrative maps. However we rejected that approach.
 
-**Our approach:** `<Name it in one line, e.g. "Trust score = weighted blend of duplicate-proximity, photo EXIF/location consistency and reporter history, with a human-review band between 0.4 and 0.7.">`
-
-*How it works in 3–4 sentences: inputs → logic → output. Mention the specific data you used.*
-
-**Alternative we considered and rejected:** `<e.g. "Mandatory OTP-verified identity for every report.">`
-
-*What it is in 1–2 sentences, and why it looked attractive at first.*
-
-## Q2. Why did we reject it? The trade-off (~150 words)
+Q2. Why did we reject it? The trade-off
 
 | Dimension | Our approach | Rejected alternative |
 |---|---|---|
-| `<e.g. Honest reporting / anonymity>` | `<...>` | `<...>` |
-| `<e.g. Spam resistance>` | `<...>` | `<...>` |
-| `<e.g. Works offline / low-end phones>` | `<...>` | `<...>` |
-| `<e.g. Build effort in 72 h>` | `<...>` | `<...>` |
+| Solving boundary disputes | Bypasses them by paying neighbors to help | Fails completely; offices just reject edge tickets |
+| Speed of cleanup | Fast, uses whatever truck is idle nearby | Slow, waits for the home office to have a free truck |
+| System reliability | Depends entirely on officers updating fleet status | Always accurate to the strict legal map |
+| Build effort in 48 hours | High, requires capacity logic and ledger | Low, just a standard map query |
 
-*In 2–3 sentences: which dimension decided it, and what we consciously gave up by choosing our approach. Name the cost.*
+The important thing for us was how fast the cleanup could happen. Getting trash off the street is way more important than having the map when there are dangers to public health.
 
-> A strong answer names a **cost** you accepted, e.g. "We accept that a coordinated group of real phones can still game the score." A weak answer lists only benefits.
+The price we decided to pay depends a lot on people being honest. We completely trust the officers in each zone to tell the truth about the tipper trucks and backhoes they are using. If an officer lies and says all their trucks are not working to make the system send work to the central city corporation our system will follow that and send tasks away from them. We gave up making people handle their areas by force in return, for quicker solutions.
 
-## Q3. What breaks at the scale of all of Mysuru? (~150 words)
+Q3. What breaks at the scale of all of Mysuru?
 
-*Assume ~65 wards plus surrounding town and gram panchayats, thousands of reports a day, festival spikes (Dasara), and patchy connectivity.*
-
-| What breaks first | Why (with a rough number) | How we'd fix it |
+| What breaks first | Why | How we would fix it |
 |---|---|---|
-| `<e.g. Duplicate check is O(n) over all open complaints>` | `<~50k open items → seconds per insert>` | `<Geospatial index / geohash bucketing>` |
-| `<e.g. Offline sync conflicts>` | `<...>` | `<...>` |
-| `<e.g. Human review queue>` | `<...>` | `<...>` |
+| System-wide capacity saturation | During Dasara, waste spikes across the city. If five adjacent zones hit 100 percent capacity simultaneously, the spillover logic could loop endlessly looking for a free truck. | Add a fallback to a standard priority queue if no neighbor is below 90 percent capacity. |
+| Inter-agency ledger depletion | If a small panchayat has a budget of 50,000 rupees and gets billed 60,000 for city corporation spillovers, the math completely breaks. | Build a monthly quota throttle to stop spillover routing once a local budget runs out. |
+| Spatial buffer querying | Checking 500-meter buffers for 5,000 daily active complaints using basic distance math will overload and slow down the server. | Switch to proper PostGIS spatial indexing instead of standard mathematical distance calculations. |
 
-*One closing line: the single change we would make first, and why.*
-
----
-
-### Self-check before exporting
-
-- [ ] Exactly one approach and one clearly rejected alternative named.
-- [ ] At least one cost or downside of **our** approach is admitted.
-- [ ] Q3 contains at least one concrete number or estimate.
-- [ ] Every team member can explain this page without notes.
+The single change we would make first is adding the monthly quota throttle. Without it, smaller panchayats could go bankrupt paying for outside help in the very first week of operation.

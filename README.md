@@ -1,4 +1,4 @@
-# `Civic Mesh` - `A geo-elastic grievance platform that overcomes jurisdictional disputes by routing complaints based on real-time fleet capacity and automating inter-agency cost clearing.`
+# Civic Mesh - A geo-elastic grievance platform that overcomes jurisdictional disputes by routing complaints based on real-time fleet capacity and automating inter-agency cost clearing.
 
 > HackMysuru 1.0 · Phase 1 · Civic Governance & Clean Mysuru
 > Team `SyntaxError-404` (`HM26-2F61`)
@@ -7,88 +7,74 @@
 |---|---|---|---|---|---|---|
 | [resource.md](./resource.md) | [resource-templates/](./resource-templates/) | [docs/architecture.md](./docs/architecture.md) | [docs/constraints.md](./docs/constraints.md) | [docs/setup.md](./docs/setup.md) | [ai.md](./ai.md) | [docs/limitations.md](./docs/limitations.md) |
 
-<!--
-This README is the overview. Detailed content lives in the linked files so each stays short.
-Keep the section ORDER below. Reviewers look for each section in the same place in every repo.
--->
-
 ---
 
 ## 1. Problem Understanding
 
-<!-- Which sub-problem did you pick and WHY that one? 5–8 sentences. -->
+**Chosen sub-problem:** Combination of Sub-Problem 1 (Routing), Sub-Problem 2 (Follow-through), and Sub-Problem 4 (Verification).
 
-**Chosen sub-problem:** `Combination of Sub-Problem 1 (Routing), Sub-Problem 2 (Follow-through), and Sub-Problem 4 (Verification).`
-
-- **The gap we saw:** `Conventional grievance apps have rigid “point-in-polygon” maps. In Mysuru today, MCC is extending its boundary to include Hootagalli, Bogadi, Kadakola and Rammanahalli. Jurisdictional disputes arise when a ticket falls right on/around a border. Because executing the order would use up jurisdiction’s local fuel, the tickets are denied, and hence the task is delayed.`
-- **Why it matters:** `150+ tonnes of daily C&D waste and citizen complains are ignored as officials bicker/argue over who is responsible, resulting in illegal dumping hotspots and crippling logistic backlogs.`
-- **Why we chose this over the others:** `Most solutions make the mistake of thinking routing is a geographical problem. We identified that the real world roadblock for civic action is the administrative hassle of uneven equipment budgets and jurisdiction clashes.`
-- **What "solved" looks like for us:** `A complainant on the border gets routed to the closest depot with available space and the clearers get reimbursed without jurisdiction squabbles. The jurisdiction that has the scope to take action, solves it.`
+- **The gap we saw:** Conventional grievance apps have rigid "point-in-polygon" maps. In Mysuru today, MCC is extending its boundary to include Hootagalli, Bogadi, Kadakola and Rammanahalli. Jurisdictional disputes arise when a ticket falls right on/around a border. Because executing the order would use up jurisdiction's local fuel, the tickets are denied, and hence the task is delayed.
+- **Why it matters:** 150+ tonnes of daily C&D waste and citizen complains are ignored as officials bicker/argue over who is responsible, resulting in illegal dumping hotspots and crippling logistic backlogs.
+- **Why we chose this over the others:** Most solutions make the mistake of thinking routing is a geographical problem. We identified that the real world roadblock for civic action is the administrative hassle of uneven equipment budgets and jurisdiction clashes.
+- **What "solved" looks like for us:** A complainant on the border gets routed to the closest depot with available space and the clearers get reimbursed without jurisdiction squabbles. The jurisdiction that has the scope to take action, solves it.
 
 ## 2. Target Users & Mysuru Context
 
 | User | Their situation | What they need from us |
 |---|---|---|
-| `Resident in a contested boundary (e.g., Bogadi edge)` | `Doesn't know if they fall under MCC or Panchayat, frustrated by bounced complaints.` | `A non-guesswork reporting tool. Drop a pin, report the issue, and see a proper solve to their problem` |
-| `Zonal Commissioner/Panchayat Officer` | `Panchayat Officer	is protective of their ward's budget, frequently lacks operational tipper trucks, so not ready to complete tasks.` | `Only receive tasks their fleet can handle, get financial credit when helping neighboring zones.` |
-| `Sanitation / Field Worker` | `Uses basic android device, gets into boundary arguments, work not done properly blamed on them` | `map-free, distraction-free section of tasks to do with a simple camera button to verify end task.` |
+| Resident in a contested boundary (e.g., Bogadi edge) | Doesn't know if they fall under MCC or Panchayat, frustrated by bounced complaints. | A non-guesswork reporting tool. Drop a pin, report the issue, and see a proper solve to their problem |
+| Zonal Commissioner/Panchayat Officer | Panchayat Officer is protective of their ward's budget, frequently lacks operational tipper trucks, so not ready to complete tasks. | Only receive tasks their fleet can handle, get financial credit when helping neighboring zones. |
+| Sanitation / Field Worker | Uses basic android device, gets into boundary arguments, work not done properly blamed on them | Map-free, distraction-free section of tasks to do with a simple camera button to verify end task. |
 
-**Local context we designed for:** `Mysuru's transitional boundary overlaps, unequal inter-agency equipment distribution, low digital literacy for field workers, and the need to prevent "fake resolution" photos`
+**Local context we designed for:** Mysuru's transitional boundary overlaps, unequal inter-agency equipment distribution, low digital literacy for field workers, and the need to prevent "fake resolution" photos.
 
 ## 3. Solution Overview
 
-<!-- Plain language. A non-engineer should follow this. -->
-
-`Civic Mesh replaces rigid boundary walls with a Geo-Elastic Routing Engine (G-ERE). This algorithm makes the administrative border permeable as a buffer zone, where complaints are routed out to the nearest depot according to its available equipment capacity, and cross-border fuel/labor liabilities are automatically balanced through an Inter-Agency Clearing Ledger.`
+Civic Mesh replaces rigid boundary walls with a Geo-Elastic Routing Engine (G-ERE). This algorithm makes the administrative border permeable as a buffer zone, where complaints are routed out to the nearest depot according to its available equipment capacity, and cross-border fuel/labor liabilities are automatically balanced through an Inter-Agency Clearing Ledger.
 
 **Core flow:**
-1. `A citizen drops a pin, selects a category, enters basic details (e.g., C&D debris, Pothole), and uploads a photo on the public portal.`
-2. `The System Auto-calculates a severity rank between 1–5. If the home zone (e.g., Bogadi) is at more than 100% capacity, the system spillover-routes the ticket to the nearest idle depot (e.g., MCC Zone 3) which is at (e.g., around 45%) and logs a debit from the home zone, and a credit to the spillover zone in the Inter-Agency Ledger.`
-3. `Panchayat office gets this task, views it, and prepares to work on it, by assigning it to an field worker.`
-4. `Staff - The field worker views a task list, travels to the site, and closes the ticket using a GPS-locked, camera-only capture (within a 50m radius).`
-5. `Citizens receives a realtime update that the issue was resolved with verified photo proof, citizens content.`
+1. A citizen drops a pin, selects a category, enters basic details (e.g., C&D debris, Pothole), and uploads a photo on the public portal.
+2. The System Auto-calculates a severity rank between 1 to 5. If the home zone (e.g., Bogadi) is at more than 100% capacity, the system spillover-routes the ticket to the nearest idle depot (e.g., MCC Zone 3) which is at (e.g., around 45%) and logs a debit from the home zone, and a credit to the spillover zone in the Inter-Agency Ledger.
+3. Panchayat office gets this task, views it, and prepares to work on it, by assigning it to a field worker.
+4. Staff - The field worker views a task list, travels to the site, and closes the ticket using a GPS-locked, camera-only capture (within a 50m radius).
+5. Citizens receives a realtime update that the issue was resolved with verified photo proof, citizens content.
 
-**Screenshots:** `<2–4 images under docs/images/, each < 1 MB>`
+**Screenshots:** *(pending insertion under docs/images/)*
 
 ## 4. Architecture
 
-`<One-sentence summary, e.g. "Offline-first PWA → REST API → PostgreSQL/PostGIS, with a rules-based routing service.">`
+A full-stack React PWA communicating with a FastAPI backend processing spatial calculations via PostgreSQL/PostGIS.
 
 ➡️ Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
 
 ## 5. Tech Stack & AI Usage
 
-**Stack:** `<React PWA · FastAPI · PostgreSQL + PostGIS · Render>` (full rationale in [docs/architecture.md](./docs/architecture.md#tech-stack))
+**Stack:** React PWA · FastAPI · PostgreSQL + PostGIS · Render
 
-**AI tools used in development:** `<ChatGPT, Copilot, ...>`
-**AI inside the product:** `<e.g. YOLOv8 for bin detection / none>`
+**AI tools used in development:** Google AI Studio, ChatGPT
+**AI inside the product:** None
 
 ➡️ Full disclosure: **[ai.md](./ai.md)**
 
 ## 6. Decision Log (Summary)
 
-<!-- The full 1-page Decision Log is a PDF on Google Drive, linked in resource.md. ≤ 3 lines here. -->
-
-- **Chose:** `<approach>`, **over:** `<rejected alternative>`
-- **Because:** `<the trade-off in one line>`
-- **First thing to break at city scale:** `<one line>`
+- **Chose:** A capacity-based Geo-Elastic Routing Engine, **over:** point-in-polygon mapping.
+- **Because:** Fast cleanup is more crucial than strict boundary map accuracy when dealing with civic health hazards.
+- **First thing to break at city scale:** System-wide capacity saturation during Dasara.
 
 ➡️ Full decision log: **[resource.md](./resource.md#4-submission-artifacts-google-drive)** · Template: **[decision-log-template.md](./resource-templates/decision-log-template.md)**
 
 ## 7. Setup & Run
 
-```bash
-git clone <repo-url> && cd <repo>
-<one-line install> && <one-line run>
-```
+Refer to `docs/setup.md` for specific instructions.
 
 ➡️ Prerequisites, environment variables, seed data and offline testing: **[docs/setup.md](./docs/setup.md)**
 
 ## 8. Known Limitations
 
-- `A panchayat could intentionally let their capacity hit 150% to lead to divertion of work/MCC to do their work. Due to this We built an "Inter-Agency Throttle" that flags the Deputy Commissioner if a zone exceeds its monthly spillover quota.` 
-- `The capacity calculation relies on Zonal Officers accurately reporting their active, non-broken equipment (tippers, etc) in the system.`
-- `The 50-meter radius requirement for field workers to close a task may face failures due to multiple factors such as, dense tree cover or poor weather, requiring a manual override end task option.`
+- A panchayat could intentionally let their capacity hit 150% to lead to divertion of work/MCC to do their work. Due to this We built an "Inter-Agency Throttle" that flags the Deputy Commissioner if a zone exceeds its monthly spillover quota.
+- The capacity calculation relies on Zonal Officers accurately reporting their active, non-broken equipment (tippers, etc) in the system.
+- The 50-meter radius requirement for field workers to close a task may face failures due to multiple factors such as, dense tree cover or poor weather, requiring a manual override end task option.
 
 ➡️ Full list, edge cases and scaling roadmap: **[docs/limitations.md](./docs/limitations.md)**
 
@@ -98,9 +84,9 @@ git clone <repo-url> && cd <repo>
 
 | Name | Role | GitHub |
 |---|---|---|
-| `Panav K Bysani` | `<...>` | `@panavkbysani2011-jpg` |
-| `Achalesh Ramana Kiral Kooloth` | `<...>` | `@agnidevaraja` |
+| Panav K Bysani | Lead Engineer | @panavkbysani2011-jpg |
+| Achalesh Ramana Kiral Kooloth | Engineer | @agnidevaraja |
 
 ## License
 
-`MIT License`. We retain full ownership of our code.
+MIT License. We retain full ownership of our code.
