@@ -19,10 +19,10 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 | Question | Answer |
 |---|---|
-| Did we use AI tools during development? | `<Yes / No>` |
+| Did we use AI tools during development? | `Yes` |
 | Does our product use AI/ML at runtime? | `<Yes / No>` |
 | Roughly how much of the code was AI-assisted? | `<e.g. ~40% of frontend, ~15% of backend, 0% of routing logic>` |
-| Can every team member explain the AI-assisted code? | `<Yes>` |
+| Can every team member explain the AI-assisted code? | `Yes` |
 
 ---
 
@@ -70,16 +70,17 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 ## 5. How We Verified AI Output
 
-- `<e.g. Every AI-generated function was run against our seed data before merging>`
-- `<e.g. Rejected suggestions that stored photos in the database as base64>`
+- `AI was to only use the functions we had given, and not add its own, but it could suggest, which we looked into and decided if it is to be included, and asked for detailed reasoning`
+- `We gave our feedback after every round of edits and creation, which acted like an set instruction criteria, making sure no major errors are present`
 - `<Example of a bug an AI tool introduced and how we caught it>`
 
 ## 6. What We Deliberately Did *Not* Use AI For
 
-- `<e.g. The Decision Log — written by the team in our own words>`
-- `<e.g. The jurisdiction routing rules>`
+- `The Decision Log and other informative documents — written by the team in our own words`
+- `The jurisdiction routing rules, along with the layout of map in the three different access portals in the product`
+- `How the worker in a panchayat experience our APP, based on which we decided what that portal should include with the instructions.`
 
 ---
 
 **Declaration:** We confirm this disclosure is complete, and every team member can explain the code listed above.
-**Signed:** `<Team Leader name>` on behalf of `<Team Name>` · `<date>`
+**Signed:** `Panav K Bysani` on behalf of `SyntaxError-404` · `19-09-2026`
