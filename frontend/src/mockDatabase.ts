@@ -1573,18 +1573,32 @@ export const rateIssueResolution = (
 ): CivicIssue[] => {
   const current = getStoredIssues();
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  let updatedTarget: CivicIssue | null = null;
+
   const updated = current.map((item) => {
     if (item.id === id || item.trackingId === id) {
-      return {
+      updatedTarget = {
         ...item,
         citizenRating,
         citizenFeedback: citizenFeedback?.trim() || undefined,
         ratedAt: now,
       };
+      return updatedTarget;
     }
     return item;
   });
+
   saveStoredIssues(updated);
+
+  // Directly sync to Firestore so the text review & rating persist to the cloud database
+  if (updatedTarget) {
+    try {
+      syncIssueToFirestore(updatedTarget);
+    } catch (syncErr) {
+      console.warn('Firestore feedback sync notice:', syncErr);
+    }
+  }
+
   return updated;
 };
 
@@ -1682,7 +1696,7 @@ export interface ClearingLedgerSummary {
 
 export const calculateClearingLedger = (
   issues: CivicIssue[], 
-  bogadiCapacityPercent: number
+  _bogadiCapacityPercent?: number
 ): ClearingLedgerSummary => {
   const capacities = calculateDynamicCapacities(issues);
 

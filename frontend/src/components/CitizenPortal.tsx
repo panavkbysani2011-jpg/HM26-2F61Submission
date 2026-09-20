@@ -13,7 +13,6 @@ import {
   BorderHotspot,
   SEVERITY_LEVELS,
   getPriorityScore,
-  isInsideBufferZone,
   detectJurisdiction,
   SAMPLE_POTHOLE_PHOTO,
   SAMPLE_DEBRIS_PHOTO,
@@ -24,7 +23,7 @@ import {
 } from '../mockDatabase';
 import { MysuruLeafletMap } from './MysuruLeafletMap';
 import { compressImage } from '../utils/imageCompressor';
-import { moderateCitizenSubmission } from '../utils/geminiVerification';
+import { moderateCitizenSubmission, moderateAndSanitizeCitizenReview } from '../utils/geminiVerification';
 import { AnimatedFileUpload } from './ui/AnimatedFileUpload';
 import { 
   signInCitizenWithGoogle, 
@@ -43,37 +42,27 @@ import {
   Check, 
   X, 
   RotateCcw,
-  Zap,
   ListOrdered,
   FilePlus2,
   ChevronRight,
   ShieldCheck,
   Send,
-  Trash2,
   Video,
   StopCircle,
   Search,
   Sparkles,
   Info,
-  Lock,
   Mail,
   Loader2,
-  LogOut,
-  KeyRound,
   UserCheck,
   Store,
   Compass,
   Building2,
   Star,
   Crosshair,
-  SlidersHorizontal,
   Sun,
-  Eye,
-  ZoomIn,
   RefreshCw,
-  Bell,
-  Smartphone,
-  Truck
+  Bell
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -392,9 +381,6 @@ export const MYSURU_PLACES: MysuruPlace[] = [
   },
 ];
 
-// Backward-compatible alias for existing references
-const MYSURU_LOCALITIES = MYSURU_PLACES;
-
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   session,
   onSetSession,
@@ -417,7 +403,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [loginEmailInput, setLoginEmailInput] = useState<string>(
     session?.role === 'citizen' ? (session.email || '') : ''
   );
-  const [loginPasswordInput, setLoginPasswordInput] = useState<string>('');
+  const [loginPasswordInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [authFeedback, setAuthFeedback] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
@@ -536,20 +522,42 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [pendingFeedbacks, setPendingFeedbacks] = useState<Record<string, string>>({});
   const [submittingRatingId, setSubmittingRatingId] = useState<string | null>(null);
 
-  // Handle Citizen Feedback Submission
-  const handleRateTicket = (ticketId: string) => {
+  // Handle Citizen Feedback Submission with Pre-save AI Moderation
+  const handleRateTicket = async (ticketId: string) => {
     const rating = pendingRatings[ticketId];
     if (!rating || rating < 1 || rating > 5) return;
-    const feedback = pendingFeedbacks[ticketId]?.trim() || undefined;
+    const rawFeedback = pendingFeedbacks[ticketId]?.trim() || '';
 
     setSubmittingRatingId(ticketId);
-    rateIssueResolution(ticketId, rating, feedback);
-    onRefreshIssues();
-    setSubmittingRatingId(null);
+    try {
+      let finalFeedback = rawFeedback;
+      if (rawFeedback) {
+        const currentTicket = issues.find(i => i.id === ticketId || i.trackingId === ticketId);
+        const modResult = await moderateAndSanitizeCitizenReview(
+          rawFeedback,
+          rating,
+          currentTicket?.title
+        );
+        finalFeedback = modResult.moderatedFeedback;
+      }
 
-    setToastType('success');
-    setToastMessage(lang === 'kn' ? 'ಧನ್ಯವಾದಗಳು! ನಿಮ್ಮ ಪರಿಹಾರ ರೇಟಿಂಗ್ ದಾಖಲಾಗಿದೆ.' : 'Thank you! Your resolution rating and feedback have been recorded.');
-    setTimeout(() => setToastMessage(null), 5000);
+      rateIssueResolution(ticketId, rating, finalFeedback || undefined);
+      onRefreshIssues();
+
+      setToastType('success');
+      setToastMessage(
+        lang === 'kn'
+          ? 'ಧನ್ಯವಾದಗಳು! ನಿಮ್ಮ ಪರಿಹಾರ ರೇಟಿಂಗ್ ಮತ್ತು ವಿಮರ್ಶೆ ದಾಖಲಾಗಿದೆ (AI ಪರಿಶೀಲಿಸಲಾಗಿದೆ).'
+          : 'Thank you! Your resolution review and rating have been recorded (AI moderated).'
+      );
+      setTimeout(() => setToastMessage(null), 5000);
+    } catch (err) {
+      console.error('Rating submission error:', err);
+      rateIssueResolution(ticketId, rating, rawFeedback || undefined);
+      onRefreshIssues();
+    } finally {
+      setSubmittingRatingId(null);
+    }
   };
 
   // User-selected features state & handlers
@@ -565,12 +573,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
   // #19 Follow-up reminder toggle
   const [followUpReminder, setFollowUpReminder] = useState<boolean>(false);
-
-  // #14 Guided camera framing reticle overlay
-  const [showReticleGuide, setShowReticleGuide] = useState<boolean>(true);
-
-  // #4 Before/After resolved photo fullscreen comparison modal
-  const [fullscreenCompareTicket, setFullscreenCompareTicket] = useState<CivicIssue | null>(null);
 
   // #21 Re-open request window (72-hour grace period)
   const [reopenReason, setReopenReason] = useState<Record<string, string>>({});
@@ -638,7 +640,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
         setLocationName(locTitle);
         setSearchQuery(locTitle);
       },
-      (err) => {
+      (_err) => {
         setIsLocating(false);
         // Fallback simulation for local development / testing
         const fallback = { lat: 12.3087, lng: 76.6531 };
@@ -925,7 +927,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     setShowLocationSuggestions(false);
     setFormError(null);
   };
-  const handleSelectLocality = handleSelectPlace;
 
   // Photo Capture via environment camera or file upload with automatic compression
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2103,7 +2104,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 {mySubmissions.map((ticket) => {
                   const rank = (ticket.severityRank || getPriorityScore(ticket.category)) as SeverityRank;
                   const severityConfig = SEVERITY_LEVELS[rank];
-                  const inBuffer = Boolean(ticket.isBufferZone);
 
                   // STRICT PRIVACY RULE:
                   // Find the active citizen's own entry inside reporters array.
@@ -2117,7 +2117,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   }) || ticket.reporters?.[0];
 
                   const myEvidencePhoto = userReporter?.imageUrl || ticket.imageUrl;
-                  const myReporterName = userReporter?.name || currentResidentName || ticket.reportedBy;
                   const isQuarantined = ticket.status === 'quarantined' || Boolean(ticket.isQuarantined);
 
                   let statusBadgeText = lang === 'kn' ? 'ಬಾಕಿ ಇದೆ' : 'Received';
@@ -2249,29 +2248,35 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         <>
                           {ticket.citizenRating ? (
                             /* Static Display of Existing Citizen Rating */
-                            <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                                  {lang === 'kn' ? 'ನಿಮ್ಮ ರೇಟಿಂಗ್:' : 'Your Rating:'}
-                                </span>
-                                <div className="flex items-center gap-0.5">
-                                  {[1, 2, 3, 4, 5].map((starVal) => (
-                                    <Star
-                                      key={starVal}
-                                      className={`w-4 h-4 ${
-                                        starVal <= (ticket.citizenRating || 0)
-                                          ? 'fill-amber-400 text-amber-400'
-                                          : 'text-stone-300 dark:text-stone-600'
-                                      }`}
-                                    />
-                                  ))}
+                            <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex flex-col gap-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                                    {lang === 'kn' ? 'ನಿಮ್ಮ ರೇಟಿಂಗ್:' : 'Your Rating:'}
+                                  </span>
+                                  <div className="flex items-center gap-0.5">
+                                    {[1, 2, 3, 4, 5].map((starVal) => (
+                                      <Star
+                                        key={starVal}
+                                        className={`w-4 h-4 ${
+                                          starVal <= (ticket.citizenRating || 0)
+                                            ? 'fill-amber-400 text-amber-400'
+                                            : 'text-stone-300 dark:text-stone-600'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs font-extrabold text-stone-700 dark:text-stone-300">
+                                    ({ticket.citizenRating} / 5)
+                                  </span>
                                 </div>
-                                <span className="text-xs font-extrabold text-stone-700 dark:text-stone-300">
-                                  ({ticket.citizenRating} / 5)
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-md">
+                                  <Sparkles className="w-3 h-3 text-amber-500" />
+                                  {lang === 'kn' ? 'AI ಪರಿಶೀಲಿಸಿದ ವಿಮರ್ಶೆ' : 'AI Moderated Review'}
                                 </span>
                               </div>
                               {ticket.citizenFeedback && (
-                                <p className="text-xs italic text-stone-700 dark:text-stone-300 bg-white/70 dark:bg-stone-900/70 px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
+                                <p className="text-xs italic text-stone-700 dark:text-stone-300 bg-white/80 dark:bg-stone-900/80 px-2.5 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
                                   &ldquo;{ticket.citizenFeedback}&rdquo;
                                 </p>
                               )}
@@ -2338,8 +2343,17 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                                   onClick={() => handleRateTicket(ticket.id)}
                                   className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-stone-950 font-bold text-xs rounded-lg shrink-0 transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                                 >
-                                  <Star className="w-3.5 h-3.5 fill-stone-950 text-stone-950" />
-                                  <span>{lang === 'kn' ? 'ರೇಟಿಂಗ್ ಸಲ್ಲಿಸಿ' : 'Submit Rating'}</span>
+                                  {submittingRatingId === ticket.id ? (
+                                    <>
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-stone-950" />
+                                      <span>{lang === 'kn' ? 'AI ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...' : 'AI Moderating...'}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Star className="w-3.5 h-3.5 fill-stone-950 text-stone-950" />
+                                      <span>{lang === 'kn' ? 'ರೇಟಿಂಗ್ ಸಲ್ಲಿಸಿ' : 'Submit Rating'}</span>
+                                    </>
+                                  )}
                                 </button>
                               </div>
                             </div>
@@ -2377,16 +2391,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                                     <button
                                       type="button"
                                       disabled={!(reopenReason[ticket.id]?.trim())}
-                                      onClick={() => {
-                                        const ok = citizenReopenIssue(ticket.id, reopenReason[ticket.id] || '');
-                                        if (ok) {
-                                          setReopeningId(null);
-                                          onRefreshIssues();
-                                          setToastType('info');
-                                          setToastMessage('Issue re-opened for review. A field officer will be assigned.');
-                                          setTimeout(() => setToastMessage(null), 5000);
-                                        }
-                                      }}
+                                      onClick={() => handleReopenTicket(ticket.id)}
                                       className="px-4 py-1.5 text-[11px] font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-lg transition-colors cursor-pointer"
                                     >
                                       <RotateCcw className="w-3 h-3 inline mr-1" />

@@ -42,17 +42,17 @@ Keep the section ORDER below. Reviewers look for each section in the same place 
 `Civic Mesh replaces rigid boundary walls with a Geo-Elastic Routing Engine (G-ERE). This algorithm makes the administrative border permeable as a buffer zone, where complaints are routed out to the nearest depot according to its available equipment capacity, and cross-border fuel/labor liabilities are automatically balanced through an Inter-Agency Clearing Ledger.`
 
 **Core flow:**
-1. `A citizen drops a pin, selects a category, enters basic details (e.g., C&D debris, Pothole), and uploads a photo on the public portal.`
-2. `The System Auto-calculates a severity rank between 1–5. If the home zone (e.g., Bogadi) is at more than 100% capacity, the system spillover-routes the ticket to the nearest idle depot (e.g., MCC Zone 3 at ~43% load) and logs a debit from the home zone, and a credit to the spillover zone in the Inter-Agency Ledger.`
-3. `The ticket automatically inherits the designated field crew lead and utility vehicle from the performing jurisdiction's worker roster (e.g., Manjunatha S., Canter KA-09-G-4412).`
-4. `Staff - The field worker views a task list, travels to the site, and closes the ticket using a GPS-locked, camera-only capture (within a 50m radius).`
-5. `Citizen receives a real-time update that the issue was resolved with verified photo proof, and submits satisfaction feedback via a 5-star rating loop.`
+1. `A citizen uses the localized English/Kannada toggle, selects from 10 standardized categories, drops an exact pin (or chooses a quick boundary hotspot like Bogadi Ring Road Junction), and uploads photo evidence.`
+2. `The System Auto-calculates a severity rank between 1–5. If the home zone (e.g., Bogadi Town Panchayat) is at >100% capacity, the system spillover-routes the ticket to the adjacent idle depot (e.g., MCC Zone 3 at ~43% load) and logs an automated debit/credit in the Inter-Agency Clearing Ledger.`
+3. `The ticket automatically inherits the designated field crew lead and utility vehicle from the performing jurisdiction's worker roster (e.g., Manjunatha S., Canter KA-09-G-4412 for MCC Zone 3).`
+4. `Staff - The field worker logs into their specific jurisdiction from the 21-zone roster, accesses their Active Work Orders, travels to the site, and closes the ticket using GPS-locked camera capture (verified by Gemini AI vision audit).`
+5. `Citizen receives a real-time update that the issue is resolved with photo proof, and submits satisfaction feedback via a 5-star rating and text review. The review is pre-moderated by AI into a clean, professional summary and displayed to both the Admin Command Dashboard and the assigned Worker.`
 
 **Screenshots:** `<2–4 images under docs/images/, each < 1 MB>`
 
 ## 4. Architecture
 
-A client-side progressive web application integrating interactive Leaflet GIS mapping, a deterministic Geo-Elastic Routing Engine (G-ERE), and Google Gemini multimodal vision verification backed by real-time state synchronization.
+A client-side progressive web application integrating interactive Leaflet GIS mapping, a deterministic Geo-Elastic Routing Engine (G-ERE), bilingual English/Kannada localization, and Google Gemini multimodal vision verification & review moderation backed by real-time state synchronization.
 
 ➡️ Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
 
@@ -61,7 +61,7 @@ A client-side progressive web application integrating interactive Leaflet GIS ma
 **Stack:** `React 19 · TypeScript · Tailwind CSS · Leaflet GIS · Google Gemini API (@google/genai) · Vite` (full rationale in [docs/architecture.md](./docs/architecture.md#tech-stack))
 
 **AI tools used in development:** `Gemini, Antigravity, Google AI Studio, Google Julius`
-**AI inside the product:** `Google Gemini 3.6 Flash via @google/genai for field worker resolution photo verification and citizen text moderation`
+**AI inside the product:** `Google Gemini Flash via @google/genai for field worker resolution photo verification, intake moderation, and pre-save citizen review sanitization & restructuring`
 
 ➡️ Full disclosure: **[ai.md](./ai.md)**
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Layers, Crosshair, Navigation, Building2, MapPin, Search, Maximize2, Minimize2 } from 'lucide-react';
+import { Crosshair, Navigation, Maximize2, Minimize2 } from 'lucide-react';
 import { CivicIssue } from '../types';
-import { MYSURU_JURISDICTIONS, getPriorityScore, isInsideBufferZone } from '../mockDatabase';
+import { getPriorityScore } from '../mockDatabase';
 
 interface AdminLeafletMapProps {
   issues: CivicIssue[];
@@ -351,7 +351,7 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
   bogadiCapacity,
   mccCapacity,
   onSelectIssue,
-  isDark = false,
+  isDark: _isDark = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);

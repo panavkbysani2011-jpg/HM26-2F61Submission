@@ -488,3 +488,105 @@ Respond ONLY with valid JSON in this exact format:
   };
 };
 
+export interface ReviewModerationResult {
+  moderatedFeedback: string;
+  isSanitized: boolean;
+  summary?: string;
+}
+
+/**
+ * Pre-save AI moderation & restructuring for citizen feedback reviews.
+ * If the citizen review contains inappropriate language, profanity, or confusing phrasing,
+ * it restructures and sanitizes it into a clean, professional civic summary.
+ * If API is unavailable, it applies deterministic rule-based sanitization.
+ */
+export async function moderateAndSanitizeCitizenReview(
+  rawText: string,
+  rating: number = 5,
+  taskTitle?: string
+): Promise<ReviewModerationResult> {
+  const trimmed = (rawText || '').trim();
+  if (!trimmed) {
+    return { moderatedFeedback: '', isSanitized: false };
+  }
+
+  // 1. Check if Gemini AI is configured
+  if (isGeminiConfigured()) {
+    try {
+      const apiKey = getGeminiApiKey();
+      const ai = new GoogleGenAI({ apiKey });
+
+      const prompt = `You are an AI civic communications editor for Mysuru City Corporation (Civic Mesh).
+A citizen has completed a post-resolution satisfaction review for a municipal civic maintenance task: "${taskTitle || 'Civic Repair'}".
+Rating given: ${rating} out of 5 stars.
+Raw citizen review: "${trimmed}"
+
+MANDATORY INSTRUCTIONS:
+1. INAPPROPRIATE LANGUAGE: If the review contains vulgarity, profanity, abusive slurs, insults, or harsh aggression, sanitize them completely into calm, constructive civic feedback.
+2. RESTRUCTURING & CLARITY: If the review is rambling, poorly structured, grammatically broken, or confusing, restructure it into a clear, concise, and professional summary (1-2 sentences) that accurately reflects the citizen's core sentiment.
+3. PRESERVE CIVIC CONTENT: Keep all genuine compliments, specific details, or constructive criticisms about the physical repair (e.g., asphalt work, road leveling, trash cleared, drainage flow).
+4. IF ALREADY CLEAN: If the citizen's text is already clear, respectful, and articulate, retain its meaning with minimal grammar polish.
+
+Respond STRICTLY with valid JSON (no markdown formatting, raw JSON only):
+{
+  "moderatedFeedback": "The polished, sanitized, and professional review text",
+  "isSanitized": boolean,
+  "summary": "Short note of modification (e.g. 'Sanitized language & restructured for clarity')"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [prompt],
+      });
+
+      const text = response?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.moderatedFeedback && typeof parsed.moderatedFeedback === 'string') {
+          return {
+            moderatedFeedback: parsed.moderatedFeedback.trim(),
+            isSanitized: Boolean(parsed.isSanitized),
+            summary: parsed.summary || 'AI-moderated civic review',
+          };
+        }
+      }
+    } catch (aiErr) {
+      console.warn('[AI Review Moderation] Gemini check bypassed, applying deterministic heuristic sanitization:', aiErr);
+    }
+  }
+
+  // 2. Deterministic Rule-Based Fallback Sanitization (if offline / no API key)
+  let sanitized = trimmed;
+
+  // Mask abusive and vulgar terms
+  const abusivePatterns = [
+    /\b(fuck|fucking|shit|bullshit|asshole|bastard|idiot|moron|corrupt|scam|scoundrel|bitch|damn)\b/gi,
+    /\b(bolimakane|thika|gandu|bewarsi|soole|lofar)\b/gi // Regional Kannada abusive slang
+  ];
+  let hadAbusiveWords = false;
+  for (const pattern of abusivePatterns) {
+    if (pattern.test(sanitized)) {
+      hadAbusiveWords = true;
+      sanitized = sanitized.replace(pattern, '***');
+    }
+  }
+
+  // Clean excessive punctuation & caps
+  sanitized = sanitized.replace(/[!?]{2,}/g, (m) => m[0]);
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
+  if (sanitized.length > 0) {
+    sanitized = sanitized.charAt(0).toUpperCase() + sanitized.slice(1);
+    if (!/[.!?]$/.test(sanitized)) {
+      sanitized += '.';
+    }
+  }
+
+  return {
+    moderatedFeedback: sanitized,
+    isSanitized: hadAbusiveWords || sanitized !== trimmed,
+    summary: hadAbusiveWords ? 'Heuristic profanity filter applied' : 'Heuristic formatting applied',
+  };
+}
+
+

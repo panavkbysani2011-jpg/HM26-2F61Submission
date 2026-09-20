@@ -40,7 +40,7 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 | Area / file | Level of AI help | What a human did |
 |---|---|---|
 | `frontend/src/components/` | `Medium: UI layout autocomplete` | `Wrote custom tab navigation, bilingual English and Kannada state wiring, and form validation` |
-| `frontend/src/utils/geminiVerification.ts` | `Medium: SDK call boilerplate` | `Wrote the audit criteria, zero-tolerance prompt rules, heuristic fallback logic, and JSON parsing checks` |
+| `frontend/src/utils/geminiVerification.ts` | `Medium: SDK call boilerplate` | `Wrote the audit criteria, zero-tolerance prompt rules, heuristic fallback logic, citizen review restructuring and profanity sanitization, and JSON parsing checks` |
 | `frontend/src/mockDatabase.ts` | `Low: Data structure scaffolding` | `Hand-wrote the Geo-Elastic Routing Engine (G-ERE), buffer zone bounding boxes, dynamic capacity math, and Inter-Agency Ledger` |
 | `frontend/src/firebase.ts` | `Low: Auth setup suggestions` | `Wrote session persistence, error handlers, and Firestore issue synchronization logic` |
 | `README / docs` | `None` | `Written completely by the team to explain the Mysuru local context and architecture` |
@@ -53,7 +53,7 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 | Model / API | What it does in our product | Hosted where | Trained / fine-tuned by us? |
 |---|---|---|---|
-| `Gemini 3.6 Flash (@google/genai SDK)` | `Audits field worker proof photos to verify civic resolution and reject selfies, flowers, pets, or indoor shots and Content moderation for incoming citizen complaints to flag spam, profanity, and keyboard mash` | `Google Cloud Gemini API` | `No, prompt engineering with strict negative constraints` |
+| `Gemini 2.5 / 3.6 Flash (@google/genai SDK)` | `1. Audits field worker proof photos to verify civic resolution and reject selfies, flowers, pets, or indoor shots. 2. Moderates incoming citizen grievance text to flag profanity and gibberish. 3. Pre-save citizen review moderation: restructures rambling/confusing post-resolution comments into clear, professional summaries and sanitizes vulgarity/inappropriate language before database persistence.` | `Google Cloud Gemini API` | `No, prompt engineering with strict negative constraints & structured JSON output` |
 
 - **Accuracy we measured:** `Tested on 40 sample civic and non-civic photos: 100% rejection on selfies, plants, and indoor objects; 90% true positive verification on clear asphalt and debris cleanup photos`
 - **What happens when the model is wrong:** `If rejected or inconclusive, the ticket is flagged for audit and sent to the supervisor queue without silent dropping; if API key is missing or network fails, the system falls back to deterministic local rule-based heuristics`

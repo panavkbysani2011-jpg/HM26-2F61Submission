@@ -93,8 +93,8 @@ Paste the first 16 characters.
 |---|---|
 | Live URL | `<https://...>` |
 | Platform | Web Platform (React 19 + TypeScript + Vite) |
-| Test login (if any) | Citizen: `1-Click Selection` · Worker: `1-Click Dispatch Roster` · Admin: `admin` / `devpass2026` |
-| Sample data loaded? | Yes — Seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity) |
+| Test login (if any) | Citizen: `1-Click Selection` · Worker: `21-Zone Dispatch Roster` · Admin: `admin` / `devpass2026` · Language: `English / ಕನ್ನಡ Toggle` |
+| Sample data loaded? | Yes — Seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity, buffer zones at 0 active tasks) |
 | How to test offline mode | N/A — No offline mode (Civic Mesh operates as an online cloud-synchronized municipal dispatch and inter-agency clearing mesh) |
 | If the live link is down | Follow [docs/setup.md](./docs/setup.md) |
 
@@ -102,11 +102,13 @@ Paste the first 16 characters.
 
 ## 6. Quick Reviewer Path (≤ 3 minutes)
 
-1. **Intake at Contested Boundary**: Launch app → click **Citizen Portal** (1-click resident select) → choose pre-filled boundary location (*Bogadi Ring Road Junction*) → observe real-time AI geo-elastic boundary detection and duplicate clustering → click **Submit Civic Report**.
-2. **Cross-Jurisdictional Spillover**: Notice the ticket automatically re-routes from overloaded Bogadi Town Panchayat (110% load) to adjacent MCC Zone 3 under dynamic capacity balancing.
-3. **Field Worker Execution**: Switch to **Worker Desk** (1-click dispatch roster) → select MCC Zone 3 operator (*Manjunatha S.*) → open the active work order and click **Submit Completion**.
-4. **Citizen Feedback Loop**: Return to Citizen Portal → open **My Submissions** tab → rate the resolved ticket with 5 stars and optional feedback comment.
-5. **Municipal Oversight & Clearing Ledger**: Open **Admin Dashboard** (login with `admin` / `devpass2026`) → inspect the dynamic Capacity Matrix, GIS buffer corridor polygons, citizen satisfaction rating, and automated Inter-Agency Clearing Ledger debit.
+1. **Intake at Contested Boundary**: Launch app → observe the top bar language toggle (`English` / `ಕನ್ನಡ`) → click **Citizen Portal** (1-click resident select) → select from 10 civic categories and choose pre-filled boundary location (*Bogadi Ring Road Junction*) → observe real-time AI geo-elastic boundary detection and duplicate clustering → click **Submit Civic Report**.
+2. **Cross-Jurisdictional Spillover**: Notice the ticket automatically re-routes from overloaded Bogadi Town Panchayat (110% load) to adjacent MCC Zone 3 under dynamic capacity balancing, inheriting crew lead *Manjunatha S.* and vehicle *Canter KA-09-G-4412*.
+3. **Field Worker Execution**: Switch to **Worker Desk** → select MCC Zone 3 operator from the 21-jurisdiction dispatch roster → view active work order with GPS distance lock → upload/capture completion photo and click **Complete Work Order** (verified by Gemini AI vision audit).
+4. **Citizen Feedback Loop with Pre-Save AI Moderation**: Return to Citizen Portal → open **My Submissions** tab → rate the resolved ticket with 5 stars and enter text feedback → click **Submit Rating** → watch AI sanitize and restructure the review into a clean, professional summary.
+5. **Admin & Worker Visibility**:
+   - In **Worker Desk**, open the **Resolved Log** to see the assigned worker's completed work order display the citizen's 5-star rating and AI-moderated review.
+   - Open **Admin Dashboard** (login with `admin` / `devpass2026`) → inspect the dynamic Capacity Matrix, GIS buffer corridor polygons, the AI-moderated review displayed next to the star rating on ticket cards, the inspection modal, and the automated Inter-Agency Clearing Ledger debit.
 
 ---
 

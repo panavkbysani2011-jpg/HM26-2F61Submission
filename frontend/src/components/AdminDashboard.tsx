@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { CivicIssue, DepartmentCapacity, UserSession, SeverityRank } from '../types';
 import { AdminLeafletMap } from './AdminLeafletMap';
 import { 
-  isInsideBufferZone, 
   getPriorityScore, 
-  getEscalationInfo,
   calculateClearingLedger,
   SEVERITY_LEVELS,
   calculateDynamicCapacities,
@@ -18,33 +16,26 @@ import {
   MapIcon,
   ArrowPathIcon,
   ArrowLeftIcon,
-  ExclamationTriangleIcon,
   ShieldExclamationIcon,
-  ShieldCheckIcon,
   CheckCircleIcon,
   ClockIcon,
   ScaleIcon,
   CreditCardIcon,
   CheckIcon,
-  EyeIcon,
   CameraIcon,
-  TruckIcon,
   WrenchIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   XMarkIcon,
   MagnifyingGlassIcon,
   UserGroupIcon,
-  UserIcon,
   DocumentTextIcon,
   ChartBarIcon,
   SparklesIcon,
   ArrowsPointingOutIcon,
   ClipboardDocumentIcon,
-  ClipboardDocumentCheckIcon,
   BoltIcon,
   PhotoIcon,
-  FunnelIcon,
   ReceiptPercentIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
@@ -59,9 +50,9 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
-  session,
+  session: _session,
   issues,
-  departments,
+  departments: _departments,
   onUpdateStatus,
   onNavigateHome,
   onResetDb,
@@ -322,9 +313,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </span>
             )}
             {issue.citizenRating && (
-              <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
-                <StarIconSolid className="w-2.5 h-2.5 text-amber-500" />
-                <span>{issue.citizenRating}/5</span>
+              <span className="inline-flex items-center gap-1.5 text-[9px] font-extrabold px-2 py-0.5 rounded bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-200 dark:border-amber-800 max-w-full">
+                <span className="inline-flex items-center gap-0.5 shrink-0">
+                  <StarIconSolid className="w-2.5 h-2.5 text-amber-500" />
+                  <span>{issue.citizenRating}/5</span>
+                </span>
+                {issue.citizenFeedback && (
+                  <span className="font-normal italic text-stone-600 dark:text-stone-300 truncate max-w-[200px]" title={issue.citizenFeedback}>
+                    &ldquo;{issue.citizenFeedback}&rdquo;
+                  </span>
+                )}
               </span>
             )}
           </div>
@@ -624,31 +622,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Citizen Satisfaction Rating */}
+                  {/* Citizen Satisfaction Rating & AI Moderated Review */}
                   {inspectingIssue.citizenRating && (
-                    <div className="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 text-xs space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-amber-950 dark:text-amber-200">Citizen Post-Remediation Feedback:</span>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <StarIconSolid
-                              key={star}
-                              className={`w-3.5 h-3.5 ${
-                                star <= (inspectingIssue.citizenRating || 0)
-                                  ? 'text-amber-500'
-                                  : 'text-stone-300 dark:text-stone-700'
-                              }`}
-                            />
-                          ))}
+                    <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-xs space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-amber-950 dark:text-amber-200">Citizen Satisfaction Rating:</span>
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <StarIconSolid
+                                key={star}
+                                className={`w-3.5 h-3.5 ${
+                                  star <= (inspectingIssue.citizenRating || 0)
+                                    ? 'text-amber-500'
+                                    : 'text-stone-300 dark:text-stone-700'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="font-bold font-mono text-amber-800 dark:text-amber-300">
+                            {inspectingIssue.citizenRating} / 5 Stars
+                          </span>
                         </div>
-                        <span className="font-bold font-mono text-amber-800 dark:text-amber-300">
-                          {inspectingIssue.citizenRating} / 5 Stars
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
+                          <SparklesIcon className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          <span>AI Moderated Review</span>
                         </span>
                       </div>
-                      {inspectingIssue.citizenComment && (
-                        <p className="text-stone-700 dark:text-stone-300 italic pt-1">
-                          "{inspectingIssue.citizenComment}"
-                        </p>
+                      {(inspectingIssue.citizenFeedback || (inspectingIssue as any).citizenComment) && (
+                        <div className="bg-white/80 dark:bg-stone-900/80 p-2.5 rounded-lg border border-amber-200/60 dark:border-amber-900/40">
+                          <p className="text-stone-700 dark:text-stone-200 italic">
+                            &ldquo;{inspectingIssue.citizenFeedback || (inspectingIssue as any).citizenComment}&rdquo;
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}

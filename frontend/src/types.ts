@@ -109,6 +109,13 @@ export interface CivicIssue {
   citizenRating?: number; // 1 to 5 stars
   citizenFeedback?: string;
   ratedAt?: string;
+  resolvedAt?: string | number;
+  jurisdictionId?: string;
+  aiAuditDetails?: {
+    isApproved?: boolean;
+    explanation?: string;
+    [key: string]: any;
+  };
 }
 
 export interface DepartmentCapacity {

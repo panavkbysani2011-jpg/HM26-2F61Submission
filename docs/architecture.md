@@ -9,8 +9,8 @@ flowchart TD
     subgraph Client ["Client Layer (Responsive Web / PWA)"]
         CP[Citizen Portal<br/>10 Categories, Pin Drop, Photos & 5-Star Feedback]
         WL[Worker Login Desk<br/>21-Zone Dispatch Roster]
-        WD[Field Worker Desk<br/>GPS Lock, Gemini Camera Audit & Resolution Log]
-        AD[Admin Command Dashboard<br/>26-Zone Capacity Matrix, GIS Corridors & Ledger]
+        WD[Field Worker Desk<br/>Active & Resolved Tabs, Gemini Camera Audit & Review Visibility]
+        AD[Admin Command Dashboard<br/>26-Zone Capacity Matrix, GIS Corridors, Clustered Filter & AI Reviews]
     end
 
     subgraph Core ["Civic Mesh Core Engine (frontend/src/)"]
@@ -20,7 +20,7 @@ flowchart TD
         DCM[Dynamic Capacity Matrix<br/>Fleet Thresholds & Spillover Calculation]
         IAC[Inter-Agency Clearing Ledger<br/>Automated Debits / Credits Balancing]
         DED[Duplicate Aggregation Engine<br/>Radius-based Cluster Grouping]
-        FBL[Citizen Feedback Engine<br/>rateIssueResolution 1-5 Star Loop]
+        FBL[Citizen Feedback Engine<br/>Pre-Save AI Moderation & 1-5 Star Loop]
     end
 
     subgraph External ["External & AI Services"]
@@ -57,20 +57,21 @@ flowchart TD
 5. **Dynamic Worker Roster Assignment**: The work order automatically inherits the dedicated field crew lead and utility vehicle mapped to the performing jurisdiction in `WORKER_ROSTER` (e.g., Manjunatha S., Canter KA-09-G-4412 for MCC Zone 3).
 6. **Worker Execution with GPS Proximity Lock**: The field operator authenticates via the 1-click dispatch roster. The mobile worker desk enforces a 50-meter GPS proximity lock to the incident site before enabling the resolution camera.
 7. **AI Vision Resolution Audit**: The completion photograph is evaluated in real time by Google Gemini 3.6 Flash via `@google/genai`. The model verifies physical municipal repair materials (asphalt, concrete, desilted culverts, luminaire replacement) and strictly rejects non-civic photos (plants, selfies, domestic interiors).
-8. **Citizen Feedback Loop**: Once the ticket transitions to `resolved`, the citizen inspects the completion status in the 'My Submissions' tab and submits an interactive 1–5 star rating with optional feedback comments, which immediately updates the municipal satisfaction telemetry in the Admin Command Dashboard.
+8. **Citizen Feedback Loop & Pre-Save AI Moderation**: Once the ticket transitions to `resolved`, the citizen inspects the completion status in the 'My Submissions' tab and submits an interactive 1–5 star rating with text review. Before saving, `moderateAndSanitizeCitizenReview()` passes the review through Gemini AI to restructure rambling/confusing sentences and sanitize inappropriate language into a clean, professional civic summary. The moderated review is saved locally and synchronized to Cloud Firestore.
+9. **Multi-Portal Review Visibility**: The AI-moderated review is rendered next to the star rating on the Admin Command Dashboard (both on ticket cards and in the detailed inspection modal) and in the Worker Desk under the Resolved Log and task detail view, giving both municipal administrators and the specific assigned field operator clear, actionable satisfaction telemetry.
 
 ## Components
 
 | Component | Responsibility | Tech | Code location |
 |---|---|---|---|
-| Citizen Portal | Public intake across 10 civic categories, pin drop, duplicate alerts, photo upload, bilingual EN/KN, 5-star resolution feedback | React 19, Leaflet, Tailwind CSS | `frontend/src/components/CitizenPortal.tsx` |
-| Worker Login Roster | 1-click dispatch roster authentication mapping operators across 21 primary jurisdictions | React 19, Lucide, Tailwind CSS | `frontend/src/components/WorkerLogin.tsx` |
-| Field Worker Desk | Distraction-free work order list, GPS proximity lock, live Gemini camera audit, bilingual Kannada/English execution | React 19, HTML5 Camera API, Lucide | `frontend/src/components/WorkerDesk.tsx` |
-| Admin Command Dashboard | 26-zone capacity matrix, GIS corridor polygons, inter-agency clearing ledger, citizen satisfaction metrics, incident inspection modal | React 19, Leaflet, SVG Charts | `frontend/src/components/AdminDashboard.tsx` |
+| Citizen Portal | Public intake across 10 civic categories, pin drop, duplicate alerts, photo upload, bilingual EN/KN, 5-star resolution feedback with pre-save AI moderation | React 19, Leaflet, Tailwind CSS | `frontend/src/components/CitizenPortal.tsx` |
+| Worker Login Roster | 1-click dispatch roster authentication mapping operators across 21 primary jurisdictions with active task counters | React 19, Lucide, Tailwind CSS | `frontend/src/components/WorkerLogin.tsx` |
+| Field Worker Desk | Distraction-free work order list, Active Work Orders vs. Resolved Log tabs, GPS proximity lock, live Gemini camera audit, citizen rating & review visibility, bilingual execution | React 19, HTML5 Camera API, Lucide | `frontend/src/components/WorkerDesk.tsx` |
+| Admin Command Dashboard | 26-zone capacity matrix, GIS corridor polygons, inter-agency clearing ledger, clustered vs. standard report filters, citizen satisfaction ratings & AI reviews, incident inspection modal | React 19, Leaflet, SVG Charts | `frontend/src/components/AdminDashboard.tsx` |
 | Language Context | Lightweight, zero-dependency bilingual state provider (`'en' \| 'kn'`) with `localStorage` persistence | React 19 Context | `frontend/src/context/LanguageContext.tsx` |
 | Geo-Elastic Routing Engine | Bounding envelope detection, capacity-based spillover delegation, corridor routing | TypeScript | `frontend/src/mockDatabase.ts` |
 | Inter-Agency Clearing Ledger | Automated cost balancing between MCC and peripheral panchayats, voucher issuance | TypeScript | `frontend/src/mockDatabase.ts` |
-| AI Verification Service | Multimodal civic repair audit and citizen complaint text moderation using Gemini 3.6 Flash | Google Gemini API (`@google/genai`) | `frontend/src/utils/geminiVerification.ts` |
+| AI Verification Service | Multimodal civic repair audit, complaint text moderation, and citizen review sanitization/restructuring using Gemini | Google Gemini API (`@google/genai`) | `frontend/src/utils/geminiVerification.ts` |
 | Geospatial Mapping Engine | 21 jurisdictional circles, 5 contested buffer polygons, interactive incident markers | Leaflet.js, OpenStreetMap | `frontend/src/components/AdminLeafletMap.tsx`, `frontend/src/components/MysuruLeafletMap.tsx` |
 
 ## Data Model
@@ -106,8 +107,9 @@ erDiagram
 | `calculateDynamicCapacities`| `(issues) => DynamicJurisdictionCapacity[]` | Recalculates fleet load and utilization percentage across all 21 operational depots based on active tasks | Real-time Engine |
 | `calculateClearingLedger` | `(issues) => ClearingLedgerEntry[]` | Computes financial debits and credits between debtor and creditor jurisdictions for rerouted tickets | Admin / Inter-Agency |
 | `resolveIssueWithProof` | `(id, resolvedImageUrl, notes, cost) => CivicIssue[]` | Completes work order with verified completion photo and resolution notes | Field Worker Desk |
-| `rateIssueResolution` | `(id, rating, feedback) => CivicIssue[]` | Submits citizen 1–5 star rating and optional feedback comment for resolved work orders | Citizen Portal |
-| `verifyResolutionImageWithGemini`| `(base64Image, taskContext) => Promise<GeminiVerificationResult>` | Multimodal AI audit checking field completion photo against strict civic repair criteria using Gemini 3.6 Flash | Field Worker Desk |
+| `rateIssueResolution` | `(id, rating, feedback) => CivicIssue[]` | Submits citizen 1–5 star rating and optional feedback comment for resolved work orders, syncing to Firestore | Citizen Portal |
+| `moderateAndSanitizeCitizenReview` | `(rawText, rating, taskTitle) => Promise<ReviewModerationResult>` | Restructures rambling/confusing reviews and sanitizes inappropriate language into clean civic summaries before saving | Citizen Portal (Pre-Save) |
+| `verifyResolutionImageWithGemini`| `(base64Image, taskContext) => Promise<GeminiVerificationResult>` | Multimodal AI audit checking field completion photo against strict civic repair criteria using Gemini | Field Worker Desk |
 | `moderateCitizenSubmission` | `(title, description) => Promise<ModerationResult>` | Content moderation flagging profanity, harassment, or gibberish in public complaints | Public Citizen Intake |
 | `resetToSeedData` | `() => void` | Resets state to initial demo baseline (4 Bogadi tickets, 2 MCC Zone 3 tickets, 0 buffer tickets) with confirmation guardrail | Global Navbar |
 

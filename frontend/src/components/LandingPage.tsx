@@ -8,9 +8,6 @@ import {
   UserGroupIcon,
   WrenchScrewdriverIcon,
   ShieldCheckIcon,
-  MapPinIcon,
-  CameraIcon,
-  ScaleIcon,
   ClockIcon,
   CheckCircleIcon,
   ChartBarIcon

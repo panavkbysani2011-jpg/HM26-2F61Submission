@@ -22,7 +22,7 @@ export const MysuruLeafletMap: React.FC<MysuruLeafletMapProps> = ({
   selectedCoords,
   onSelectCoords,
   existingIssues = [],
-  isDark = false,
+  isDark: _isDark = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);

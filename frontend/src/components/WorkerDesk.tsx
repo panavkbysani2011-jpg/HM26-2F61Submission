@@ -8,7 +8,6 @@ import {
 } from '../mockDatabase';
 import { 
   verifyFieldWorkerProof, 
-  isGeminiConfigured, 
   GeminiVerificationResult 
 } from '../utils/geminiVerification';
 import { 
@@ -27,7 +26,6 @@ import {
   ArrowUpTrayIcon as Upload, 
   ExclamationTriangleIcon as AlertTriangle, 
   VideoCameraIcon as Video, 
-  StopCircleIcon as StopCircle, 
   ShieldCheckIcon as ShieldCheck, 
   InformationCircleIcon as Info, 
   SparklesIcon as Sparkles, 
@@ -38,6 +36,7 @@ import {
   UserGroupIcon as Users 
 } from '@heroicons/react/24/outline';
 import { useLanguage } from '../context/LanguageContext';
+import { StarIcon as Star } from '@heroicons/react/24/solid';
 
 interface WorkerDeskProps {
   session: UserSession | null;
@@ -858,6 +857,52 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                             {selectedDetailTask.resolutionNotes}
                           </p>
                         )}
+
+                        {/* Citizen Satisfaction Review & AI Moderation */}
+                        {selectedDetailTask.citizenRating ? (
+                          <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-amber-950 dark:text-amber-200">
+                                  {lang === 'kn' ? 'ನಾಗರಿಕ ತೃಪ್ತಿ ರೇಟಿಂಗ್:' : 'Citizen Satisfaction Review:'}
+                                </span>
+                                <div className="flex items-center gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`w-3.5 h-3.5 ${
+                                        star <= (selectedDetailTask.citizenRating || 0)
+                                          ? 'fill-amber-400 text-amber-400'
+                                          : 'text-stone-300 dark:text-stone-600'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300">
+                                  ({selectedDetailTask.citizenRating}/5)
+                                </span>
+                              </div>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
+                                <Sparkles className="w-3 h-3 text-amber-600" />
+                                <span>{lang === 'kn' ? 'AI ಪರಿಶೀಲಿಸಿದ ವಿಮರ್ಶೆ' : 'AI Moderated Review'}</span>
+                              </span>
+                            </div>
+                            {selectedDetailTask.citizenFeedback && (
+                              <p className="text-xs italic text-stone-700 dark:text-stone-200 bg-white/80 dark:bg-stone-900/80 p-2.5 rounded-lg border border-amber-200/60 dark:border-amber-900/40">
+                                &ldquo;{selectedDetailTask.citizenFeedback}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 text-xs flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-stone-400" />
+                            <span>
+                              {lang === 'kn'
+                                ? 'ನಾಗರಿಕರ ರೇಟಿಂಗ್ ಮತ್ತು ವಿಮರ್ಶೆಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ.'
+                                : 'Awaiting citizen post-resolution rating & review.'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1121,6 +1166,20 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                         {task.title}
                       </h3>
                       <p className="text-xs text-stone-500 dark:text-stone-400">{task.location}</p>
+
+                      {task.citizenRating && (
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 shrink-0">
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
+                            <span>{task.citizenRating}/5</span>
+                          </span>
+                          {task.citizenFeedback && (
+                            <span className="text-[11px] italic text-stone-600 dark:text-stone-300 truncate max-w-[280px]" title={task.citizenFeedback}>
+                              &ldquo;{task.citizenFeedback}&rdquo;
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">

@@ -14,10 +14,7 @@ import {
   getFirestore, 
   doc, 
   getDocFromServer, 
-  setDoc, 
-  getDoc,
-  collection,
-  onSnapshot
+  setDoc
 } from 'firebase/firestore';
 import rawFirebaseConfig from '../firebase-applet-config.json';
 import { UserSession } from './types';

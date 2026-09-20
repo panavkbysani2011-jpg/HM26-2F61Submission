@@ -4,16 +4,11 @@ import { UserSession, CivicIssue, WorkerRosterEntry } from '../types';
 import { 
   Wrench, 
   Truck, 
-  MapPin, 
   ArrowLeft, 
   Search, 
-  CheckCircle2, 
   AlertCircle, 
   Building2, 
-  Shield, 
-  ArrowRight,
-  Filter,
-  Users
+  ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
