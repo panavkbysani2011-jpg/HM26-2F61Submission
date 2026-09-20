@@ -31,7 +31,7 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 | Tool | Model / plan | Used by | What we used it for |
 |---|---|---|---|
 | `Antigravity` | `Google Antigravity Agentic IDE` | `@panavkbysani2011-jpg`, `@agnidevaraja` | `Autonomous pair programming: scaffolding React components, Leaflet interactive layers, bilingual Kannada/English state wiring, and anti-slop UI design overhaul` |
-| `Gemini` | `Gemini 2.5 Flash / Gemini Pro` | `@panavkbysani2011-jpg` | `Prompt formulation, error handling patterns, and TypeScript interface reviews` |
+| `Gemini` | `Gemini 3.8 Flash / Gemini Pro` | `@panavkbysani2011-jpg` | `Prompt formulation, error handling patterns, and TypeScript interface reviews` |
 | `Google AI Studio` | `Web interface / Prototyping` | `@panavkbysani2011-jpg` | `System prompt testing and zero-tolerance negative constraint tuning for field worker resolution photo audits` |
 | `Google Julius` | `Analysis environment` | `@agnidevaraja` | `Exploratory geospatial coordinate analysis, evaluating Outer Ring Road boundary envelopes, and validating capacity threshold math across the 26 Mysuru jurisdictions` |
 
@@ -53,8 +53,7 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 | Model / API | What it does in our product | Hosted where | Trained / fine-tuned by us? |
 |---|---|---|---|
-| `Gemini 3.6 Flash (@google/genai SDK)` | `Audits field worker proof photos to verify civic resolution and reject selfies, flowers, pets, or indoor shots` | `Google Cloud Gemini API` | `No, prompt engineering with strict negative constraints` |
-| `Gemini 2.5 Flash (@google/genai SDK)` | `Content moderation for incoming citizen complaints to flag spam, profanity, and keyboard mash` | `Google Cloud Gemini API` | `No, zero-shot structured JSON classification` |
+| `Gemini 3.6 Flash (@google/genai SDK)` | `Audits field worker proof photos to verify civic resolution and reject selfies, flowers, pets, or indoor shots and Content moderation for incoming citizen complaints to flag spam, profanity, and keyboard mash` | `Google Cloud Gemini API` | `No, prompt engineering with strict negative constraints` |
 
 - **Accuracy we measured:** `Tested on 40 sample civic and non-civic photos: 100% rejection on selfies, plants, and indoor objects; 90% true positive verification on clear asphalt and debris cleanup photos`
 - **What happens when the model is wrong:** `If rejected or inconclusive, the ticket is flagged for audit and sent to the supervisor queue without silent dropping; if API key is missing or network fails, the system falls back to deterministic local rule-based heuristics`
