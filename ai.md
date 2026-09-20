@@ -21,7 +21,7 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 |---|---|
 | Did we use AI tools during development? | `Yes` |
 | Does our product use AI/ML at runtime? | `Yes` |
-| Roughly how much of the code was AI-assisted? | `~25% of frontend layout and types, 0% of routing and ledger logic` |
+| Roughly how much of the code was AI-assisted? | `~80% of frontend layout and types, 30% of backend, 15% of routing and ledger logic` |
 | Can every team member explain the AI-assisted code? | `Yes` |
 
 ---
@@ -67,7 +67,8 @@ Commit convention (optional, recommended): commits containing substantial AI-gen
 
 | # | Prompt (short) | What we kept | What we changed or rejected |
 |---|---|---|---|
-| 1 | `<"Suggest a schema for complaints with geo-dedup">` | `<Table layout>` | `<Replaced lat/lng floats with PostGIS geography>` |
+| "Build a React/Tailwind UI for a grievance form. Need a ward dropdown, text area, file upload, and an Eng/Kan toggle. Just the UI shell and state, no backend logic." | The structural grid layout, Tailwind responsive classes, and basic React `useState` hooks. | Rejected the mock API calls it generated. Manually wired the form to our Firebase offline-sync queue and our secure storage bucket. |
+| "@workspace Write a utility to send the raw citizen review to Gemini for sanitization, then update the dashboard UIs to display the clean text. Don't run tests." | The core API fetch structure for Gemini and the UI boilerplate for displaying the new text field. | Fixed hallucinated TypeScript interfaces (`resolvedAt`). Completely rewrote the Firebase update logic because it routed to the wrong worker ID and broke the capacity matrix. |
 
 ## 5. How We Verified AI Output
 
