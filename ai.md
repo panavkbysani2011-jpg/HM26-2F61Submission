@@ -13,8 +13,8 @@
 | Question | Answer |
 |---|---|
 | Did we use AI tools during development? | `Yes` |
-| Does our product use AI/ML at runtime? | `No` |
-| Roughly how much of the code was AI-assisted? | `~60% of the frontend layout logic, 0% of the core routing algorithms` |
+| Does our product use AI/ML at runtime? | `<Yes / No - Pending App Completion>` |
+| Roughly how much of the code was AI-assisted? | `<Pending final codebase calculation - Heavy frontend, bare minimum backend>` |
 | Can every team member explain the AI-assisted code? | `Yes` |
 
 ---
@@ -23,29 +23,31 @@
 
 | Tool | Model / plan | Used by | What we used it for |
 |---|---|---|---|
-| Google AI Studio | Gemini Pro 1.5 | @panavkbysani2011-jpg | Idea generation, refining concepts, setting up frontend templates (React, Tailwind CSS). |
-| ChatGPT | GPT-4 | @panavkbysani2011-jpg | Structuring documentation logic, checking edge cases for the product. |
+| Google AI Studio | Gemini Pro 1.5 | @panavkbysani2011-jpg | Brainstorming core mechanics, refining the Geo-Elastic Routing concept, and scaffolding complex frontend layouts. |
+| Google Antigravity | App Builder | @panavkbysani2011-jpg | Rapid prototyping of the initial UI components and layout structures. |
+| Gemini (Chat) | Gemini Advanced | @panavkbysani2011-jpg | Acting as a sounding board for logic flows and verifying edge cases for our constraints. |
 
 ## 2. Where AI Helped in the Codebase
 
 | Area / file | Level of AI help | What a human did |
 |---|---|---|
-| `src/frontend/citizen` | High: scaffolded by Google AI Studio | Rewrote state handling, customized form categories, connected to backend. |
-| `src/frontend/dispatch` | High: scaffolded by Google AI Studio | Connected the data to the API, finalized dynamic mapping overlays. |
-| `src/backend/services/routing` | None | Written entirely by hand, handling core mathematical load balancing. |
-| `docs/` | Low: Ideation assistance | Synthesized outputs into our actual operational plan for Mysuru context. |
+| `<Frontend / React UI>` | `High` | `We directed the AI to generate the visual skeleton and component layout, but we manually wired all the state management and user workflows.` |
+| `<Backend / Firebase>` | `Very Low / None` | `The backend logic, API connections, and Firebase integrations were done almost entirely by hand. The AI struggled with our specific routing engine requirements, so we built it ourselves.` |
+| `<Documentation>` | `Low` | `We wrote the core logic, decision logs, and trade-offs ourselves. AI was only used to check for clarity and format the markdown tables.` |
 
 ## 3. How We Verified AI Output
 
-- AI was instructed to only use the functions we provided and not add its own components. It was limited to suggesting logic which we thoroughly reviewed.
-- We provided manual feedback after every generation round, establishing a strict instruction criteria to guarantee no major flaws in logic or user flows.
-- We forced the AI to strip out generic UI fluff and enforce local map coordinates specific to Mysuru (12.2979, 76.6393).
+We took a very strict, iterative approach to AI generation to ensure we maintained absolute control over the product.
+
+- **Iterative Guardrails:** The AI was strictly instructed to only use the functions and libraries we explicitly permitted. It was not allowed to invent its own dependencies or "hallucinate" third-party tools.
+- **Manual Feedback Loops:** We didn't just accept the first output. After every single round of code generation, we reviewed the logic, provided critical feedback, and forced the AI to correct its own structure based on our strict instruction criteria. This ensured no major logical errors slipped through.
+- **Hardcoding Reality:** When the AI tried to use generic placeholder data, we manually intervened to strip out the fluff and enforce real-world parameters (like actual Mysuru map coordinates and real boundary buffer logic). We dictated the business logic; the AI just typed fast.
 
 ## 4. What We Deliberately Did *Not* Use AI For
 
-- The Decision Log and other informative documents - written by the team in our own words to capture real-world trade-offs.
-- The jurisdiction routing rules (the Geo-Elastic Routing Engine), alongside the specific layout of maps in the three different portals.
-- Analyzing how the panchayat field worker experiences the app, which directly guided our decision to remove the map interface entirely to prevent jurisdiction arguments.
+- **The Real-World Context:** The Decision Log, the trade-off analysis, and the understanding of Mysuru's actual political and geographical boundary issues. We researched and wrote that entirely in our own words.
+- **The Core Engine Logic:** The actual mathematical rules that drive our Geo-Elastic Routing Engine (deciding how and when to spillover tasks based on capacity).
+- **The Worker's Experience:** We explicitly decided to remove the map from the field worker's portal to kill jurisdiction arguments at the root. This was a human, empathetic design decision that AI couldn't have deduced.
 
 ---
 

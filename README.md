@@ -43,16 +43,16 @@ Civic Mesh replaces rigid boundary walls with a Geo-Elastic Routing Engine (G-ER
 
 ## 4. Architecture
 
-A full-stack React PWA communicating with a FastAPI backend processing spatial calculations via PostgreSQL/PostGIS.
+`<High-level architecture summary pending finalization of tech stack>`
 
 ➡️ Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
 
 ## 5. Tech Stack & AI Usage
 
-**Stack:** React PWA · FastAPI · PostgreSQL + PostGIS · Render
+**Stack:** `<Pending final stack - e.g., Firebase, React, etc.>`
 
-**AI tools used in development:** Google AI Studio, ChatGPT
-**AI inside the product:** None
+**AI tools used in development:** Google AI Studio, Google Antigravity, Gemini
+**AI inside the product:** `<Pending final review>`
 
 ➡️ Full disclosure: **[ai.md](./ai.md)**
 
@@ -66,7 +66,12 @@ A full-stack React PWA communicating with a FastAPI backend processing spatial c
 
 ## 7. Setup & Run
 
-Refer to `docs/setup.md` for specific instructions.
+Refer to `docs/setup.md` for specific instructions once the tech stack is finalized.
+
+```bash
+<install command pending>
+<run command pending>
+```
 
 ➡️ Prerequisites, environment variables, seed data and offline testing: **[docs/setup.md](./docs/setup.md)**
 

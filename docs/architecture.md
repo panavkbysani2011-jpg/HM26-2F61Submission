@@ -6,9 +6,9 @@
 
 ```mermaid
 flowchart TD
-    A[Citizen Intake Portal<br/>React + Leaflet] -->|Submit complaint| B[API Server<br/>FastAPI]
-    W[Panchayat Field Desk<br/>React] -->|Upload verification & close| B
-    B --> C[(Database<br/>PostgreSQL + PostGIS)]
+    A[Citizen Intake Portal] -->|Submit complaint| B[API / Backend Services]
+    W[Panchayat Field Desk] -->|Upload verification & close| B
+    B --> C[(Database)]
     B --> D[Geo-Elastic Routing Engine]
     D --> E[(Operational Capacity & Boundary Data)]
     B --> F[Central Dispatch & Load-Balancing Hub]
@@ -27,12 +27,12 @@ flowchart TD
 
 | Component | Responsibility | Tech | Code location |
 |---|---|---|---|
-| Citizen Intake Portal | Clean mapping interface for citizens to drop pins and submit issues | React, Tailwind CSS, Leaflet.js | `src/frontend/citizen` |
-| Central Dispatch Hub | Zonal capacity visualization, dynamic routing engine, inter-agency ledger | React, Tailwind CSS, Leaflet.js | `src/frontend/dispatch` |
-| Panchayat Field Desk | Actionable task queue without maps, GPS-locked photo verification | React, Tailwind CSS | `src/frontend/worker` |
-| API Server | Handles all requests, processes logic, manages database | FastAPI (Python) | `src/backend/api` |
-| Routing Service | Geo-Elastic routing, capacity engine, severity calculations | Python | `src/backend/services/routing` |
-| Data Store | Stores incidents, zone data, ledgers, verification logs | PostgreSQL + PostGIS | `src/backend/db` |
+| Citizen Intake Portal | Clean mapping interface for citizens to drop pins and submit issues | `<Frontend Tech Pending>` | `src/frontend/citizen` |
+| Central Dispatch Hub | Zonal capacity visualization, dynamic routing engine, inter-agency ledger | `<Frontend Tech Pending>` | `src/frontend/dispatch` |
+| Panchayat Field Desk | Actionable task queue without maps, GPS-locked photo verification | `<Frontend Tech Pending>` | `src/frontend/worker` |
+| API Server | Handles all requests, processes logic, manages database | `<Backend Tech Pending>` | `src/backend/api` |
+| Routing Service | Geo-Elastic routing, capacity engine, severity calculations | `<Backend Tech Pending>` | `src/backend/services/routing` |
+| Data Store | Stores incidents, zone data, ledgers, verification logs | `<Database Tech Pending>` | `src/backend/db` |
 
 ## Data Model
 
@@ -63,10 +63,10 @@ erDiagram
 
 | Layer | Choice | Why this over alternatives |
 |---|---|---|
-| Frontend | React + Vite + Tailwind CSS | Fast compilation, reusable components, and responsive design for three different portals. |
-| Backend | FastAPI (Python) | High performance, simple integration with complex routing and ML logic, rapid development. |
-| Database | PostgreSQL + PostGIS | Robust relational data with powerful spatial querying for our buffer zones and distance calculations. |
-| ML / AI | Python Services | Custom algorithms for severity and routing to handle administrative rules rather than complex machine learning models. |
+| Frontend | `<Frontend Tech Pending>` | `<...>` |
+| Backend | `<Firebase / Backend Tech Pending>` | `<...>` |
+| Database | `<Database Tech Pending>` | `<...>` |
+| ML / AI | `<Pending>` | `<...>` |
 
 ## Data Sources
 
