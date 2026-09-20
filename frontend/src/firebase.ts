@@ -229,7 +229,18 @@ export async function syncIssueToFirestore(issue: any): Promise<void> {
       imageUrl: issue.imageUrl && issue.imageUrl.length > 300000 ? issue.imageUrl.slice(0, 300000) : (issue.imageUrl || null),
       resolvedImageUrl: issue.resolvedImageUrl && issue.resolvedImageUrl.length > 300000 ? issue.resolvedImageUrl.slice(0, 300000) : (issue.resolvedImageUrl || null),
     };
-    await setDoc(issueRef, safeData, { merge: true });
+    const cleanUndefined = (val: any): any => {
+      if (Array.isArray(val)) return val.map(cleanUndefined);
+      if (val !== null && typeof val === 'object') {
+        const res: Record<string, any> = {};
+        for (const [k, v] of Object.entries(val)) {
+          if (v !== undefined) res[k] = cleanUndefined(v);
+        }
+        return res;
+      }
+      return val;
+    };
+    await setDoc(issueRef, cleanUndefined(safeData), { merge: true });
   } catch (err) {
     console.info('Firestore issue background sync notice:', err);
   }

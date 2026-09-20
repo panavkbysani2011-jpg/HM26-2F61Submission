@@ -34,8 +34,10 @@ import {
   ExternalLink,
   ChevronRight,
   Copy,
-  Navigation
+  Navigation,
+  Users
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface WorkerDeskProps {
   session: UserSession | null;
@@ -44,6 +46,7 @@ interface WorkerDeskProps {
   onUpdateStatus: (id: string, status: CivicIssue['status'], crew?: string) => void;
   onNavigateHome: () => void;
   onRefreshIssues?: () => void;
+  onSwitchWorker?: () => void;
 }
 
 export const WorkerDesk: React.FC<WorkerDeskProps> = ({
@@ -51,7 +54,9 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   issues,
   onUpdateStatus,
   onNavigateHome,
+  onSwitchWorker,
 }) => {
+  const { lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [completionNotice, setCompletionNotice] = useState<string | null>(null);
   
@@ -77,9 +82,11 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   // Native camera/file input ref for desktop testing fallback
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Field Worker identity
+  // Field Worker identity from session (dynamic roster login)
   const workerName = session?.name || 'Manjunatha S.';
-  const workerDepot = 'MCC Depot 3';
+  const workerJurisdictionName = session?.jurisdictionName || 'MCC Zone 3';
+  const workerJurisdictionId = session?.jurisdictionId || 'mcc-zone-3';
+  const workerRole = session?.workerRole || 'Field Operator';
   const workerVehicle = session?.vehicle || 'Canter KA-09-G-4412';
 
   // Helper: Open location in Google Maps
@@ -127,10 +134,26 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   });
   const deduplicatedIssues = Array.from(uniqueIssuesMap.values());
 
-  const activeTasks = deduplicatedIssues.filter(
+  // Filter tasks strictly to the current worker's jurisdiction
+  const myJurisdictionIssues = deduplicatedIssues.filter((i) => {
+    if (!workerJurisdictionId) return true;
+    if (i.assignedJurisdictionId === workerJurisdictionId) return true;
+    if (i.targetJurisdictionId === workerJurisdictionId) return true;
+    
+    // Check if assignedCrewLead matches worker name
+    if (i.assignedCrewLead && i.assignedCrewLead.toLowerCase().includes(workerName.toLowerCase())) return true;
+
+    // Fallback checks for depot or location string matching
+    const jurBase = workerJurisdictionName.split(' (')[0].trim().toLowerCase();
+    if (i.assignedDepot && i.assignedDepot.toLowerCase().includes(jurBase)) return true;
+    if (i.location && i.location.toLowerCase().includes(jurBase)) return true;
+    return false;
+  });
+
+  const activeTasks = myJurisdictionIssues.filter(
     (i) => i.status !== 'resolved' && i.status !== 'quarantined' && !i.isQuarantined
   );
-  const completedTasks = deduplicatedIssues.filter(
+  const completedTasks = myJurisdictionIssues.filter(
     (i) => i.status === 'resolved' && !i.isQuarantined
   );
 
@@ -155,7 +178,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   // Transition task into In Progress from inside Task Detail
   const handleStartWorkFromDetail = () => {
     if (!selectedDetailTask) return;
-    onUpdateStatus(selectedDetailTask.id, 'in_progress', `${workerName} (${workerDepot})`);
+    onUpdateStatus(selectedDetailTask.id, 'in_progress', `${workerName} (${workerJurisdictionName})`);
     setSelectedDetailTask((prev) => (prev ? { ...prev, status: 'in_progress' } : null));
   };
 
@@ -319,7 +342,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
       resolutionNotes: auditNote,
     });
 
-    onUpdateStatus(ticketId, 'resolved', `${workerName} (${workerDepot})`);
+    onUpdateStatus(ticketId, 'resolved', `${workerName} (${workerJurisdictionName})`);
 
     setSelectedDetailTask(null);
     setPendingPhotoPreview(null);
@@ -583,7 +606,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-[0.98] cursor-pointer"
                         >
                           <PlayCircle className="w-4 h-4" />
-                          <span>Start Task</span>
+                          <span>{lang === 'kn' ? 'ಕೆಲಸ ಪ್ರಾರಂಭಿಸಿ' : 'Start Task'}</span>
                         </button>
                       </div>
                     )}
@@ -804,7 +827,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                             className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-2 transition-all active:scale-98 cursor-pointer"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>Submit Completion</span>
+                            <span>{lang === 'kn' ? 'ಪೂರ್ಣಗೊಳಿಸುವಿಕೆಯನ್ನು ಸಲ್ಲಿಸಿ' : 'Submit Completion'}</span>
                           </button>
                         </div>
                       </div>
@@ -815,7 +838,11 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                       <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-3">
                         <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 text-xs font-bold">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>This work order has been completed and logged in municipal records.</span>
+                          <span>
+                            {lang === 'kn'
+                              ? 'ಈ ಕಾರ್ಯ ಆದೇಶವು ಪೂರ್ಣಗೊಂಡಿದೆ ಮತ್ತು ಪುರಸಭೆಯ ದಾಖಲೆಗಳಲ್ಲಿ ದಾಖಲಾಗಿದೆ.'
+                              : 'This work order has been completed and logged in municipal records.'}
+                          </span>
                         </div>
                         {selectedDetailTask.resolvedImageUrl && (
                           <div className="rounded-xl overflow-hidden border border-emerald-300/60 max-h-48">
@@ -850,32 +877,44 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-extrabold tracking-tight text-stone-950 dark:text-white">
-                  Worker Desk
+                  {lang === 'kn' ? 'ಕಾರ್ಮಿಕ ಪೋರ್ಟಲ್' : 'Worker Desk'}
                 </h1>
                 <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-800">
-                  Field Dispatch
+                  {workerJurisdictionName}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-stone-600 dark:text-stone-300 mt-1">
-                <span>Field Operator:</span>
-                <strong className="text-stone-950 dark:text-white">{workerName} ({workerDepot})</strong>
+                <span>{lang === 'kn' ? 'ಕ್ಷೇತ್ರ ನಿರ್ವಾಹಕ:' : 'Field Operator:'}</span>
+                <strong className="text-stone-950 dark:text-white">{workerName} ({workerRole})</strong>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 font-mono font-semibold text-stone-800 dark:text-stone-200">
                   <Truck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Vehicle: {workerVehicle}</span>
+                  <span>{lang === 'kn' ? 'ವಾಹನ:' : 'Vehicle:'} {workerVehicle}</span>
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {onSwitchWorker && (
+              <button
+                id="worker-switch-profile"
+                type="button"
+                onClick={onSwitchWorker}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 rounded-xl transition-colors cursor-pointer"
+                title="Switch to another jurisdiction worker profile"
+              >
+                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>{lang === 'kn' ? 'ಕಾರ್ಮಿಕರನ್ನು ಬದಲಾಯಿಸಿ' : 'Switch Worker'}</span>
+              </button>
+            )}
             <button
               id="worker-back-home"
               onClick={onNavigateHome}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Portal Hub</span>
+              <span>{lang === 'kn' ? 'ಪೋರ್ಟಲ್ ಹಬ್' : 'Portal Hub'}</span>
             </button>
           </div>
         </div>
@@ -886,13 +925,13 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
             <button
               id="tab-active-tasks"
               onClick={() => setActiveTab('active')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer ${
                 activeTab === 'active'
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-sm'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-200/70 dark:bg-stone-800'
               }`}
             >
-              <span>Active Work Orders</span>
+              <span>{lang === 'kn' ? 'ಸಕ್ರಿಯ ಕಾರ್ಯಗಳು' : 'Active Work Orders'}</span>
               <span className="px-1.5 py-0.2 rounded-full text-[11px] bg-amber-400 text-stone-950 font-extrabold">
                 {activeTasks.length}
               </span>
@@ -901,19 +940,19 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
             <button
               id="tab-completed-tasks"
               onClick={() => setActiveTab('completed')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer ${
                 activeTab === 'completed'
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-sm'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-200/70 dark:bg-stone-800'
               }`}
             >
-              <span>Resolved Log</span>
+              <span>{lang === 'kn' ? 'ಪರಿಹರಿಸಲಾಗಿದೆ' : 'Resolved Log'}</span>
               <span className="text-[11px] opacity-75">({completedTasks.length})</span>
             </button>
           </div>
 
           <span className="text-xs font-medium text-stone-500 dark:text-stone-400 hidden sm:block">
-            Field Execution Desk
+            {lang === 'kn' ? 'ಕ್ಷೇತ್ರ ನಿರ್ವಹಣಾ ಡೆಸ್ಕ್' : 'Field Execution Desk'}
           </span>
         </div>
 
@@ -925,9 +964,13 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                 <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 mx-auto flex items-center justify-center">
                   <Check className="w-6 h-6" />
                 </div>
-                <h2 className="text-base font-bold text-stone-900 dark:text-white">Active Queue Cleared</h2>
+                <h2 className="text-base font-bold text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ಎಲ್ಲಾ ಸಕ್ರಿಯ ಕಾರ್ಯಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ' : 'Active Queue Cleared'}
+                </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400 max-w-sm mx-auto">
-                  All assigned municipal tasks in your queue have been completed. Check back when new dispatches arrive.
+                  {lang === 'kn'
+                    ? `ನಿಮ್ಮ ಸರದಿಯಲ್ಲಿ ನಿಯೋಜಿಸಲಾದ ಎಲ್ಲಾ ಪುರಸಭೆಯ ಕಾರ್ಯಗಳು (${workerJurisdictionName}) ಪೂರ್ಣಗೊಂಡಿವೆ.`
+                    : `All assigned municipal tasks in your queue (${workerJurisdictionName}) have been completed. Check back when new dispatches arrive or switch worker profiles.`}
                 </p>
               </div>
             ) : (
@@ -1026,7 +1069,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                       </div>
 
                       <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
-                        <span>View Task Details &amp; Actions</span>
+                        <span>{lang === 'kn' ? 'ಕಾರ್ಯ ವಿವರಗಳನ್ನು ನೋಡಿ' : 'View Task Details & Actions'}</span>
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>

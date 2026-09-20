@@ -1,5 +1,6 @@
 import React from 'react';
 import { CivicIssue, DepartmentCapacity } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Users,
   Wrench,
@@ -28,6 +29,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   issues,
   departments,
 }) => {
+  const { lang } = useLanguage();
   const reportedCount = issues.filter(i => i.status === 'reported').length;
   const inProgressCount = issues.filter(i => i.status === 'in_progress' || i.status === 'assigned').length;
   const resolvedCount = issues.filter(i => i.status === 'resolved').length;
@@ -72,17 +74,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Users className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl font-bold text-stone-900 dark:text-white">Citizen Portal</h2>
+                <h2 className="text-xl font-bold text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ನಾಗರಿಕ ಪೋರ್ಟಲ್' : 'Citizen Portal'}
+                </h2>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                  Public Intake
+                  {lang === 'kn' ? 'ಸಾರ್ವಜನಿಕ ಸೇವೆ' : 'Public Intake'}
                 </span>
               </div>
               <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed mb-6">
-                Pinpoint infrastructure issues on the interactive Mysuru map, upload on-site evidence, and follow civic repair timelines.
+                {lang === 'kn'
+                  ? 'ಸಮಸ್ಯೆಗಳನ್ನು ಮೈಸೂರು ನಕ್ಷೆಯಲ್ಲಿ ಗುರುತಿಸಿ, ಸಾಕ್ಷ್ಯಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ ಮತ್ತು ಪರಿಹಾರ ಪ್ರಕ್ರಿಯೆಯನ್ನು ಗಮನಿಸಿ.'
+                  : 'Pinpoint infrastructure issues on the interactive Mysuru map, upload on-site evidence, and follow civic repair timelines.'}
               </p>
               <div className="text-xs text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/60 rounded-lg p-3 border border-stone-100 dark:border-stone-800 mb-6 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>Geospatial pin-drop intake with automatic duplicate grouping</span>
+                <span>{lang === 'kn' ? 'ಭೌಗೋಳಿಕ ಪಿನ್-ಡ್ರಾಪ್ ಮತ್ತು ಸ್ವಯಂಚಾಲಿತ ವರ್ಗೀಕರಣ' : 'Geospatial pin-drop intake with automatic duplicate grouping'}</span>
               </div>
             </div>
 
@@ -91,7 +97,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onEnterCitizenPortal}
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-emerald-700 text-white font-medium text-sm hover:bg-emerald-700 dark:hover:bg-emerald-600 active:scale-[0.99] transition-all"
             >
-              <span>Citizen Portal</span>
+              <span>{lang === 'kn' ? 'ನಾಗರಿಕ ಪೋರ್ಟಲ್ ಪ್ರವೇಶಿಸಿ' : 'Citizen Portal'}</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
@@ -106,17 +112,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Wrench className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl font-bold text-stone-900 dark:text-white">Worker Desk</h2>
+                <h2 className="text-xl font-bold text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ಕಾರ್ಮಿಕ ಪೋರ್ಟಲ್' : 'Worker Desk'}
+                </h2>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-100/70 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
-                  Field Dispatch
+                  {lang === 'kn' ? 'ಕ್ಷೇತ್ರ ಕಾರ್ಯ' : 'Field Dispatch'}
                 </span>
               </div>
               <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed mb-6">
-                Receive dynamically balanced work tickets, claim on-site diagnostics, and log completed civic repairs.
+                {lang === 'kn'
+                  ? 'ಸಮತೋಲಿತ ಕಾರ್ಯಗಳನ್ನು ಸ್ವೀಕರಿಸಿ, ಸ್ಥಳದಲ್ಲಿ ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಪೂರ್ಣಗೊಂಡ ದುರಸ್ತಿಗಳನ್ನು ದಾಖಲಿಸಿ.'
+                  : 'Receive dynamically balanced work tickets, claim on-site diagnostics, and log completed civic repairs.'}
               </p>
               <div className="text-xs text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/60 rounded-lg p-3 border border-stone-100 dark:border-stone-800 mb-6 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>Field crew load limits balanced dynamically across active units</span>
+                <span>{lang === 'kn' ? 'ಕ್ಷೇತ್ರ ತಂಡಗಳ ಸಾಮರ್ಥ್ಯ ಸಮತೋಲನ' : 'Field crew load limits balanced dynamically across active units'}</span>
               </div>
             </div>
 
@@ -125,7 +135,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onEnterWorkerDesk}
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-blue-700 text-white font-medium text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.99] transition-all"
             >
-              <span>Worker Desk</span>
+              <span>{lang === 'kn' ? 'ಕಾರ್ಮಿಕ ಪೋರ್ಟಲ್ ಪ್ರವೇಶಿಸಿ' : 'Worker Desk'}</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
@@ -140,17 +150,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl font-bold text-stone-900 dark:text-white">Admin Dashboard</h2>
+                <h2 className="text-xl font-bold text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ಆಡಳಿತ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್' : 'Admin Dashboard'}
+                </h2>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-rose-100/70 dark:bg-rose-950 text-rose-800 dark:text-rose-300">
-                  Officer Clearance
+                  {lang === 'kn' ? 'ಅಧಿಕಾರಿ ವೀಕ್ಷಣೆ' : 'Officer Clearance'}
                 </span>
               </div>
               <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed mb-6">
-                Municipal command center for capacity rebalancing, department load distribution, and cross-ward resolution audits.
+                {lang === 'kn'
+                  ? 'ನಗರ ಸಾಮರ್ಥ್ಯ ಮರುಸಮತೋಲನ, ಇಲಾಖಾ ಕಾರ್ಯಭಾರ ವಿತರಣೆ ಮತ್ತು ವಲಯ ಪರಿಹಾರ ಲೆಕ್ಕಪರಿಶೋಧನೆ.'
+                  : 'Municipal command center for capacity rebalancing, department load distribution, and cross-ward resolution audits.'}
               </p>
               <div className="text-xs text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/60 rounded-lg p-3 border border-stone-100 dark:border-stone-800 mb-6 flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                <span>Requires authorized municipal clearance credentials</span>
+                <span>{lang === 'kn' ? 'ಅಧಿಕೃತ ಪುರಸಭೆ ಲಾಗಿನ್ ಅಗತ್ಯವಿದೆ' : 'Requires authorized municipal clearance credentials'}</span>
               </div>
             </div>
 
@@ -159,7 +173,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onEnterAdminDashboard}
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-rose-700 text-white font-medium text-sm hover:bg-rose-700 dark:hover:bg-rose-600 active:scale-[0.99] transition-all"
             >
-              <span>Admin Dashboard</span>
+              <span>{lang === 'kn' ? 'ಆಡಳಿತ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಪ್ರವೇಶಿಸಿ' : 'Admin Dashboard'}</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
@@ -171,14 +185,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-base font-bold text-stone-900 dark:text-white">Live Dynamic Capacity Telemetry</h3>
+                <h3 className="text-base font-bold text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ಲೈವ್ ಡೈನಾಮಿಕ್ ಸಾಮರ್ಥ್ಯ ಟೆಲಿಮೆಟ್ರಿ' : 'Live Dynamic Capacity Telemetry'}
+                </h3>
               </div>
               <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                Real-time municipal capacity status across Mysuru engineering divisions
+                {lang === 'kn'
+                  ? 'ಮೈಸೂರು ಎಂಜಿನಿಯರಿಂಗ್ ವಿಭಾಗಗಳ ನೈಜ-ಸಮಯದ ಪುರಸಭೆ ಸಾಮರ್ಥ್ಯ ಸ್ಥಿತಿ'
+                  : 'Real-time municipal capacity status across Mysuru engineering divisions'}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-stone-600 dark:text-stone-300">City Mesh Load:</span>
+              <span className="text-xs font-medium text-stone-600 dark:text-stone-300">
+                {lang === 'kn' ? 'ನಗರ ಮೆಶ್ ಲೋಡ್:' : 'City Mesh Load:'}
+              </span>
               <div className="w-36 bg-stone-100 dark:bg-stone-800 rounded-full h-2.5 overflow-hidden">
                 <div
                   className={`h-2.5 rounded-full transition-all ${systemLoadPercentage > 80 ? 'bg-rose-500' : systemLoadPercentage > 60 ? 'bg-amber-500' : 'bg-emerald-500'
@@ -194,37 +214,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-1">
                 <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Pending Intake</span>
+                <span>{lang === 'kn' ? 'ಬಾಕಿ ಇದೆ' : 'Pending Intake'}</span>
               </div>
               <div className="text-2xl font-bold text-stone-900 dark:text-white">{reportedCount}</div>
-              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">Awaiting dispatch queue</div>
+              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">
+                {lang === 'kn' ? 'ರವಾನೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ' : 'Awaiting dispatch queue'}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-1">
                 <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>Active in Field</span>
+                <span>{lang === 'kn' ? 'ಸಕ್ರಿಯ ಕಾರ್ಯಗಳು' : 'Active in Field'}</span>
               </div>
               <div className="text-2xl font-bold text-stone-900 dark:text-white">{inProgressCount}</div>
-              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">Balanced across crews</div>
+              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">
+                {lang === 'kn' ? 'ತಂಡಗಳ ನಡುವೆ ಸಮತೋಲಿತ' : 'Balanced across crews'}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Resolved</span>
+                <span>{lang === 'kn' ? 'ಪರಿಹರಿಸಲಾಗಿದೆ' : 'Resolved'}</span>
               </div>
               <div className="text-2xl font-bold text-stone-900 dark:text-white">{resolvedCount}</div>
-              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">Verified resolutions</div>
+              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">
+                {lang === 'kn' ? 'ದೃಢಪಡಿಸಿದ ಪರಿಹಾರಗಳು' : 'Verified resolutions'}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-1">
                 <Cpu className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>Capacity Pool</span>
+                <span>{lang === 'kn' ? 'ಸಾಮರ್ಥ್ಯ ಪೂಲ್' : 'Capacity Pool'}</span>
               </div>
               <div className="text-2xl font-bold text-stone-900 dark:text-white">{totalLoad} / {totalCapacity}</div>
-              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">Workload unit balance</div>
+              <div className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">
+                {lang === 'kn' ? 'ಕಾರ್ಯಭಾರ ಘಟಕ ಸಮತೋಲನ' : 'Workload unit balance'}
+              </div>
             </div>
           </div>
         </section>

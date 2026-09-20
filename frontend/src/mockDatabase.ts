@@ -1,4 +1,4 @@
-import { CivicIssue, DepartmentCapacity, UserSession, CivicCategory, SeverityRank, MysuruJurisdiction, IssueStatus, IssuePriority } from './types';
+import { CivicIssue, DepartmentCapacity, UserSession, CivicCategory, SeverityRank, MysuruJurisdiction, IssueStatus, IssuePriority, WorkerRosterEntry } from './types';
 import { sanitizeImageString } from './utils/imageCompressor';
 import { syncIssueToFirestore } from './firebase';
 
@@ -175,10 +175,262 @@ export const MYSURU_JURISDICTIONS: MysuruJurisdiction[] = [
   { id: 'buf-hootagalli-belavadi', name: 'Hootagalli-Belavadi Industrial Buffer', type: 'buffer_zone', baseWorkers: 6, description: 'Contested road cuts and drain corridors along industrial development edge.' },
   { id: 'buf-rammanahalli-prr', name: 'Rammanahalli PRR Boundary Buffer', type: 'buffer_zone', baseWorkers: 5, description: 'Corridor under active road widening with jurisdiction demarcations pending.' },
   { id: 'buf-alanahalli-foothills', name: 'Alanahalli-Chamundi Foothills Buffer', type: 'buffer_zone', baseWorkers: 5, description: 'Eastern entry zone with mixed panchayat and MCC revenue survey numbers.' },
-  { id: 'buf-kadakola-nanjangud', name: 'Kadakola Industrial Border Buffer', type: 'buffer_zone', baseWorkers: 5, description: 'High-traffic industrial transport corridor crossing southern municipal limits.' },
 ];
 
+// Primary Field Worker Roster: Maps every primary jurisdiction ID (9 MCC zones, 4 Town Panchayats, 8 Gram Panchayats = 21 Total)
+// to a unique field worker profile. Buffer corridors are strictly omitted.
+export const WORKER_ROSTER: Record<string, WorkerRosterEntry> = {
+  // 9 Mysuru City Corporation (MCC) Zones
+  'mcc-zone-1': {
+    jurisdictionId: 'mcc-zone-1',
+    name: 'Basavaraju M.',
+    vehicle: 'Canter KA-09-G-3112',
+    role: 'Field Operator',
+    jurisdictionName: 'MCC Zone 1 (Ashokapuram / Vani Vilas)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-2': {
+    jurisdictionId: 'mcc-zone-2',
+    name: 'Shivanna K.',
+    vehicle: 'Dumper KA-09-G-5204',
+    role: 'Senior Field Lead',
+    jurisdictionName: 'MCC Zone 2 (Krishnaraja / Agrahara)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-3': {
+    jurisdictionId: 'mcc-zone-3',
+    name: 'Manjunatha S.',
+    vehicle: 'Canter KA-09-G-4412',
+    role: 'Field Operator',
+    jurisdictionName: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-4': {
+    jurisdictionId: 'mcc-zone-4',
+    name: 'Syed Nizamuddin',
+    vehicle: 'Tipper KA-09-G-8821',
+    role: 'Rapid Response Lead',
+    jurisdictionName: 'MCC Zone 4 (Nazarbad / Lashkar Mohalla)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-5': {
+    jurisdictionId: 'mcc-zone-5',
+    name: 'Mohammed Rafiq',
+    vehicle: 'Canter KA-09-G-6744',
+    role: 'Field Operator',
+    jurisdictionName: 'MCC Zone 5 (Bannimantap / Mandi Mohalla)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-6': {
+    jurisdictionId: 'mcc-zone-6',
+    name: 'Nagaraju P.',
+    vehicle: 'Mini Truck KA-09-G-2219',
+    role: 'Civic Maintenance Lead',
+    jurisdictionName: 'MCC Zone 6 (Tilak Nagar / Yadavagiri)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-7': {
+    jurisdictionId: 'mcc-zone-7',
+    name: 'Chandrashekar H.',
+    vehicle: 'Canter KA-09-G-9930',
+    role: 'Field Technician',
+    jurisdictionName: 'MCC Zone 7 (Hebbal / KRS Road)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-8': {
+    jurisdictionId: 'mcc-zone-8',
+    name: 'Venkatesh Murthy',
+    vehicle: 'JCB / Loader KA-09-G-1102',
+    role: 'Heavy Crew Operator',
+    jurisdictionName: 'MCC Zone 8 (Kuvempunagar / Ramakrishnanagar)',
+    zoneType: 'mcc_zone',
+  },
+  'mcc-zone-9': {
+    jurisdictionId: 'mcc-zone-9',
+    name: 'Mahesh Kumar R.',
+    vehicle: 'Canter KA-09-G-7715',
+    role: 'Field Operator',
+    jurisdictionName: 'MCC Zone 9 (Chamundipuram / Ittegagudu)',
+    zoneType: 'mcc_zone',
+  },
+
+  // 4 Town Municipal Councils / Town Panchayats
+  'tp-bogadi': {
+    jurisdictionId: 'tp-bogadi',
+    name: 'Someshwara Gowda',
+    vehicle: 'Tractor-Trailer KA-09-EA-1842',
+    role: 'Panchayat Squad Lead',
+    jurisdictionName: 'Bogadi Town Panchayat',
+    zoneType: 'town_panchayat',
+  },
+  'tp-hootagalli': {
+    jurisdictionId: 'tp-hootagalli',
+    name: 'Ramegowda N.',
+    vehicle: 'Canter KA-09-EA-3390',
+    role: 'Industrial Sanitation Lead',
+    jurisdictionName: 'Hootagalli Town Municipal Council (TMC)',
+    zoneType: 'town_panchayat',
+  },
+  'tp-kadakola': {
+    jurisdictionId: 'tp-kadakola',
+    name: 'Devendrappa B.',
+    vehicle: 'Tipper KA-09-EA-5501',
+    role: 'Highway Corridor Lead',
+    jurisdictionName: 'Kadakola Town Panchayat',
+    zoneType: 'town_panchayat',
+  },
+  'tp-rammanahalli': {
+    jurisdictionId: 'tp-rammanahalli',
+    name: 'Anand Kumar K.',
+    vehicle: 'Tractor KA-09-EA-7210',
+    role: 'Town Works Operator',
+    jurisdictionName: 'Rammanahalli Town Panchayat',
+    zoneType: 'town_panchayat',
+  },
+
+  // 8 Surrounding Gram Panchayats
+  'gp-belavadi': {
+    jurisdictionId: 'gp-belavadi',
+    name: 'Kariyappa M.',
+    vehicle: 'Utility Mini-Truck KA-09-GP-101',
+    role: 'Rural Works Supervisor',
+    jurisdictionName: 'Belavadi Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-alanahalli': {
+    jurisdictionId: 'gp-alanahalli',
+    name: 'Puttegowda S.',
+    vehicle: 'Utility Tractor KA-09-GP-102',
+    role: 'Sanitation Inspector',
+    jurisdictionName: 'Alanahalli Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-siddalingapura': {
+    jurisdictionId: 'gp-siddalingapura',
+    name: 'Girish Chandra N.',
+    vehicle: 'Canter KA-09-GP-103',
+    role: 'Expressway Route Lead',
+    jurisdictionName: 'Siddalingapura Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-ilavala': {
+    jurisdictionId: 'gp-ilavala',
+    name: 'Lingaraju H.',
+    vehicle: 'Utility Tractor KA-09-GP-104',
+    role: 'Highway Works Lead',
+    jurisdictionName: 'Ilavala Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-chamundi-hill': {
+    jurisdictionId: 'gp-chamundi-hill',
+    name: 'Madegowda C.',
+    vehicle: 'Eco Electric Van KA-09-GP-105',
+    role: 'Eco-Zone Supervisor',
+    jurisdictionName: 'Chamundi Hill Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-koorgalli': {
+    jurisdictionId: 'gp-koorgalli',
+    name: 'Govindaraju T.',
+    vehicle: 'Dumper KA-09-GP-106',
+    role: 'Manufacturing Belt Lead',
+    jurisdictionName: 'Koorgalli Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-varuna': {
+    jurisdictionId: 'gp-varuna',
+    name: 'Siddegowda R.',
+    vehicle: 'Utility Tractor KA-09-GP-107',
+    role: 'Rural Development Lead',
+    jurisdictionName: 'Varuna Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+  'gp-dhanagalli': {
+    jurisdictionId: 'gp-dhanagalli',
+    name: 'Kempegowda J.',
+    vehicle: 'Utility Mini-Truck KA-09-GP-108',
+    role: 'Southern Perimeter Operator',
+    jurisdictionName: 'Dhanagalli Gram Panchayat',
+    zoneType: 'gram_panchayat',
+  },
+};
+
+export { CIVIC_CATEGORIES } from './types';
+
+// Universal Buffer Zone Adjacency Map: Each buffer zone maps to its two adjacent primary jurisdictions
+export const BUFFER_ZONE_ADJACENCY: Record<string, [string, string]> = {
+  'buf-bogadi-mcc': ['tp-bogadi', 'mcc-zone-3'],
+  'buf-hootagalli-belavadi': ['tp-hootagalli', 'gp-belavadi'],
+  'buf-rammanahalli-prr': ['tp-rammanahalli', 'mcc-zone-9'],
+  'buf-alanahalli-foothills': ['gp-alanahalli', 'gp-chamundi-hill'],
+  'buf-kadakola-nanjangud': ['tp-kadakola', 'mcc-zone-8'],
+};
+
+// Detect which buffer zone a location/coordinates fall into (returns buffer zone ID or null)
+export const detectBufferZoneId = (locationStr: string, coords?: { lat: number; lng: number }): string | null => {
+  const locLower = (locationStr || '').toLowerCase();
+  if (locLower.includes('bogadi') && (locLower.includes('buffer') || locLower.includes('ring road'))) return 'buf-bogadi-mcc';
+  if (locLower.includes('hootagalli') && (locLower.includes('buffer') || locLower.includes('belavadi'))) return 'buf-hootagalli-belavadi';
+  if (locLower.includes('rammanahalli') && (locLower.includes('buffer') || locLower.includes('prr'))) return 'buf-rammanahalli-prr';
+  if (locLower.includes('alanahalli') && (locLower.includes('buffer') || locLower.includes('foothills') || locLower.includes('chamundi'))) return 'buf-alanahalli-foothills';
+  if (locLower.includes('kadakola') && (locLower.includes('buffer') || locLower.includes('industrial') || locLower.includes('nanjangud'))) return 'buf-kadakola-nanjangud';
+
+  // Geospatial fallback: match coordinates to exact buffer corridor polygon envelopes & centers
+  if (coords) {
+    // 1. Bogadi-MCC Zone 3 Ring Road Buffer: Lat [12.2890, 12.3120], Lng [76.6110, 76.6260], Center [12.3020, 76.6180]
+    if (coords.lat >= 12.2890 && coords.lat <= 12.3120 && coords.lng >= 76.6110 && coords.lng <= 76.6260) return 'buf-bogadi-mcc';
+    if (Math.abs(coords.lat - 12.3020) < 0.007 && Math.abs(coords.lng - 76.6180) < 0.007) return 'buf-bogadi-mcc';
+
+    // 2. Hootagalli-Belavadi Industrial Buffer: Lat [12.3310, 12.3480], Lng [76.5710, 76.5860], Center [12.3390, 76.5770]
+    if (coords.lat >= 12.3310 && coords.lat <= 12.3480 && coords.lng >= 76.5710 && coords.lng <= 76.5860) return 'buf-hootagalli-belavadi';
+    if (Math.abs(coords.lat - 12.3390) < 0.007 && Math.abs(coords.lng - 76.5770) < 0.007) return 'buf-hootagalli-belavadi';
+
+    // 3. Rammanahalli PRR Boundary Buffer: Lat [12.3240, 12.3430], Lng [76.6970, 76.7130], Center [12.3330, 76.7050]
+    if (coords.lat >= 12.3240 && coords.lat <= 12.3430 && coords.lng >= 76.6970 && coords.lng <= 76.7130) return 'buf-rammanahalli-prr';
+    if (Math.abs(coords.lat - 12.3330) < 0.007 && Math.abs(coords.lng - 76.7050) < 0.007) return 'buf-rammanahalli-prr';
+
+    // 4. Alanahalli-Chamundi Foothills Buffer: Lat [12.2740, 12.2930], Lng [76.6840, 76.7010], Center [12.2830, 76.6920]
+    if (coords.lat >= 12.2740 && coords.lat <= 12.2930 && coords.lng >= 76.6840 && coords.lng <= 76.7010) return 'buf-alanahalli-foothills';
+    if (Math.abs(coords.lat - 12.2830) < 0.007 && Math.abs(coords.lng - 76.6920) < 0.007) return 'buf-alanahalli-foothills';
+
+    // 5. Kadakola Industrial Border Buffer: Lat [12.2090, 12.2330], Lng [76.6540, 76.6770], Center [12.2210, 76.6660]
+    if (coords.lat >= 12.2090 && coords.lat <= 12.2330 && coords.lng >= 76.6540 && coords.lng <= 76.6770) return 'buf-kadakola-nanjangud';
+    if (Math.abs(coords.lat - 12.2210) < 0.007 && Math.abs(coords.lng - 76.6660) < 0.007) return 'buf-kadakola-nanjangud';
+  }
+  return null;
+};
+
+// Universal Dynamic Routing: Route buffer zone ticket to the adjacent jurisdiction with lower real-time load
+export const routeBufferZoneTicket = (
+  bufferZoneId: string,
+  currentIssues: CivicIssue[]
+): { targetJurisdictionId: string; targetJurisdictionName: string } => {
+  const adjacentIds = BUFFER_ZONE_ADJACENCY[bufferZoneId];
+  if (!adjacentIds) {
+    // Fallback: default to MCC Zone 3
+    return { targetJurisdictionId: 'mcc-zone-3', targetJurisdictionName: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)' };
+  }
+
+  const capacities = calculateDynamicCapacities(currentIssues);
+  const [idA, idB] = adjacentIds;
+  const capA = capacities.find(c => c.jurisdiction.id === idA);
+  const capB = capacities.find(c => c.jurisdiction.id === idB);
+
+  const loadA = capA?.capacityPercent ?? 0;
+  const loadB = capB?.capacityPercent ?? 0;
+
+  // Route to whichever adjacent jurisdiction has the LOWER current load percentage
+  if (loadA <= loadB) {
+    const jur = MYSURU_JURISDICTIONS.find(j => j.id === idA);
+    return { targetJurisdictionId: idA, targetJurisdictionName: jur?.name || idA };
+  } else {
+    const jur = MYSURU_JURISDICTIONS.find(j => j.id === idB);
+    return { targetJurisdictionId: idB, targetJurisdictionName: jur?.name || idB };
+  }
+};
+
 // Quick Mysuru Border Landmarks (Boundary Testing)
+// Synchronized strictly to lie INSIDE the drawn buffer corridor polygons in AdminLeafletMap
 export interface BorderHotspot {
   id: string;
   name: string;
@@ -194,9 +446,9 @@ export const BORDER_HOTSPOTS: BorderHotspot[] = [
   {
     id: 'spot-bogadi-rr',
     name: 'Bogadi Ring Road Junction',
-    lat: 12.3025,
-    lng: 76.6021,
-    description: 'Contested peripheral junction between Bogadi Town Panchayat and MCC Ward 3.',
+    lat: 12.3020,
+    lng: 76.6180,
+    description: 'Contested peripheral junction inside Bogadi-MCC Zone 3 Buffer Zone corridor.',
     category: 'Debris',
     defaultRank: 5,
     jurisdictionId: 'tp-bogadi',
@@ -204,9 +456,9 @@ export const BORDER_HOTSPOTS: BorderHotspot[] = [
   {
     id: 'spot-hootagalli',
     name: 'Hootagalli-Belavadi Edge',
-    lat: 12.3382,
-    lng: 76.5864,
-    description: 'Peripheral corridor bordering Belavadi village development limits.',
+    lat: 12.3390,
+    lng: 76.5770,
+    description: 'Peripheral corridor inside Hootagalli-Belavadi Industrial Buffer polygon.',
     category: 'Potholes',
     defaultRank: 4,
     jurisdictionId: 'gp-belavadi',
@@ -214,9 +466,9 @@ export const BORDER_HOTSPOTS: BorderHotspot[] = [
   {
     id: 'spot-rammanahalli',
     name: 'Rammanahalli PRR Entry',
-    lat: 12.3356,
-    lng: 76.7012,
-    description: 'Proposed Peripheral Ring Road boundary with Rammanahalli TMC zone.',
+    lat: 12.3330,
+    lng: 76.7050,
+    description: 'Proposed Peripheral Ring Road boundary inside Rammanahalli PRR Buffer corridor.',
     category: 'Drainage',
     defaultRank: 3,
     jurisdictionId: 'tp-rammanahalli',
@@ -224,9 +476,9 @@ export const BORDER_HOTSPOTS: BorderHotspot[] = [
   {
     id: 'spot-alanahalli',
     name: 'Alanahalli T-Junction',
-    lat: 12.2891,
-    lng: 76.7034,
-    description: 'Bannur Road intersection at Alanahalli peripheral panchayat perimeter.',
+    lat: 12.2830,
+    lng: 76.6920,
+    description: 'Bannur Road intersection inside Alanahalli-Chamundi Foothills Buffer polygon.',
     category: 'Garbage Dump',
     defaultRank: 2,
     jurisdictionId: 'gp-alanahalli',
@@ -234,9 +486,9 @@ export const BORDER_HOTSPOTS: BorderHotspot[] = [
   {
     id: 'spot-kadakola',
     name: 'Kadakola Peripheral Gate',
-    lat: 12.2154,
-    lng: 76.6698,
-    description: 'Southern industrial corridor boundary crossing Nanjangud highway jurisdiction.',
+    lat: 12.2210,
+    lng: 76.6660,
+    description: 'Southern industrial corridor boundary inside Kadakola Industrial Border Buffer.',
     category: 'Streetlights',
     defaultRank: 1,
     jurisdictionId: 'tp-kadakola',
@@ -248,23 +500,24 @@ export const isInsideBufferZone = (lat?: number, lng?: number, isExplicitBuffer?
   if (isExplicitBuffer) return true;
   if (lat == null || lng == null) return false;
 
-  // 1. Direct match with hotspots
-  if (Math.abs(lat - 12.3025) < 0.007 && Math.abs(lng - 76.6021) < 0.007) return true;
-  if (Math.abs(lat - 12.3382) < 0.007 && Math.abs(lng - 76.5864) < 0.007) return true;
-  if (Math.abs(lat - 12.3356) < 0.007 && Math.abs(lng - 76.7012) < 0.007) return true;
-  if (Math.abs(lat - 12.2891) < 0.007 && Math.abs(lng - 76.7034) < 0.007) return true;
-  if (Math.abs(lat - 12.2154) < 0.007 && Math.abs(lng - 76.6698) < 0.007) return true;
+  // 1. Direct match with preset buffer hotspots (exact centers with ±0.007 margin)
+  if (Math.abs(lat - 12.3020) < 0.007 && Math.abs(lng - 76.6180) < 0.007) return true; // Bogadi-MCC
+  if (Math.abs(lat - 12.3390) < 0.007 && Math.abs(lng - 76.5770) < 0.007) return true; // Hootagalli-Belavadi
+  if (Math.abs(lat - 12.3330) < 0.007 && Math.abs(lng - 76.7050) < 0.007) return true; // Rammanahalli PRR
+  if (Math.abs(lat - 12.2830) < 0.007 && Math.abs(lng - 76.6920) < 0.007) return true; // Alanahalli-Chamundi
+  if (Math.abs(lat - 12.2210) < 0.007 && Math.abs(lng - 76.6660) < 0.007) return true; // Kadakola-Nanjangud
 
-  // 2. Geometric distance from Bogadi-MCC corridor center (12.2985, 76.6190)
-  const dLat = (lat - 12.2985) * 111000;
-  const dLng = (lng - 76.6190) * 108500;
-  const dist = Math.sqrt(dLat * dLat + dLng * dLng);
-  if (dist <= 1800) return true;
-
-  // 3. Rectangular boundary envelope
-  if (lat >= 12.2850 && lat <= 12.3120 && lng >= 76.6000 && lng <= 76.6280) {
-    return true;
-  }
+  // 2. Strict rectangular boundary envelopes matching AdminLeafletMap polygonCoords
+  // Bogadi-MCC Zone 3 Buffer Zone: Lat [12.2890, 12.3120], Lng [76.6110, 76.6260]
+  if (lat >= 12.2890 && lat <= 12.3120 && lng >= 76.6110 && lng <= 76.6260) return true;
+  // Hootagalli-Belavadi Industrial Buffer: Lat [12.3310, 12.3480], Lng [76.5710, 76.5860]
+  if (lat >= 12.3310 && lat <= 12.3480 && lng >= 76.5710 && lng <= 76.5860) return true;
+  // Rammanahalli PRR Boundary Buffer: Lat [12.3240, 12.3430], Lng [76.6970, 76.7130]
+  if (lat >= 12.3240 && lat <= 12.3430 && lng >= 76.6970 && lng <= 76.7130) return true;
+  // Alanahalli-Chamundi Foothills Buffer: Lat [12.2740, 12.2930], Lng [76.6840, 76.7010]
+  if (lat >= 12.2740 && lat <= 12.2930 && lng >= 76.6840 && lng <= 76.7010) return true;
+  // Kadakola Industrial Border Buffer: Lat [12.2090, 12.2330], Lng [76.6540, 76.6770]
+  if (lat >= 12.2090 && lat <= 12.2330 && lng >= 76.6540 && lng <= 76.6770) return true;
 
   return false;
 };
@@ -282,7 +535,7 @@ export const SAMPLE_BOGADI_DEBRIS_PHOTO = 'data:image/svg+xml;utf8,' + encodeURI
   <polygon points="380,280 460,220 510,280 430,310" fill="#78716c" stroke="#d6d3d1" stroke-width="2"/>
   <circle cx="280" cy="230" r="14" fill="#ef4444" opacity="0.8"/>
   <text x="30" y="50" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold">ON-SITE CAMERA CAPTURE: BOGADI RING ROAD BUFFER</text>
-  <text x="30" y="75" fill="#f59e0b" font-family="monospace" font-size="12">GEO: 12.30250°N, 76.60210°E • TIMESTAMP: 2026-09-19 07:15</text>
+  <text x="30" y="75" fill="#f59e0b" font-family="monospace" font-size="12">GEO: 12.30200°N, 76.61800°E • TIMESTAMP: 2026-09-19 07:15</text>
   <text x="30" y="95" fill="#a8a29e" font-family="monospace" font-size="12">STATUS: MULTI-TONNE DEMOLITION RUBBLE BLOCKING DUAL CARRIAGEWAY</text>
 </svg>`);
 
@@ -367,16 +620,16 @@ export const SAMPLE_DRAINAGE_PHOTO = SAMPLE_BOGADI_DRAINAGE_PHOTO;
 // MCC Zone 3 (Saraswathipuram): 2 active tickets, 13 load units (~45% load)
 // All other jurisdictions: 0 active tickets, 0% load
 const INITIAL_ISSUES: CivicIssue[] = [
-  // 1. Bogadi Ticket 1 (Buffer Zone Debris, Load 6, Sev 5)
+  // 1. Bogadi Ticket 1 (Core Bogadi Debris, Load 6, Sev 5)
   {
     id: 'ISS-BOG-001',
     trackingId: 'MYS-2026-904121',
-    title: 'Multi-Tonne Demolition Debris Spill on Ring Road Boundary',
+    title: 'Multi-Tonne Demolition Debris Spill on Main Road',
     category: 'Debris',
-    description: 'Heavy concrete demolition slabs and foundation rubble blocking two lanes of Bogadi Ring Road near the municipal boundary marker.',
-    location: 'Bogadi Outer Ring Road Junction (Buffer Zone), Mysuru',
-    coordinates: { lat: 12.3025, lng: 76.6021 },
-    coordinatesStr: '12.30250, 76.60210',
+    description: 'Heavy concrete demolition slabs and foundation rubble blocking two lanes of Bogadi Main Road near the panchayat office.',
+    location: 'Bogadi Town Panchayat Main Road, Mysuru',
+    coordinates: { lat: 12.2965, lng: 76.5860 },
+    coordinatesStr: '12.29650, 76.58600',
     priority: 'critical',
     severityRank: 5,
     status: 'assigned',
@@ -390,16 +643,17 @@ const INITIAL_ISSUES: CivicIssue[] = [
       },
     ],
     images: [SAMPLE_BOGADI_DEBRIS_PHOTO],
-    assignedCrew: 'Manjunatha S. (MCC Depot 3)',
-    assignedVehicle: 'Canter KA-09-G-4412',
+    assignedCrewLead: 'Someshwara Gowda',
+    assignedCrew: 'Someshwara Gowda (Bogadi Town Panchayat)',
+    assignedVehicle: 'Tractor-Trailer KA-09-EA-1842',
     assignedDepot: 'Bogadi Town Panchayat',
+    assignedJurisdictionId: 'tp-bogadi',
     clearingCost: 6500,
     reportedAt: '2026-09-19 07:15',
     updatedAt: '2026-09-19 08:30',
     loadWeight: 6,
-    reportCount: 8,
-    isBufferZone: true,
-    targetJurisdictionId: 'mcc-zone-3',
+    reportCount: 1,
+    isBufferZone: false,
     isFlagged: false,
     imageUrl: SAMPLE_BOGADI_DEBRIS_PHOTO,
   },
@@ -410,9 +664,9 @@ const INITIAL_ISSUES: CivicIssue[] = [
     title: 'Deep Trench Crater & Road Subsidence near Bogadi Bus Stand',
     category: 'Potholes',
     description: 'Severe asphalt collapse and unpaved excavation trench depth ~22cm causing vehicular stoppage and two-wheeler accidents.',
-    location: 'Bogadi 2nd Stage Main Road, Near Bus Stand, Mysuru',
-    coordinates: { lat: 12.2985, lng: 76.6062 },
-    coordinatesStr: '12.29850, 76.60620',
+    location: 'Bogadi 2nd Stage Central Market, Mysuru',
+    coordinates: { lat: 12.2925, lng: 76.5840 },
+    coordinatesStr: '12.29250, 76.58400',
     priority: 'critical',
     severityRank: 5,
     status: 'reported',
@@ -426,28 +680,30 @@ const INITIAL_ISSUES: CivicIssue[] = [
       },
     ],
     images: [SAMPLE_BOGADI_POTHOLE_PHOTO],
-    assignedCrew: 'Bogadi Road Maintenance Crew',
-    assignedVehicle: 'Tractor KA-09-EA-1092',
+    assignedCrewLead: 'Someshwara Gowda',
+    assignedCrew: 'Someshwara Gowda (Bogadi Town Panchayat)',
+    assignedVehicle: 'Tractor-Trailer KA-09-EA-1842',
     assignedDepot: 'Bogadi Town Panchayat',
+    assignedJurisdictionId: 'tp-bogadi',
     clearingCost: 6500,
     reportedAt: '2026-09-19 08:00',
     updatedAt: '2026-09-19 08:00',
     loadWeight: 6,
-    reportCount: 5,
+    reportCount: 1,
     isBufferZone: false,
     isFlagged: false,
     imageUrl: SAMPLE_BOGADI_POTHOLE_PHOTO,
   },
-  // 3. Bogadi Ticket 3 (Buffer Drainage Siltation, Load 5, Sev 4)
+  // 3. Bogadi Ticket 3 (Core Bogadi Drainage Siltation, Load 5, Sev 4)
   {
     id: 'ISS-BOG-003',
     trackingId: 'MYS-2026-904123',
-    title: 'Stormwater Culvert Siltation & Boundary Overflow',
+    title: 'Stormwater Culvert Siltation & Silt Overflow',
     category: 'Drainage',
     description: 'Culvert heavily clogged with silt, construction sediment and plastic waste causing stormwater backflow onto carriageway.',
-    location: 'Bogadi Ring Road Service Lane, Mysuru',
-    coordinates: { lat: 12.3012, lng: 76.6045 },
-    coordinatesStr: '12.30120, 76.60450',
+    location: 'Bogadi Village Panchayat Bus Stop Road, Mysuru',
+    coordinates: { lat: 12.2980, lng: 76.5820 },
+    coordinatesStr: '12.29800, 76.58200',
     priority: 'high',
     severityRank: 4,
     status: 'reported',
@@ -461,16 +717,17 @@ const INITIAL_ISSUES: CivicIssue[] = [
       },
     ],
     images: [SAMPLE_BOGADI_DRAINAGE_PHOTO],
-    assignedCrew: 'Bogadi Drain Response Team',
-    assignedVehicle: 'Jetting Unit KA-09-J-3301',
+    assignedCrewLead: 'Someshwara Gowda',
+    assignedCrew: 'Someshwara Gowda (Bogadi Town Panchayat)',
+    assignedVehicle: 'Tractor-Trailer KA-09-EA-1842',
     assignedDepot: 'Bogadi Town Panchayat',
+    assignedJurisdictionId: 'tp-bogadi',
     clearingCost: 4000,
     reportedAt: '2026-09-19 08:45',
     updatedAt: '2026-09-19 08:45',
     loadWeight: 5,
-    reportCount: 4,
-    isBufferZone: true,
-    targetJurisdictionId: 'mcc-zone-3',
+    reportCount: 1,
+    isBufferZone: false,
     isFlagged: false,
     imageUrl: SAMPLE_BOGADI_DRAINAGE_PHOTO,
   },
@@ -478,12 +735,12 @@ const INITIAL_ISSUES: CivicIssue[] = [
   {
     id: 'ISS-BOG-004',
     trackingId: 'MYS-2026-904124',
-    title: 'Commercial Bulk Waste & Plastic Dump on Peripheral Link',
+    title: 'Commercial Bulk Waste & Plastic Dump on Village Road',
     category: 'Garbage Dump',
     description: 'Repeated midnight unauthorized commercial dump of plastic scraps, packing crates and organic waste obstructing walkway.',
-    location: 'Bogadi Radial Link Road, Near Maramma Temple, Mysuru',
-    coordinates: { lat: 12.2950, lng: 76.6090 },
-    coordinatesStr: '12.29500, 76.60900',
+    location: 'Bogadi Maramma Temple Street, Mysuru',
+    coordinates: { lat: 12.2910, lng: 76.5880 },
+    coordinatesStr: '12.29100, 76.58800',
     priority: 'high',
     severityRank: 4,
     status: 'in_progress',
@@ -497,14 +754,16 @@ const INITIAL_ISSUES: CivicIssue[] = [
       },
     ],
     images: [SAMPLE_BOGADI_WASTE_PHOTO],
-    assignedCrew: 'Bogadi Sanitation Unit 1',
-    assignedVehicle: 'Tipper KA-09-EA-2104',
+    assignedCrewLead: 'Someshwara Gowda',
+    assignedCrew: 'Someshwara Gowda (Bogadi Town Panchayat)',
+    assignedVehicle: 'Tractor-Trailer KA-09-EA-1842',
     assignedDepot: 'Bogadi Town Panchayat',
+    assignedJurisdictionId: 'tp-bogadi',
     clearingCost: 4000,
     reportedAt: '2026-09-19 09:10',
     updatedAt: '2026-09-19 09:30',
     loadWeight: 5,
-    reportCount: 3,
+    reportCount: 1,
     isBufferZone: false,
     isFlagged: false,
     imageUrl: SAMPLE_BOGADI_WASTE_PHOTO,
@@ -532,14 +791,16 @@ const INITIAL_ISSUES: CivicIssue[] = [
       },
     ],
     images: [SAMPLE_MCC3_WATERMAIN_PHOTO],
-    assignedCrew: 'Manjunatha S. (MCC Depot 3)',
+    assignedCrewLead: 'Manjunatha S.',
+    assignedCrew: 'Manjunatha S. (MCC Zone 3)',
     assignedVehicle: 'Canter KA-09-G-4412',
     assignedDepot: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)',
+    assignedJurisdictionId: 'mcc-zone-3',
     clearingCost: 6500,
     reportedAt: '2026-09-18 16:20',
     updatedAt: '2026-09-19 09:15',
     loadWeight: 7,
-    reportCount: 6,
+    reportCount: 1,
     isBufferZone: false,
     isFlagged: false,
     imageUrl: SAMPLE_MCC3_WATERMAIN_PHOTO,
@@ -567,14 +828,16 @@ const INITIAL_ISSUES: CivicIssue[] = [
       },
     ],
     images: [SAMPLE_MCC3_POTHOLE_PHOTO],
-    assignedCrew: 'MCC Zone 3 Rapid Response',
-    assignedVehicle: 'Patch Truck KA-09-M-7711',
+    assignedCrewLead: 'Manjunatha S.',
+    assignedCrew: 'Manjunatha S. (MCC Zone 3)',
+    assignedVehicle: 'Canter KA-09-G-4412',
     assignedDepot: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)',
+    assignedJurisdictionId: 'mcc-zone-3',
     clearingCost: 4000,
     reportedAt: '2026-09-19 08:15',
     updatedAt: '2026-09-19 09:00',
     loadWeight: 6,
-    reportCount: 2,
+    reportCount: 1,
     isBufferZone: false,
     isFlagged: false,
     imageUrl: SAMPLE_MCC3_POTHOLE_PHOTO,
@@ -676,20 +939,23 @@ export const calculateDynamicCapacities = (issues: CivicIssue[]): DynamicJurisdi
       const depot = (iss.assignedDepot || '').toLowerCase();
       const loc = (iss.location || '').toLowerCase();
 
-      // Buffer Zone Sync: When a ticket is placed in a Buffer Zone, explicitly add its Load Units to the target jurisdictionId (e.g., MCC Zone 3)
-      if (jurId === 'mcc-zone-3' && iss.isBufferZone && (iss.targetJurisdictionId === 'mcc-zone-3' || depot.includes('bogadi'))) {
-        if (iss.id !== 'ISS-BOG-001' && iss.id !== 'ISS-BOG-003') {
-          return true;
-        }
+      // Dynamically routed ticket targeted to this specific jurisdiction
+      if (iss.targetJurisdictionId && iss.targetJurisdictionId === jurId) {
+        return true;
       }
 
       if (jur.type === 'buffer_zone') {
-        if (jurId === 'buf-bogadi-mcc') return depot.includes('buf-bogadi') || depot.includes('bogadi-mcc zone 3 ring road buffer') || iss.isBufferZone;
-        if (jurId === 'buf-hootagalli-belavadi') return depot.includes('buf-hootagalli') || depot.includes('hootagalli-belavadi');
-        if (jurId === 'buf-rammanahalli-prr') return depot.includes('buf-rammanahalli') || depot.includes('rammanahalli prr');
-        if (jurId === 'buf-alanahalli-foothills') return depot.includes('buf-alanahalli') || depot.includes('alanahalli-chamundi');
-        if (jurId === 'buf-kadakola-nanjangud') return depot.includes('buf-kadakola') || depot.includes('kadakola industrial');
-        return depot.includes(jur.name.toLowerCase());
+        // A buffer zone includes active tickets that are explicitly tagged as buffer corridor tickets
+        if (iss.isBufferZone) {
+          const corridorId = detectBufferZoneId(iss.location, iss.coordinates) || (jurId === 'buf-bogadi-mcc' ? 'buf-bogadi-mcc' : null);
+          if (corridorId === jurId) return true;
+        }
+        if (jurId === 'buf-bogadi-mcc') return depot.includes('buf-bogadi') || depot.includes('bogadi-mcc zone 3 ring road buffer') || iss.targetJurisdictionId === 'buf-bogadi-mcc';
+        if (jurId === 'buf-hootagalli-belavadi') return depot.includes('buf-hootagalli') || depot.includes('hootagalli-belavadi') || iss.targetJurisdictionId === 'buf-hootagalli-belavadi';
+        if (jurId === 'buf-rammanahalli-prr') return depot.includes('buf-rammanahalli') || depot.includes('rammanahalli prr') || iss.targetJurisdictionId === 'buf-rammanahalli-prr';
+        if (jurId === 'buf-alanahalli-foothills') return depot.includes('buf-alanahalli') || depot.includes('alanahalli-chamundi') || iss.targetJurisdictionId === 'buf-alanahalli-foothills';
+        if (jurId === 'buf-kadakola-nanjangud') return depot.includes('buf-kadakola') || depot.includes('kadakola industrial') || iss.targetJurisdictionId === 'buf-kadakola-nanjangud';
+        return depot.includes(jur.name.toLowerCase()) || iss.targetJurisdictionId === jur.id;
       }
 
       // Check specific matching
@@ -712,7 +978,10 @@ export const calculateDynamicCapacities = (issues: CivicIssue[]): DynamicJurisdi
       return depot.includes(jurNameLower) || depot.includes(jur.id);
     });
 
-    const activeLoad = activeIssues.reduce((sum, iss) => sum + (iss.loadWeight || iss.severityRank || 2), 0);
+    // For buffer zones with no assigned tasks, guarantee strict 0 active tasks and 0% capacity
+    const activeLoad = (jur.type === 'buffer_zone' && activeIssues.length === 0)
+      ? 0
+      : activeIssues.reduce((sum, iss) => sum + (iss.loadWeight || iss.severityRank || 2), 0);
     // Baseline capacity: Bogadi = 20 (22 load = 110%), MCC Zone 3 = 29 (13 load = 45%), others = workers * 1.8
     const maxCapacity = jur.id === 'tp-bogadi' 
       ? 20 
@@ -734,23 +1003,29 @@ export const calculateDynamicCapacities = (issues: CivicIssue[]): DynamicJurisdi
   });
 };
 
-// Auto-detect best suited jurisdiction based on name, location or coordinates
-export const detectJurisdiction = (locationStr: string, coords?: { lat: number; lng: number }): string => {
+// Detect primary jurisdiction ID based on location string or coordinates (returns primary jurisdiction ID)
+export const detectJurisdictionId = (locationStr: string, coords?: { lat: number; lng: number }): string => {
   const locLower = (locationStr || '').toLowerCase();
-  if (locLower.includes('bogadi')) return 'Bogadi Town Panchayat';
-  if (locLower.includes('hootagalli')) return 'Hootagalli Town Municipal Council (TMC)';
-  if (locLower.includes('belavadi')) return 'Belavadi Gram Panchayat';
-  if (locLower.includes('rammanahalli')) return 'Rammanahalli Town Panchayat';
-  if (locLower.includes('alanahalli')) return 'Alanahalli Gram Panchayat';
-  if (locLower.includes('kadakola')) return 'Kadakola Town Panchayat';
-  if (locLower.includes('siddalingapura')) return 'Siddalingapura Gram Panchayat';
-  if (locLower.includes('ilavala')) return 'Ilavala Gram Panchayat';
-  if (locLower.includes('chamundi')) return 'Chamundi Hill Gram Panchayat';
-  if (locLower.includes('koorgalli')) return 'Koorgalli Gram Panchayat';
-  if (locLower.includes('varuna')) return 'Varuna Gram Panchayat';
-  if (locLower.includes('dhanagalli')) return 'Dhanagalli Gram Panchayat';
+
+  // Town Municipal Councils / Town Panchayats
+  if (locLower.includes('bogadi')) return 'tp-bogadi';
+  if (locLower.includes('hootagalli')) return 'tp-hootagalli';
+  if (locLower.includes('kadakola')) return 'tp-kadakola';
+  if (locLower.includes('rammanahalli')) return 'tp-rammanahalli';
+
+  // Gram Panchayats
+  if (locLower.includes('belavadi')) return 'gp-belavadi';
+  if (locLower.includes('alanahalli')) return 'gp-alanahalli';
+  if (locLower.includes('siddalingapura')) return 'gp-siddalingapura';
+  if (locLower.includes('ilavala')) return 'gp-ilavala';
+  if (locLower.includes('chamundi')) return 'gp-chamundi-hill';
+  if (locLower.includes('koorgalli')) return 'gp-koorgalli';
+  if (locLower.includes('varuna')) return 'gp-varuna';
+  if (locLower.includes('dhanagalli')) return 'gp-dhanagalli';
+
+  // MCC Zones
   if (locLower.includes('ashokapuram') || locLower.includes('vani vilas') || locLower.includes('krishnamurthypuram') || locLower.includes('ballal')) {
-    return 'MCC Zone 1 (Ashokapuram / Vani Vilas)';
+    return 'mcc-zone-1';
   }
   if (
     locLower.includes('sayyaji') ||
@@ -763,7 +1038,7 @@ export const detectJurisdiction = (locationStr: string, coords?: { lat: number; 
     locLower.includes('guru sweets') ||
     locLower.includes('palace')
   ) {
-    return 'MCC Zone 2 (Krishnaraja / Agrahara)';
+    return 'mcc-zone-2';
   }
   if (
     locLower.includes('saraswathipuram') ||
@@ -772,32 +1047,42 @@ export const detectJurisdiction = (locationStr: string, coords?: { lat: number; 
     locLower.includes('gokulam') ||
     locLower.includes('kautilya')
   ) {
-    return 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)';
+    return 'mcc-zone-3';
   }
   if (locLower.includes('bannimantap') || locLower.includes('mandi mohalla') || locLower.includes('highway circle')) {
-    return 'MCC Zone 5 (Bannimantap / Mandi Mohalla)';
+    return 'mcc-zone-5';
   }
   if (locLower.includes('hebbal') || locLower.includes('krs road') || locLower.includes('kumbarakoppal')) {
-    return 'MCC Zone 7 (Hebbal / KRS Road)';
+    return 'mcc-zone-7';
   }
   if (locLower.includes('yadavagiri') || locLower.includes('tilak nagar')) {
-    return 'MCC Zone 6 (Tilak Nagar / Yadavagiri)';
+    return 'mcc-zone-6';
   }
   if (locLower.includes('nazarbad') || locLower.includes('lashkar') || locLower.includes('forum mall')) {
-    return 'MCC Zone 4 (Nazarbad / Lashkar Mohalla)';
+    return 'mcc-zone-4';
   }
   if (locLower.includes('kuvempunagar') || locLower.includes('ramakrishnanagar') || locLower.includes('jp nagar') || locLower.includes('dattagalli')) {
-    return 'MCC Zone 8 (Kuvempunagar / Ramakrishnanagar)';
+    return 'mcc-zone-8';
+  }
+  if (locLower.includes('ittegagudu') || locLower.includes('siddartha') || locLower.includes('zoo')) {
+    return 'mcc-zone-9';
   }
 
+  // Geospatial fallback
   if (coords) {
-    if (coords.lng < 76.61) return 'Bogadi Town Panchayat';
-    if (coords.lat > 12.33) return 'Belavadi Gram Panchayat';
-    if (coords.lat < 12.25) return 'Kadakola Town Panchayat';
-    if (coords.lng > 76.69) return 'Alanahalli Gram Panchayat';
+    if (coords.lng < 76.61) return 'tp-bogadi';
+    if (coords.lat > 12.33) return 'gp-belavadi';
+    if (coords.lat < 12.25) return 'tp-kadakola';
+    if (coords.lng > 76.69) return 'gp-alanahalli';
   }
 
-  return 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)';
+  return 'mcc-zone-3';
+};
+
+// Auto-detect best suited jurisdiction based on name, location or coordinates
+export const detectJurisdiction = (locationStr: string, coords?: { lat: number; lng: number }): string => {
+  const jurId = detectJurisdictionId(locationStr, coords);
+  return WORKER_ROSTER[jurId]?.jurisdictionName || 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)';
 };
 
 // In-memory cache to guarantee zero data loss and eliminate quota crash blocks
@@ -900,7 +1185,33 @@ export const getStoredIssues = (): CivicIssue[] => {
       return INITIAL_ISSUES;
     }
     const parsed = JSON.parse(raw);
-    inMemoryIssuesCache = Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ISSUES;
+    const loadedList = Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ISSUES;
+    // Guarantee that pre-loaded tickets are strictly assigned to core Bogadi Town Panchayat and buffer zones launch at 0%
+    const sanitized = loadedList.map((item: CivicIssue) => {
+      const seed = INITIAL_ISSUES.find((s) => s.id === item.id);
+      if (seed && item.id.startsWith('ISS-BOG-')) {
+        return {
+          ...item,
+          isBufferZone: false,
+          targetJurisdictionId: undefined,
+          assignedDepot: 'Bogadi Town Panchayat',
+          location: seed.location,
+          coordinates: seed.coordinates,
+          coordinatesStr: seed.coordinatesStr,
+          title: seed.title,
+          description: seed.description,
+        };
+      }
+      if (seed && item.id.startsWith('ISS-MCC3-')) {
+        return {
+          ...item,
+          isBufferZone: false,
+          targetJurisdictionId: undefined,
+        };
+      }
+      return item;
+    });
+    inMemoryIssuesCache = sanitized;
     return inMemoryIssuesCache;
   } catch {
     inMemoryIssuesCache = INITIAL_ISSUES;
@@ -1057,6 +1368,13 @@ export const submitCitizenReport = (data: {
     }
 
     const inBuffer = existing.isBufferZone || isInsideBufferZone(data.coordinates?.lat, data.coordinates?.lng);
+    const targetJurisdictionId = existing.targetJurisdictionId || (inBuffer ? (() => {
+      const bufId = detectBufferZoneId(data.location, data.coordinates);
+      return bufId ? routeBufferZoneTicket(bufId, current).targetJurisdictionId : 'mcc-zone-3';
+    })() : undefined);
+
+    const assignedJurisdictionId = targetJurisdictionId || existing.assignedJurisdictionId || detectJurisdictionId(existing.location, existing.coordinates);
+    const assignedWorker = WORKER_ROSTER[assignedJurisdictionId] || WORKER_ROSTER['mcc-zone-3'];
 
     const updatedTicket: CivicIssue = {
       ...existing,
@@ -1070,7 +1388,12 @@ export const submitCitizenReport = (data: {
       reporters: existingReporters,
       images: existingImages,
       isBufferZone: inBuffer,
-      targetJurisdictionId: existing.targetJurisdictionId || (inBuffer ? 'mcc-zone-3' : undefined),
+      targetJurisdictionId,
+      assignedJurisdictionId,
+      assignedCrewLead: existing.assignedCrewLead || assignedWorker.name,
+      assignedCrew: existing.assignedCrew || `${assignedWorker.name} (${assignedWorker.jurisdictionName.split(' (')[0]})`,
+      assignedVehicle: existing.assignedVehicle || assignedWorker.vehicle,
+      assignedDepot: existing.assignedDepot || assignedWorker.jurisdictionName,
     };
 
     const updatedList = [...current];
@@ -1090,7 +1413,19 @@ export const submitCitizenReport = (data: {
   const newId = `ISS-${Math.floor(5100 + Math.random() * 800)}`;
 
   const inBuffer = isInsideBufferZone(data.coordinates?.lat, data.coordinates?.lng);
-  const assignedDepot = data.assignedDepot || detectJurisdiction(data.location, data.coordinates);
+  const bufferZoneId = inBuffer ? detectBufferZoneId(data.location, data.coordinates) : null;
+  const dynamicRoute = (inBuffer && bufferZoneId) ? routeBufferZoneTicket(bufferZoneId, current) : null;
+
+  // Dynamically inherit assigned crew, lead and vehicle from WORKER_ROSTER
+  const assignedJurisdictionId = dynamicRoute 
+    ? dynamicRoute.targetJurisdictionId 
+    : detectJurisdictionId(data.location, data.coordinates);
+
+  const assignedWorker = WORKER_ROSTER[assignedJurisdictionId] || WORKER_ROSTER['mcc-zone-3'];
+  const assignedCrewLead = assignedWorker.name;
+  const assignedVehicle = assignedWorker.vehicle;
+  const assignedCrew = `${assignedWorker.name} (${assignedWorker.jurisdictionName.split(' (')[0]})`;
+  const assignedDepot = assignedWorker.jurisdictionName;
 
   const newTicket: CivicIssue = {
     id: newId,
@@ -1107,15 +1442,17 @@ export const submitCitizenReport = (data: {
     reportedBy: data.reportedBy,
     reporters: [newReporterEntry],
     images: data.imageUrl ? [data.imageUrl] : [],
-    assignedCrew: 'Manjunatha S. (MCC Depot 3)',
-    assignedVehicle: 'Canter KA-09-G-4412',
+    assignedCrew,
+    assignedCrewLead,
+    assignedVehicle,
     assignedDepot,
+    assignedJurisdictionId,
     clearingCost: cost,
     reportedAt: now,
     updatedAt: now,
     loadWeight: isQuarantined ? 0 : rank,
     isBufferZone: inBuffer,
-    targetJurisdictionId: inBuffer ? 'mcc-zone-3' : undefined,
+    targetJurisdictionId: inBuffer ? assignedJurisdictionId : undefined,
     isFlagged: isFlagged || isQuarantined,
     isQuarantined,
     quarantineReason,
@@ -1228,6 +1565,29 @@ export const resolveIssueWithProof = (
   return updated;
 };
 
+// Citizen Feedback / Satisfaction Rating Handler
+export const rateIssueResolution = (
+  id: string,
+  citizenRating: number,
+  citizenFeedback?: string
+): CivicIssue[] => {
+  const current = getStoredIssues();
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  const updated = current.map((item) => {
+    if (item.id === id || item.trackingId === id) {
+      return {
+        ...item,
+        citizenRating,
+        citizenFeedback: citizenFeedback?.trim() || undefined,
+        ratedAt: now,
+      };
+    }
+    return item;
+  });
+  saveStoredIssues(updated);
+  return updated;
+};
+
 export const getStoredDepartments = (): DepartmentCapacity[] => {
   try {
     const raw = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
@@ -1300,42 +1660,90 @@ export const resetToSeedData = () => {
   return { issues: freshIssues, departments: freshDepts };
 };
 
-// Inter-Agency Clearing Ledger Calculations
+// Inter-Agency Clearing Ledger Calculations (Universal — NOT hardcoded to Bogadi/Zone 3)
+export interface ClearingLedgerEntry {
+  debtorJurisdiction: string;
+  creditorJurisdiction: string;
+  amount: number;
+  tickets: CivicIssue[];
+}
+
 export interface ClearingLedgerSummary {
   spilloverTicketsCount: number;
-  totalBogadiOwesMCC: number;
+  totalBogadiOwesMCC: number; // retained for backward compat display
   totalMCCReimbursed: number;
   pendingReconciliationCount: number;
   tickets: CivicIssue[];
   cycleMonth: string;
   overloadedPanchayats: string[];
+  entries: ClearingLedgerEntry[];
+  totalDebit: number;
 }
 
 export const calculateClearingLedger = (
   issues: CivicIssue[], 
   bogadiCapacityPercent: number
 ): ClearingLedgerSummary => {
-  const isBogadiOverloaded = bogadiCapacityPercent > 100;
-  
-  // Spillover issues: originating from overloaded Bogadi Town Panchayat within the buffer corridor
-  const spilloverTickets = issues.filter((issue) => {
-    if (issue.status === 'closed') return false;
-    const isBogadiDepot = (issue.assignedDepot || '').toLowerCase().includes('bogadi');
-    const inBuffer = isInsideBufferZone(issue.coordinates?.lat, issue.coordinates?.lng, issue.isBufferZone);
-    return isBogadiDepot && inBuffer && isBogadiOverloaded;
+  const capacities = calculateDynamicCapacities(issues);
+
+  // Find ALL overloaded jurisdictions (not just Bogadi)
+  const overloadedJurisdictions = capacities.filter(c => c.capacityPercent > 100);
+  const overloadedIds = new Set(overloadedJurisdictions.map(c => c.jurisdiction.id));
+  const overloadedNames = overloadedJurisdictions.map(c => c.jurisdiction.name);
+
+  // Find actual active buffer tickets that were rerouted across jurisdictions
+  const allSpilloverTickets: CivicIssue[] = [];
+  const entries: ClearingLedgerEntry[] = [];
+
+  // Check each buffer zone for spillover tickets
+  Object.entries(BUFFER_ZONE_ADJACENCY).forEach(([bufId, [adjA, adjB]]) => {
+    const aOverloaded = overloadedIds.has(adjA);
+    const bOverloaded = overloadedIds.has(adjB);
+
+    // Only count actual active buffer tickets (issue.isBufferZone === true)
+    const bufTickets = issues.filter(issue => {
+      if (
+        issue.status === 'closed' || 
+        issue.status === 'resolved' || 
+        issue.status === 'quarantined' || 
+        issue.isQuarantined
+      ) {
+        return false;
+      }
+      // Strictly require that the ticket is marked as an active buffer ticket!
+      if (!issue.isBufferZone) return false;
+
+      const corridorId = detectBufferZoneId(issue.location, issue.coordinates) || (issue.isBufferZone ? 'buf-bogadi-mcc' : null);
+      if (corridorId !== bufId) return false;
+
+      return Boolean(issue.targetJurisdictionId || issue.assignedDepot);
+    });
+
+    if (bufTickets.length > 0) {
+      const debtor = aOverloaded ? adjA : (bOverloaded ? adjB : adjA);
+      const creditor = aOverloaded ? adjB : (bOverloaded ? adjA : adjB);
+      const debtorName = MYSURU_JURISDICTIONS.find(j => j.id === debtor)?.name || debtor;
+      const creditorName = MYSURU_JURISDICTIONS.find(j => j.id === creditor)?.name || creditor;
+      const amount = bufTickets.reduce((acc, issue) => acc + (issue.clearingCost || SEVERITY_LEVELS[issue.severityRank || 3]?.defaultCost || 2500), 0);
+
+      entries.push({ debtorJurisdiction: debtorName, creditorJurisdiction: creditorName, amount, tickets: bufTickets });
+      allSpilloverTickets.push(...bufTickets);
+    }
   });
 
-  const totalBogadiOwesMCC = spilloverTickets.reduce((acc, issue) => {
-    return acc + (issue.clearingCost || SEVERITY_LEVELS[issue.severityRank || 3]?.defaultCost || 2500);
-  }, 0);
+  // Deduplicate spillover tickets
+  const uniqueSpillover = Array.from(new Map(allSpilloverTickets.map(t => [t.id, t])).values());
+  const totalDebit = entries.reduce((acc, e) => acc + e.amount, 0);
 
   return {
-    spilloverTicketsCount: spilloverTickets.length,
-    totalBogadiOwesMCC,
+    spilloverTicketsCount: uniqueSpillover.length,
+    totalBogadiOwesMCC: totalDebit,
     totalMCCReimbursed: 0,
-    pendingReconciliationCount: spilloverTickets.length,
-    tickets: spilloverTickets,
+    pendingReconciliationCount: uniqueSpillover.length,
+    tickets: uniqueSpillover,
     cycleMonth: 'September 2026',
-    overloadedPanchayats: isBogadiOverloaded ? ['Bogadi Town Panchayat'] : [],
+    overloadedPanchayats: overloadedNames,
+    entries,
+    totalDebit,
   };
 };

@@ -1,4 +1,6 @@
-export type ViewType = 'landing' | 'citizen' | 'worker' | 'admin-login' | 'admin';
+export type ViewType = 'landing' | 'citizen' | 'worker-login' | 'worker' | 'admin-login' | 'admin';
+
+export type LanguageType = 'en' | 'kn';
 
 export type IssueStatus = 'reported' | 'assigned' | 'in_progress' | 'resolved' | 'closed' | 'quarantined';
 
@@ -6,17 +8,30 @@ export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
 export type SeverityRank = 1 | 2 | 3 | 4 | 5;
 
-export type CivicCategory = 
-  | 'Debris' 
-  | 'Potholes' 
-  | 'Drainage' 
-  | 'Streetlights' 
+export type CivicCategory =
+  | 'Debris'
+  | 'Potholes'
+  | 'Drainage'
+  | 'Streetlights'
   | 'Garbage Dump'
   | 'Roads & Pavement'
   | 'Water & Drainage'
   | 'Electrical & Lighting'
   | 'Waste & Sanitation'
   | 'Parks & Public Spaces';
+
+export const CIVIC_CATEGORIES: readonly CivicCategory[] = [
+  'Debris',
+  'Potholes',
+  'Drainage',
+  'Streetlights',
+  'Garbage Dump',
+  'Roads & Pavement',
+  'Water & Drainage',
+  'Electrical & Lighting',
+  'Waste & Sanitation',
+  'Parks & Public Spaces',
+] as const;
 
 export type JurisdictionType = 'mcc_zone' | 'town_panchayat' | 'gram_panchayat' | 'buffer_zone';
 
@@ -28,6 +43,15 @@ export interface MysuruJurisdiction {
   description: string;
   taluk?: string;
   centerCoords?: { lat: number; lng: number };
+}
+
+export interface WorkerRosterEntry {
+  jurisdictionId: string;
+  name: string;
+  vehicle: string;
+  role: string;
+  jurisdictionName: string;
+  zoneType: 'mcc_zone' | 'town_panchayat' | 'gram_panchayat';
 }
 
 export interface ReporterInfo {
@@ -63,7 +87,9 @@ export interface CivicIssue {
   images?: string[];
 
   assignedCrew?: string;
+  assignedCrewLead?: string;
   assignedVehicle?: string;
+  assignedJurisdictionId?: string;
   reportedAt: string;
   updatedAt: string;
   loadWeight: number; // 1 to 5
@@ -80,6 +106,9 @@ export interface CivicIssue {
   clearingCost?: number; // In INR (₹) for inter-agency clearing
   adminNotes?: string;
   resolutionNotes?: string;
+  citizenRating?: number; // 1 to 5 stars
+  citizenFeedback?: string;
+  ratedAt?: string;
 }
 
 export interface DepartmentCapacity {
@@ -98,9 +127,13 @@ export interface UserSession {
   role: 'citizen' | 'worker' | 'admin';
   badge?: string;
   vehicle?: string;
+  jurisdictionId?: string;
+  jurisdictionName?: string;
+  workerRole?: string;
   authenticatedAt: string;
   authProvider?: 'google' | 'firebase' | 'municipal_desk';
   photoURL?: string;
   firebaseUid?: string;
 }
+
 

@@ -35,6 +35,7 @@ import {
   Truck,
   Wrench,
   ChevronRight,
+  ChevronDown,
   X,
   MapPin,
   Maximize2,
@@ -44,7 +45,10 @@ import {
   User,
   Image as ImageIcon,
   Layers,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Users,
+  Star
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -87,6 +91,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [ledgerSettled, setLedgerSettled] = useState<boolean>(false);
   const [showVoucherModal, setShowVoucherModal] = useState<boolean>(false);
 
+  // Global search query for ticket filtering
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Accordion collapse state for three-tier sections
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    quarantined: true,
+    clustered: true,
+    standard: true,
+  });
+
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   // Selected ticket for detailed inspection & action modal
   const [inspectingIssue, setInspectingIssue] = useState<CivicIssue | null>(null);
 
@@ -102,19 +120,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Inter-Agency Clearing Ledger summary calculation
   const ledgerSummary = calculateClearingLedger(issues, bogadiCapacity);
 
-  // Filtered issues calculation for the tracking ledger
-  const displayedIssues = issues.filter((issue) => {
-    if (showQuarantinedOnly) {
-      return issue.status === 'quarantined' || Boolean(issue.isQuarantined);
-    }
+  // Global search filter: matches across ID, description, category, reporter names
+  const searchFiltered = issues.filter((issue) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const idMatch = (issue.id || '').toLowerCase().includes(q) || (issue.trackingId || '').toLowerCase().includes(q);
+    const descMatch = (issue.description || '').toLowerCase().includes(q) || (issue.title || '').toLowerCase().includes(q);
+    const catMatch = (issue.category || '').toLowerCase().includes(q);
+    const reporterMatch = (issue.reportedBy || '').toLowerCase().includes(q) ||
+      (issue.reporters || []).some(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+    const locMatch = (issue.location || '').toLowerCase().includes(q);
+    return idMatch || descMatch || catMatch || reporterMatch || locMatch;
+  });
+
+  // Category + buffer filter on top of search
+  const displayedIssues = searchFiltered.filter((issue) => {
     if (filterCategory !== 'all' && issue.category !== filterCategory) return false;
-    if (showBufferOnly && !isInsideBufferZone(issue.coordinates?.lat, issue.coordinates?.lng, issue.isBufferZone)) return false;
+    if (showBufferOnly && !issue.isBufferZone) return false;
     return true;
   });
 
-  const bufferZoneTicketsCount = issues.filter((i) => 
-    isInsideBufferZone(i.coordinates?.lat, i.coordinates?.lng, i.isBufferZone)
-  ).length;
+  // Three-tier categorization
+  const quarantinedIssues = displayedIssues.filter(i => i.status === 'quarantined' || Boolean(i.isQuarantined));
+  const clusteredIssues = displayedIssues.filter(i => {
+    if (i.status === 'quarantined' || Boolean(i.isQuarantined)) return false;
+    return Boolean(i.reporters && i.reporters.length > 1);
+  });
+  const standardIssues = displayedIssues.filter(i => {
+    if (i.status === 'quarantined' || Boolean(i.isQuarantined)) return false;
+    return !i.reporters || i.reporters.length <= 1;
+  });
+
+  // Helper: split issues into active/pending and completed/resolved
+  const splitByStatus = (list: CivicIssue[]) => {
+    const active = list.filter(i => !['resolved', 'closed'].includes(i.status));
+    const completed = list.filter(i => ['resolved', 'closed'].includes(i.status));
+    return { active, completed };
+  };
+
+  const bufferZoneTicketsCount = issues.filter((i) => Boolean(i.isBufferZone)).length;
 
   const quarantinedTicketsCount = issues.filter((i) => 
     i.status === 'quarantined' || Boolean(i.isQuarantined)
@@ -232,6 +276,95 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return true;
   });
 
+  // Reusable ticket card renderer for the three-tier accordion sections
+  const renderTicketCard = (issue: CivicIssue) => {
+    const rank = (issue.severityRank || getPriorityScore(issue.category)) as SeverityRank;
+    const severityMeta = SEVERITY_LEVELS[rank] || SEVERITY_LEVELS[3];
+    const inBuffer = Boolean(issue.isBufferZone);
+    const reporterCount = issue.reporters && issue.reporters.length > 0 ? issue.reporters.length : 1;
+
+    return (
+      <div
+        key={issue.id}
+        onClick={() => handleOpenInspection(issue)}
+        className={`group flex items-center gap-4 p-3.5 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
+          issue.isQuarantined || issue.status === 'quarantined'
+            ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900 hover:border-rose-400'
+            : inBuffer
+            ? 'bg-amber-50/40 dark:bg-amber-950/15 border-amber-200 dark:border-amber-900 hover:border-amber-400'
+            : 'bg-white dark:bg-stone-800/40 border-stone-200 dark:border-stone-700 hover:border-emerald-400 dark:hover:border-emerald-600'
+        }`}
+      >
+        {/* Severity dot */}
+        <div className="flex-shrink-0">
+          <div className={`w-3 h-3 rounded-full ${severityMeta.dotColor}`} />
+        </div>
+
+        {/* Main info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[11px] font-extrabold text-stone-600 dark:text-stone-300">
+              {issue.trackingId || issue.id}
+            </span>
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border ${severityMeta.badgeClass}`}>
+              R{rank} • {issue.category}
+            </span>
+            {issue.isFlagged && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 rounded border border-rose-200 dark:border-rose-800">
+                Flagged
+              </span>
+            )}
+            {inBuffer && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                Buffer
+              </span>
+            )}
+            {reporterCount > 1 && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                {reporterCount} Reporters
+              </span>
+            )}
+            {issue.citizenRating && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
+                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                <span>{issue.citizenRating}/5</span>
+              </span>
+            )}
+          </div>
+          <div className="text-xs font-semibold text-stone-900 dark:text-white mt-0.5 line-clamp-1">
+            {issue.title}
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+            <MapPin className="w-3 h-3 text-stone-400 shrink-0" />
+            <span className="line-clamp-1">{issue.location}</span>
+            <span className="text-stone-300 dark:text-stone-600">•</span>
+            <span>{issue.reportedBy || 'Resident'}</span>
+          </div>
+        </div>
+
+        {/* Status badge */}
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold capitalize ${
+              issue.status === 'resolved'
+                ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                : issue.status === 'closed'
+                ? 'bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700'
+                : issue.status === 'quarantined'
+                ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                : issue.status === 'in_progress'
+                ? 'bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700'
+            }`}
+          >
+            {issue.status.replace('_', ' ')}
+          </span>
+          <ChevronRight className="w-4 h-4 text-stone-300 dark:text-stone-600 group-hover:text-emerald-500 transition-colors" />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-stone-50 dark:bg-stone-950 py-8 px-4 sm:px-6 lg:px-8 text-stone-900 dark:text-stone-100 transition-colors">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -293,7 +426,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           const allCitizenPhotos = (inspectingIssue.images && inspectingIssue.images.length > 0)
             ? inspectingIssue.images
             : (inspectingIssue.imageUrl ? [inspectingIssue.imageUrl] : []);
-          const totalReportsCount = inspectingIssue.reporters?.length || inspectingIssue.reportCount || 1;
+          const totalReportsCount = inspectingIssue.reporters && inspectingIssue.reporters.length > 0 ? inspectingIssue.reporters.length : 1;
           const isQuarantined = inspectingIssue.status === 'quarantined' || Boolean(inspectingIssue.isQuarantined);
 
           return (
@@ -443,7 +576,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         GPS Coordinates
                       </span>
                       <span className="font-mono font-bold text-stone-900 dark:text-white mt-0.5 block">
-                        {inspectingIssue.coordinatesStr || (inspectingIssue.coordinates ? `${inspectingIssue.coordinates.lat.toFixed(4)}, ${inspectingIssue.coordinates.lng.toFixed(4)}` : '12.3025° N, 76.6021° E')}
+                        {inspectingIssue.coordinatesStr || (inspectingIssue.coordinates ? `${inspectingIssue.coordinates.lat.toFixed(4)}, ${inspectingIssue.coordinates.lng.toFixed(4)}` : '12.3020° N, 76.6180° E')}
                       </span>
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 inline-block">
                         ✓ Geotag Verified
@@ -486,7 +619,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               className="w-full h-full object-cover"
                             />
                             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white font-mono text-[9px]">
-                              PRIMARY EVIDENCE • GEO: {inspectingIssue.coordinatesStr || '12.3025, 76.6021'}
+                              PRIMARY EVIDENCE • GEO: {inspectingIssue.coordinatesStr || '12.3020, 76.6180'}
                             </div>
                             <button
                               type="button"
@@ -629,6 +762,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Citizen Satisfaction Feedback & Rating Card (Citizen Feedback Loop) */}
+                {inspectingIssue.citizenRating && (
+                  <div className="p-4 bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60 space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span>Citizen Satisfaction Rating</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= (inspectingIssue.citizenRating || 0)
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-stone-300 dark:text-stone-600'
+                            }`}
+                          />
+                        ))}
+                        <span className="text-xs font-extrabold text-amber-900 dark:text-amber-200 ml-1.5">
+                          {inspectingIssue.citizenRating} / 5 Stars
+                        </span>
+                      </div>
+                    </div>
+                    {inspectingIssue.citizenFeedback && (
+                      <div className="text-xs italic text-stone-700 dark:text-stone-300 bg-white/80 dark:bg-stone-900/80 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/40">
+                        &ldquo;{inspectingIssue.citizenFeedback}&rdquo;
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Administrative Actions Form */}
                 <div className="p-4 bg-stone-100 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-700 space-y-4">
@@ -846,7 +1011,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            {isBogadiOverloaded && (
+            {ledgerSummary.spilloverTicketsCount > 0 && (
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-bold animate-pulse">
                 <Zap className="w-3.5 h-3.5 text-rose-600" />
                 <span>Geo-Elastic Spillover ACTIVE ({ledgerSummary.spilloverTicketsCount} Tickets Rerouted to MCC)</span>
@@ -1086,286 +1251,263 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           />
         </div>
 
-        {/* Master Civic Triage Ledger - Interactive Clickable List with Detailed Modal Inspection */}
+        {/* Master Civic Triage Ledger — Three-Tier Accordion with Global Search */}
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-stone-100 dark:border-stone-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-stone-900 dark:text-white">
-                  Active Civic Resolution Ledger & Geo-Elastic Router
-                </h2>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
-                  {displayedIssues.length} Tickets
-                </span>
+          {/* Header */}
+          <div className="p-6 border-b border-stone-100 dark:border-stone-800 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-white">
+                    Active Civic Resolution Ledger & Geo-Elastic Router
+                  </h2>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+                    {displayedIssues.length} Tickets
+                  </span>
+                </div>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  Click any ticket to inspect citizen photos, worker resolution audits, and take governance actions.
+                </p>
               </div>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                Click any ticket to inspect citizen photos, worker resolution audits, and take governance actions.
-              </p>
+
+              {/* Filter controls */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBufferOnly(!showBufferOnly);
+                    if (!showBufferOnly) setShowQuarantinedOnly(false);
+                  }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
+                    showBufferOnly
+                      ? 'bg-amber-600 text-white font-semibold'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                  }`}
+                >
+                  Buffer Zone Only ({bufferZoneTicketsCount})
+                </button>
+
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-800 dark:text-stone-200 focus:outline-none cursor-pointer font-medium"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="Debris">Debris (Rank 5 - Red)</option>
+                  <option value="Potholes">Potholes (Rank 4 - Orange)</option>
+                  <option value="Drainage">Drainage (Rank 3 - Yellow)</option>
+                  <option value="Garbage Dump">Garbage Dump (Rank 2 - Blue)</option>
+                  <option value="Streetlights">Streetlights (Rank 1 - Gray)</option>
+                </select>
+              </div>
             </div>
 
-            {/* Filter controls */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowBufferOnly(!showBufferOnly);
-                  if (!showBufferOnly) setShowQuarantinedOnly(false);
-                }}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
-                  showBufferOnly
-                    ? 'bg-amber-600 text-white font-semibold'
-                    : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-                }`}
-              >
-                Buffer Zone Only ({bufferZoneTicketsCount})
-              </button>
-
-              <button
-                type="button"
-                id="btn-filter-quarantined"
-                onClick={() => {
-                  setShowQuarantinedOnly(!showQuarantinedOnly);
-                  if (!showQuarantinedOnly) setShowBufferOnly(false);
-                }}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
-                  showQuarantinedOnly
-                    ? 'bg-rose-600 text-white font-semibold'
-                    : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-                }`}
-              >
-                Quarantined / Audit ({quarantinedTicketsCount})
-              </button>
-
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-800 dark:text-stone-200 focus:outline-none cursor-pointer font-medium"
-              >
-                <option value="all">All Categories</option>
-                <option value="Debris">Debris (Rank 5 - Red)</option>
-                <option value="Potholes">Potholes (Rank 4 - Orange)</option>
-                <option value="Drainage">Drainage (Rank 3 - Yellow)</option>
-                <option value="Garbage Dump">Garbage Dump (Rank 2 - Blue)</option>
-                <option value="Streetlights">Streetlights (Rank 1 - Gray)</option>
-              </select>
+            {/* Global Full-Width Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
+              <input
+                id="admin-search-tickets"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tickets by ID, description, category, reporter name, or location..."
+                className="w-full pl-10 pr-4 py-3 text-sm bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 dark:focus:border-emerald-600 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* High-Fidelity Administrative Grievance Register Table */}
-          <div className="overflow-x-auto">
-            {/* Desktop Table View */}
-            <table className="w-full text-left border-collapse hidden md:table">
-              <thead>
-                <tr className="border-b border-stone-200 dark:border-stone-800 bg-stone-50/75 dark:bg-stone-800/40 text-[11px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
-                  <th scope="col" className="py-3.5 px-4 font-bold text-stone-900 dark:text-stone-100">
-                    Tracking ID (Clickable)
-                  </th>
-                  <th scope="col" className="py-3.5 px-4">Category & Severity</th>
-                  <th scope="col" className="py-3.5 px-4">Location & Corridor</th>
-                  <th scope="col" className="py-3.5 px-4">Reported By</th>
-                  <th scope="col" className="py-3.5 px-4">Worker & Vehicle</th>
-                  <th scope="col" className="py-3.5 px-4">Status</th>
-                  <th scope="col" className="py-3.5 px-4 text-right">Administrative Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100 dark:divide-stone-800 text-xs">
-                {displayedIssues.map((issue) => {
-                  const rank = (issue.severityRank || getPriorityScore(issue.category)) as SeverityRank;
-                  const severityMeta = SEVERITY_LEVELS[rank] || SEVERITY_LEVELS[3];
-                  const inBuffer = isInsideBufferZone(issue.coordinates?.lat, issue.coordinates?.lng, issue.isBufferZone);
-                  const isBogadiDepot = (issue.assignedDepot || '').toLowerCase().includes('bogadi');
-                  const isSpillover = isBogadiDepot && inBuffer && isBogadiOverloaded;
+          {/* Three-Tier Accordion Sections */}
+          <div className="divide-y divide-stone-100 dark:divide-stone-800">
 
-                  return (
-                    <tr
-                      key={issue.id}
-                      className={`hover:bg-stone-50/90 dark:hover:bg-stone-800/50 transition-colors ${
-                        isSpillover ? 'bg-amber-50/30 dark:bg-amber-950/15' : ''
-                      }`}
-                    >
-                      {/* 1. Clickable Tracking ID Column */}
-                      <td className="py-4 px-4 whitespace-nowrap align-middle">
-                        <button
-                          type="button"
-                          id={`btn-tracking-${issue.id}`}
-                          onClick={() => handleOpenInspection(issue)}
-                          className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-emerald-50 dark:bg-stone-800 dark:hover:bg-emerald-950/70 text-stone-900 hover:text-emerald-700 dark:text-stone-100 dark:hover:text-emerald-300 border border-stone-300 hover:border-emerald-400 dark:border-stone-700 dark:hover:border-emerald-600 transition-all cursor-pointer shadow-2xs group/track"
-                          title="Click Tracking ID to open full inspection and admin actions"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-stone-500 group-hover/track:text-emerald-600 dark:text-stone-400 dark:group-hover/track:text-emerald-400 shrink-0" />
-                          <span className="underline decoration-dotted underline-offset-2">{issue.trackingId || issue.id}</span>
-                          <ExternalLink className="w-3 h-3 text-stone-400 group-hover/track:text-emerald-600 dark:group-hover/track:text-emerald-400 opacity-60 group-hover/track:opacity-100" />
-                        </button>
-                      </td>
-
-                      {/* 2. Category & Severity */}
-                      <td className="py-4 px-4 align-middle">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-stone-900 dark:text-white">
-                              {issue.category}
-                            </span>
-                            {issue.isFlagged && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 rounded border border-rose-200 dark:border-rose-800">
-                                Flagged
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${severityMeta.badgeClass}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${severityMeta.dotColor}`} />
-                              <span>Rank {rank}/5</span>
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* 3. Location & Corridor */}
-                      <td className="py-4 px-4 align-middle max-w-xs">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 text-stone-900 dark:text-stone-100 font-medium line-clamp-1">
-                            <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                            <span>{issue.location}</span>
-                          </div>
-                          <div className="text-[11px] text-stone-500 dark:text-stone-400 flex items-center gap-2">
-                            <span className="font-mono text-[10px]">
-                              {issue.coordinates ? `${issue.coordinates.lat.toFixed(3)}, ${issue.coordinates.lng.toFixed(3)}` : 'Mysuru'}
-                            </span>
-                            {inBuffer && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                                Buffer Zone
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* 4. Reported By */}
-                      <td className="py-4 px-4 align-middle whitespace-nowrap">
-                        <div className="space-y-0.5">
-                          <div className="font-semibold text-stone-900 dark:text-white flex items-center gap-1">
-                            <User className="w-3 h-3 text-stone-400" />
-                            <span>{issue.reportedBy || 'Resident'}</span>
-                          </div>
-                          <div className="text-[10px] text-stone-500 dark:text-stone-400">
-                            {issue.reportedAt}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* 5. Worker & Vehicle */}
-                      <td className="py-4 px-4 align-middle whitespace-nowrap">
-                        <div className="space-y-0.5">
-                          <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1">
-                            <Wrench className="w-3 h-3 text-blue-500" />
-                            <span>{issue.assignedCrew || 'MCC Field Depot 3'}</span>
-                          </div>
-                          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-mono">
-                            {issue.assignedVehicle || 'KA-09-G-4412'}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* 6. Status */}
-                      <td className="py-4 px-4 align-middle whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold capitalize ${
-                            issue.status === 'resolved'
-                              ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                              : issue.status === 'closed'
-                              ? 'bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700'
-                              : issue.status === 'in_progress'
-                              ? 'bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
-                              : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700'
-                          }`}
-                        >
-                          {issue.status.replace('_', ' ')}
-                        </span>
-                      </td>
-
-                      {/* 7. Action Button */}
-                      <td className="py-4 px-4 align-middle text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenInspection(issue)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-900 hover:text-white dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Inspect</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* Mobile View: Responsive Card Table */}
-            <div className="md:hidden divide-y divide-stone-100 dark:divide-stone-800">
-              {displayedIssues.map((issue) => {
-                const rank = (issue.severityRank || getPriorityScore(issue.category)) as SeverityRank;
-                const severityMeta = SEVERITY_LEVELS[rank] || SEVERITY_LEVELS[3];
-                const inBuffer = isInsideBufferZone(issue.coordinates?.lat, issue.coordinates?.lng, issue.isBufferZone);
-
-                return (
-                  <div key={issue.id} className="p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      {/* Clickable Tracking ID Button on Mobile */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenInspection(issue)}
-                        className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-emerald-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 border border-stone-300 dark:border-stone-700"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-stone-500" />
-                        <span className="underline decoration-dotted">{issue.trackingId || issue.id}</span>
-                        <ExternalLink className="w-3 h-3 text-stone-400" />
-                      </button>
-
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                          issue.status === 'resolved'
-                            ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300'
-                            : issue.status === 'closed'
-                            ? 'bg-stone-200 dark:bg-stone-800 text-stone-800 dark:text-stone-300'
-                            : issue.status === 'in_progress'
-                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300'
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
-                        }`}
-                      >
-                        {issue.status.replace('_', ' ')}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="text-xs font-bold text-stone-900 dark:text-white">
-                        {issue.title}
+            {/* SECTION 1: Quarantined & Flagged */}
+            {(() => {
+              const { active, completed } = splitByStatus(quarantinedIssues);
+              return (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('quarantined')}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-stone-50/60 dark:hover:bg-stone-800/30 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 flex items-center justify-center">
+                        <ShieldAlert className="w-4 h-4" />
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-stone-500 dark:text-stone-400">
-                        <MapPin className="w-3 h-3 text-stone-400" />
-                        <span className="line-clamp-1">{issue.location}</span>
+                      <div>
+                        <h3 className="text-sm font-bold text-stone-900 dark:text-white">Quarantined & Flagged</h3>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">Tickets caught by AI content filter for abusive language, spam, or explicit content</p>
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${severityMeta.badgeClass}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${severityMeta.dotColor}`} />
-                        <span>Rank {rank}/5 • {issue.category}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                        {quarantinedIssues.length}
                       </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenInspection(issue)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 text-xs font-bold"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Inspect & Action</span>
-                      </button>
+                      {expandedSections.quarantined ? <ChevronDown className="w-4 h-4 text-stone-400" /> : <ChevronRight className="w-4 h-4 text-stone-400" />}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  </button>
+                  {expandedSections.quarantined && (
+                    <div className="px-6 pb-4 space-y-3">
+                      {quarantinedIssues.length === 0 ? (
+                        <div className="text-center py-6 text-xs text-stone-400 dark:text-stone-500 italic">
+                          No quarantined tickets. AI content filters have not flagged any reports.
+                        </div>
+                      ) : (
+                        <>
+                          {active.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 uppercase tracking-wider">Active / Pending ({active.length})</span>
+                              </div>
+                              <div className="space-y-2">{active.map(issue => renderTicketCard(issue))}</div>
+                            </div>
+                          )}
+                          {completed.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2 mt-3">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 uppercase tracking-wider">Completed / Resolved ({completed.length})</span>
+                              </div>
+                              <div className="space-y-2">{completed.map(issue => renderTicketCard(issue))}</div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* SECTION 2: Clustered Reports */}
+            {(() => {
+              const { active, completed } = splitByStatus(clusteredIssues);
+              return (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('clustered')}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-stone-50/60 dark:hover:bg-stone-800/30 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 flex items-center justify-center">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-stone-900 dark:text-white">Clustered Reports</h3>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">Multi-reporter grouped tickets with corroborated evidence from 2+ citizens</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {clusteredIssues.length}
+                      </span>
+                      {expandedSections.clustered ? <ChevronDown className="w-4 h-4 text-stone-400" /> : <ChevronRight className="w-4 h-4 text-stone-400" />}
+                    </div>
+                  </button>
+                  {expandedSections.clustered && (
+                    <div className="px-6 pb-4 space-y-3">
+                      {clusteredIssues.length === 0 ? (
+                        <div className="text-center py-6 text-xs text-stone-400 dark:text-stone-500 italic">
+                          No clustered reports. All current tickets have single reporters.
+                        </div>
+                      ) : (
+                        <>
+                          {active.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 uppercase tracking-wider">Active / Pending ({active.length})</span>
+                              </div>
+                              <div className="space-y-2">{active.map(issue => renderTicketCard(issue))}</div>
+                            </div>
+                          )}
+                          {completed.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2 mt-3">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 uppercase tracking-wider">Completed / Resolved ({completed.length})</span>
+                              </div>
+                              <div className="space-y-2">{completed.map(issue => renderTicketCard(issue))}</div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* SECTION 3: Standard Reports */}
+            {(() => {
+              const { active, completed } = splitByStatus(standardIssues);
+              return (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('standard')}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-stone-50/60 dark:hover:bg-stone-800/30 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center justify-center">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-stone-900 dark:text-white">Standard Reports</h3>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">Normal single-reporter civic issue tickets</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                        {standardIssues.length}
+                      </span>
+                      {expandedSections.standard ? <ChevronDown className="w-4 h-4 text-stone-400" /> : <ChevronRight className="w-4 h-4 text-stone-400" />}
+                    </div>
+                  </button>
+                  {expandedSections.standard && (
+                    <div className="px-6 pb-4 space-y-3">
+                      {standardIssues.length === 0 ? (
+                        <div className="text-center py-6 text-xs text-stone-400 dark:text-stone-500 italic">
+                          No standard reports match the current filters.
+                        </div>
+                      ) : (
+                        <>
+                          {active.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 uppercase tracking-wider">Active / Pending ({active.length})</span>
+                              </div>
+                              <div className="space-y-2">{active.map(issue => renderTicketCard(issue))}</div>
+                            </div>
+                          )}
+                          {completed.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2 mt-3">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 uppercase tracking-wider">Completed / Resolved ({completed.length})</span>
+                              </div>
+                              <div className="space-y-2">{completed.map(issue => renderTicketCard(issue))}</div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
           </div>
         </div>
 

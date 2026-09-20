@@ -143,8 +143,8 @@ const ALL_JURISDICTIONS_GEO: JurisdictionGeo[] = [
     id: 'tp-hootagalli',
     name: 'Hootagalli Town Municipal Council (TMC)',
     type: 'town_panchayat',
-    center: [12.3420, 76.5860],
-    radius: 1650,
+    center: [12.3440, 76.5920],
+    radius: 1100,
     color: '#2563eb',
     fillColor: '#3b82f6',
     description: 'Western industrial township bordering Belavadi, Koorgalli, and Koorgalli BEML.',
@@ -154,8 +154,8 @@ const ALL_JURISDICTIONS_GEO: JurisdictionGeo[] = [
     id: 'tp-kadakola',
     name: 'Kadakola Town Panchayat',
     type: 'town_panchayat',
-    center: [12.2150, 76.6680],
-    radius: 1750,
+    center: [12.2020, 76.6680],
+    radius: 1200,
     color: '#2563eb',
     fillColor: '#3b82f6',
     description: 'Southern industrial growth corridor on Mysuru-Nanjangud Highway.',
@@ -165,8 +165,8 @@ const ALL_JURISDICTIONS_GEO: JurisdictionGeo[] = [
     id: 'tp-rammanahalli',
     name: 'Rammanahalli Town Panchayat',
     type: 'town_panchayat',
-    center: [12.3350, 76.7150],
-    radius: 1650,
+    center: [12.3350, 76.7200],
+    radius: 1100,
     color: '#2563eb',
     fillColor: '#3b82f6',
     description: 'North-eastern urbanizing boundary on Mahadevapura and Peripheral Ring Road.',
@@ -483,7 +483,8 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
 
       if (geo.type === 'buffer_zone' && geo.polygonCoords) {
         // Draw buffer corridor polygon
-        const isCorridorActive = isBogadiOverloaded && geo.id === 'buf-bogadi-mcc';
+        const hasActiveBufferTicket = issues.some(i => Boolean(i.isBufferZone) && !['resolved', 'closed', 'quarantined'].includes(i.status));
+        const isCorridorActive = isBogadiOverloaded && hasActiveBufferTicket && geo.id === 'buf-bogadi-mcc';
         const polygon = L.polygon(geo.polygonCoords, {
           color: isCorridorActive ? '#dc2626' : geo.color,
           fillColor: isCorridorActive ? '#ef4444' : geo.fillColor,
@@ -576,7 +577,7 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
     issues.forEach((issue) => {
       if (!issue.coordinates) return;
 
-      const inBuffer = isInsideBufferZone(issue.coordinates.lat, issue.coordinates.lng, issue.isBufferZone);
+      const inBuffer = Boolean(issue.isBufferZone);
       const isSpillover = inBuffer && bogadiCapacity > 100;
       const effectiveDepot = isSpillover ? 'MCC Zone 3' : (issue.assignedDepot || (inBuffer ? 'Bogadi Panchayat' : 'MCC Zone 3'));
       const score = (issue.severityRank || getPriorityScore(issue.category)) as number;
@@ -608,7 +609,43 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
         iconAnchor: [12, 12],
       });
 
-      const marker = L.marker([issue.coordinates.lat, issue.coordinates.lng], {
+      // Validation Rule: Ensure that if a ticket is mathematically routed as a spillover/buffer issue,
+      // its visual map marker absolutely must render inside the contested dashed zones, not inside the primary jurisdiction circles.
+      let markerLat = issue.coordinates.lat;
+      let markerLng = issue.coordinates.lng;
+
+      if (inBuffer) {
+        // Check if coordinates already lie strictly inside one of the 5 contested buffer polygons
+        const inBogadi = markerLat >= 12.2890 && markerLat <= 12.3120 && markerLng >= 76.6110 && markerLng <= 76.6260;
+        const inHootagalli = markerLat >= 12.3310 && markerLat <= 12.3480 && markerLng >= 76.5710 && markerLng <= 76.5860;
+        const inRammanahalli = markerLat >= 12.3240 && markerLat <= 12.3430 && markerLng >= 76.6970 && markerLng <= 76.7130;
+        const inAlanahalli = markerLat >= 12.2740 && markerLat <= 12.2930 && markerLng >= 76.6840 && markerLng <= 76.7010;
+        const inKadakola = markerLat >= 12.2090 && markerLat <= 12.2330 && markerLng >= 76.6540 && markerLng <= 76.6770;
+
+        if (!inBogadi && !inHootagalli && !inRammanahalli && !inAlanahalli && !inKadakola) {
+          // If ticket has legacy coordinates or drifted, snap strictly inside its contested buffer corridor polygon
+          const locLower = (issue.location || '').toLowerCase();
+          if (locLower.includes('hootagalli') || locLower.includes('belavadi')) {
+            markerLat = 12.3390;
+            markerLng = 76.5770;
+          } else if (locLower.includes('rammanahalli') || locLower.includes('prr')) {
+            markerLat = 12.3330;
+            markerLng = 76.7050;
+          } else if (locLower.includes('alanahalli') || locLower.includes('foothills') || locLower.includes('chamundi')) {
+            markerLat = 12.2830;
+            markerLng = 76.6920;
+          } else if (locLower.includes('kadakola') || locLower.includes('industrial') || locLower.includes('nanjangud')) {
+            markerLat = 12.2210;
+            markerLng = 76.6660;
+          } else {
+            // Default Bogadi-MCC Zone 3 Buffer Zone corridor center
+            markerLat = 12.3020;
+            markerLng = 76.6180;
+          }
+        }
+      }
+
+      const marker = L.marker([markerLat, markerLng], {
         icon: customPin,
       });
 
@@ -622,7 +659,7 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           </div>
           <div style="font-weight: 700; margin-bottom: 2px;">${issue.title}</div>
           <div style="font-size: 11px; color: #57534e; margin-bottom: 6px;">${issue.location}</div>
-          
+          ${inBuffer ? '<div style="color: #b45309; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 700; margin-bottom: 4px;">⚠️ Contested Boundary Buffer Corridor</div>' : ''}
           <div style="background: #f5f5f4; border-radius: 6px; padding: 6px; font-size: 11px; margin-bottom: 4px;">
             <div><strong>Assigned Depot:</strong> <span style="color: ${isSpillover ? '#dc2626' : '#059669'}; font-weight: 700;">${effectiveDepot}</span></div>
             ${isSpillover ? '<div style="color: #dc2626; font-size: 10px; font-weight: 600; margin-top: 2px;">⚡ Spillover Assigned (Inter-Agency Ledger Credited)</div>' : ''}

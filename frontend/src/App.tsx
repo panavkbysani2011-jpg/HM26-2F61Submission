@@ -13,8 +13,10 @@ import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { AdminLogin } from './components/AdminLogin';
 import { CitizenPortal } from './components/CitizenPortal';
+import { WorkerLogin } from './components/WorkerLogin';
 import { WorkerDesk } from './components/WorkerDesk';
 import { AdminDashboard } from './components/AdminDashboard';
+import { LanguageProvider } from './context/LanguageContext';
 
 export default function App() {
   // Navigation State Manager
@@ -133,18 +135,13 @@ export default function App() {
     setCurrentView('citizen');
   };
 
-  // 2. Worker Desk: Route to worker view with localized field technician identity
+  // 2. Worker Desk: Route to worker profile selection matrix (or active desk if already logged in)
   const handleEnterWorkerDesk = () => {
-    const workerSession: UserSession = {
-      id: 'wrk-042',
-      name: 'Manjunatha S. (MCC Depot 3)',
-      role: 'worker',
-      badge: 'Field Operations',
-      vehicle: 'Canter KA-09-G-4412',
-      authenticatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    updateSessionState(workerSession);
-    setCurrentView('worker');
+    if (session && session.role === 'worker' && session.jurisdictionId) {
+      setCurrentView('worker');
+    } else {
+      setCurrentView('worker-login');
+    }
   };
 
   // 3. Admin Dashboard: Strict login screen
@@ -190,6 +187,10 @@ export default function App() {
       handleEnterWorkerDesk();
       return;
     }
+    if (view === 'worker-login') {
+      setCurrentView('worker-login');
+      return;
+    }
     if (view === 'admin') {
       handleEnterAdminDashboard();
       return;
@@ -218,91 +219,109 @@ export default function App() {
   }, []);
 
   const handleResetDb = useCallback(() => {
+    const confirmed = window.confirm(
+      'Are you sure you want to reset all live data back to the initial demo state?\n\nThis will clear all current tickets and restore the default Bogadi (110% overload) and MCC Zone 3 (45% load) seed data.'
+    );
+    if (!confirmed) return;
     const { issues: newIssues, departments: newDepts } = resetToSeedData();
     setIssues(newIssues);
     setDepartments(newDepts);
   }, []);
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col font-sans antialiased selection:bg-amber-100 selection:text-amber-900 dark:selection:bg-amber-950 dark:selection:text-amber-100 transition-colors">
-      {/* Top Navigation Bar with Dark Mode Toggle */}
-      <Navbar
-        currentView={currentView}
-        onNavigate={handleNavigate}
-        session={session}
-        onLogout={handleLogout}
-        onResetDb={handleResetDb}
-        isDark={isDark}
-        onToggleDark={handleToggleDark}
-      />
+    <LanguageProvider>
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col font-sans antialiased selection:bg-amber-100 selection:text-amber-900 dark:selection:bg-amber-950 dark:selection:text-amber-100 transition-colors">
+        {/* Top Navigation Bar with Dark Mode Toggle */}
+        <Navbar
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          session={session}
+          onLogout={handleLogout}
+          onResetDb={handleResetDb}
+          isDark={isDark}
+          onToggleDark={handleToggleDark}
+        />
 
-      {/* Main View Router */}
-      <main className="flex-1">
-        {currentView === 'landing' && (
-          <LandingPage
-            onEnterCitizenPortal={handleEnterCitizenPortal}
-            onEnterWorkerDesk={handleEnterWorkerDesk}
-            onEnterAdminDashboard={handleEnterAdminDashboard}
-            issues={issues}
-            departments={departments}
-          />
-        )}
+        {/* Main View Router */}
+        <main className="flex-1">
+          {currentView === 'landing' && (
+            <LandingPage
+              onEnterCitizenPortal={handleEnterCitizenPortal}
+              onEnterWorkerDesk={handleEnterWorkerDesk}
+              onEnterAdminDashboard={handleEnterAdminDashboard}
+              issues={issues}
+              departments={departments}
+            />
+          )}
 
-        {currentView === 'admin-login' && (
-          <AdminLogin
-            onSuccess={handleAdminLoginSuccess}
-            onCancel={() => handleNavigate('landing')}
-          />
-        )}
+          {currentView === 'admin-login' && (
+            <AdminLogin
+              onSuccess={handleAdminLoginSuccess}
+              onCancel={() => handleNavigate('landing')}
+            />
+          )}
 
-        {currentView === 'citizen' && (
-          <CitizenPortal
-            session={session}
-            onSetSession={updateSessionState}
-            issues={issues}
-            onRefreshIssues={handleRefreshIssues}
-            onNavigateHome={() => handleNavigate('landing')}
-            isDark={isDark}
-          />
-        )}
+          {currentView === 'citizen' && (
+            <CitizenPortal
+              session={session}
+              onSetSession={updateSessionState}
+              issues={issues}
+              onRefreshIssues={handleRefreshIssues}
+              onNavigateHome={() => handleNavigate('landing')}
+              isDark={isDark}
+            />
+          )}
 
-        {currentView === 'worker' && (
-          <WorkerDesk
-            session={session}
-            issues={issues}
-            departments={departments}
-            onUpdateStatus={handleUpdateStatus}
-            onNavigateHome={() => handleNavigate('landing')}
-          />
-        )}
+          {currentView === 'worker-login' && (
+            <WorkerLogin
+              issues={issues}
+              onSelectWorker={(workerSession) => {
+                updateSessionState(workerSession);
+                setCurrentView('worker');
+              }}
+              onCancel={() => handleNavigate('landing')}
+            />
+          )}
 
-        {currentView === 'admin' && (
-          <AdminDashboard
-            session={session}
-            issues={issues}
-            departments={departments}
-            onUpdateStatus={handleUpdateStatus}
-            onNavigateHome={() => handleNavigate('landing')}
-            onResetDb={handleResetDb}
-          />
-        )}
-      </main>
+          {currentView === 'worker' && (
+            <WorkerDesk
+              session={session}
+              issues={issues}
+              departments={departments}
+              onUpdateStatus={handleUpdateStatus}
+              onNavigateHome={() => handleNavigate('landing')}
+              onSwitchWorker={() => setCurrentView('worker-login')}
+            />
+          )}
 
-      {/* Clean Production-Grade Civic Footer */}
-      <footer className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 py-4 px-4 sm:px-6 transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 dark:text-stone-400 gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-stone-700 dark:text-stone-300">Civic Mesh</span>
-            <span>•</span>
-            <span>Dynamic Capacity Balancing & Municipal Dispatch</span>
+          {currentView === 'admin' && (
+            <AdminDashboard
+              session={session}
+              issues={issues}
+              departments={departments}
+              onUpdateStatus={handleUpdateStatus}
+              onNavigateHome={() => handleNavigate('landing')}
+              onResetDb={handleResetDb}
+            />
+          )}
+        </main>
+
+        {/* Clean Production-Grade Civic Footer */}
+        <footer className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 py-4 px-4 sm:px-6 transition-colors">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 dark:text-stone-400 gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-stone-700 dark:text-stone-300">Civic Mesh</span>
+              <span>•</span>
+              <span>Dynamic Capacity Balancing & Municipal Dispatch</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span>Mysuru Urban Municipal Administration</span>
+              <span>•</span>
+              <span>Live Geospatial Intake</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span>Mysuru Urban Municipal Administration</span>
-            <span>•</span>
-            <span>Live Geospatial Intake</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </LanguageProvider>
   );
 }

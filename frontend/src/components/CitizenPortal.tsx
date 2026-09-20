@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   CivicIssue, 
   CivicCategory, 
+  CIVIC_CATEGORIES,
   UserSession,
   SeverityRank
 } from '../types';
@@ -16,7 +17,8 @@ import {
   detectJurisdiction,
   SAMPLE_POTHOLE_PHOTO,
   SAMPLE_DEBRIS_PHOTO,
-  SAMPLE_DRAINAGE_PHOTO
+  SAMPLE_DRAINAGE_PHOTO,
+  rateIssueResolution
 } from '../mockDatabase';
 import { MysuruLeafletMap } from './MysuruLeafletMap';
 import { compressImage } from '../utils/imageCompressor';
@@ -58,8 +60,10 @@ import {
   UserCheck,
   Store,
   Compass,
-  Building2
+  Building2,
+  Star
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CitizenPortalProps {
   session: UserSession | null;
@@ -70,13 +74,7 @@ interface CitizenPortalProps {
   isDark?: boolean;
 }
 
-const CATEGORIES: CivicCategory[] = [
-  'Debris',
-  'Potholes',
-  'Drainage',
-  'Streetlights',
-  'Garbage Dump',
-];
+const CATEGORIES: readonly CivicCategory[] = CIVIC_CATEGORIES;
 
 // Rich Mysuru Places & Landmarks: circles, shops, markets, and municipal zones
 export interface MysuruPlace {
@@ -263,7 +261,7 @@ export const MYSURU_PLACES: MysuruPlace[] = [
   },
   {
     name: 'Bogadi 2nd Stage (Near Ring Road)',
-    coords: { lat: 12.3025, lng: 76.6021 },
+    coords: { lat: 12.3020, lng: 76.6180 },
     category: 'locality',
     subtext: 'Bogadi Town Panchayat / MCC Zone 3 Boundary Corridor',
     aliases: ['bogadi', 'bogadi 2nd stage', 'bogadi ring road'],
@@ -393,6 +391,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   onNavigateHome,
   isDark = false,
 }) => {
+  const { lang } = useLanguage();
+
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<'intake' | 'submissions'>('intake');
 
@@ -435,8 +435,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [description, setDescription] = useState('');
   const [locationName, setLocationName] = useState('Bogadi 2nd Stage (Near Ring Road)');
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number }>({
-    lat: 12.3025,
-    lng: 76.6021,
+    lat: 12.3020,
+    lng: 76.6180,
   });
 
   // Location Search & Filter States
@@ -517,6 +517,28 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [submittedResult, setSubmittedResult] = useState<SubmitReportResult | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Citizen Resolution Rating & Feedback Loop State
+  const [pendingRatings, setPendingRatings] = useState<Record<string, number>>({});
+  const [hoverRatings, setHoverRatings] = useState<Record<string, number>>({});
+  const [pendingFeedbacks, setPendingFeedbacks] = useState<Record<string, string>>({});
+  const [submittingRatingId, setSubmittingRatingId] = useState<string | null>(null);
+
+  // Handle Citizen Feedback Submission
+  const handleRateTicket = (ticketId: string) => {
+    const rating = pendingRatings[ticketId];
+    if (!rating || rating < 1 || rating > 5) return;
+    const feedback = pendingFeedbacks[ticketId]?.trim() || undefined;
+
+    setSubmittingRatingId(ticketId);
+    rateIssueResolution(ticketId, rating, feedback);
+    onRefreshIssues();
+    setSubmittingRatingId(null);
+
+    setToastType('success');
+    setToastMessage(lang === 'kn' ? 'ಧನ್ಯವಾದಗಳು! ನಿಮ್ಮ ಪರಿಹಾರ ರೇಟಿಂಗ್ ದಾಖಲಾಗಿದೆ.' : 'Thank you! Your resolution rating and feedback have been recorded.');
+    setTimeout(() => setToastMessage(null), 5000);
+  };
 
   // The system automatically computes severity rank based on category (citizen cannot select this)
   const autoAssessedSeverity = getPriorityScore(category);
@@ -1197,13 +1219,15 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Citizen Portal</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ನಾಗರಿಕ ಪೋರ್ಟಲ್' : 'Citizen Portal'}
+                </h1>
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  Mysuru Municipal Corporation
+                  {lang === 'kn' ? 'ಮೈಸೂರು ಮಹಾನಗರ ಪಾಲಿಕೆ' : 'Mysuru Municipal Corporation'}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mt-1">
-                <span>Verified Resident:</span>
+                <span>{lang === 'kn' ? 'ದೃಢೀಕೃತ ನಿವಾಸಿ:' : 'Verified Resident:'}</span>
                 <span className="font-bold text-stone-900 dark:text-white bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded border border-stone-200 dark:border-stone-700">
                   {currentResidentName}
                 </span>
@@ -1214,24 +1238,26 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 )}
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {session?.authProvider === 'google' ? 'Google Verified Citizen' : 'Verified Resident'}
+                  {session?.authProvider === 'google' 
+                    ? (lang === 'kn' ? 'ಗೂಗಲ್ ಪರಿಶೀಲಿತ ನಾಗರಿಕ' : 'Google Verified Citizen')
+                    : (lang === 'kn' ? 'ದೃಢೀಕೃತ ನಿವಾಸಿ' : 'Verified Resident')}
                 </span>
                 <button
                   type="button"
                   id="btn-switch-resident"
                   onClick={() => setShowResidentLogin(true)}
-                  className="ml-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 transition-colors"
+                  className="ml-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer"
                 >
-                  Switch Resident
+                  {lang === 'kn' ? 'ನಿವಾಸಿ ಬದಲಾಯಿಸಿ' : 'Switch Resident'}
                 </button>
                 {isCitizenLoggedIn && (
                   <button
                     type="button"
                     id="btn-signout-resident"
                     onClick={handleSignOutCitizen}
-                    className="text-[11px] font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:underline px-1 py-0.5"
+                    className="text-[11px] font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:underline px-1 py-0.5 cursor-pointer"
                   >
-                    Sign Out
+                    {lang === 'kn' ? 'ನಿರ್ಗಮಿಸಿ' : 'Sign Out'}
                   </button>
                 )}
               </div>
@@ -1242,10 +1268,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
             <button
               id="citizen-back-hub"
               onClick={onNavigateHome}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Portal Hub</span>
+              <span>{lang === 'kn' ? 'ಪೋರ್ಟಲ್ ಹಬ್' : 'Portal Hub'}</span>
             </button>
           </div>
         </div>
@@ -1259,28 +1285,28 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               setActiveTab('intake');
               setSubmittedResult(null);
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'intake'
                 ? 'bg-stone-900 dark:bg-emerald-700 text-white shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-100 dark:bg-stone-800'
             }`}
           >
             <FilePlus2 className="w-4 h-4" />
-            <span>File Grievance</span>
+            <span>{lang === 'kn' ? 'ದೂರು ದಾಖಲಿಸಿ' : 'File Grievance'}</span>
           </button>
 
           <button
             id="tab-my-submissions"
             type="button"
             onClick={() => setActiveTab('submissions')}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'submissions'
                 ? 'bg-stone-900 dark:bg-emerald-700 text-white shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-100 dark:bg-stone-800'
             }`}
           >
             <ListOrdered className="w-4 h-4" />
-            <span>My Submissions</span>
+            <span>{lang === 'kn' ? 'ನನ್ನ ಸಲ್ಲಿಕೆಗಳು' : 'My Submissions'}</span>
             <span className="px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold">
               {mySubmissions.length}
             </span>
@@ -1395,9 +1421,13 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               /* Grievance Intake Form */
               <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-sm space-y-6">
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 dark:text-white">Lodge Municipal Civic Grievance</h2>
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-white">
+                    {lang === 'kn' ? 'ನಾಗರಿಕ ಕುಂದುಕೊರತೆ ದೂರು ದಾಖಲಿಸಿ' : 'Lodge Municipal Civic Grievance'}
+                  </h2>
                   <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Submit public infrastructure defects with verified photographic evidence. Triage severity and jurisdiction dispatch are automated by municipal rules.
+                    {lang === 'kn' 
+                      ? 'ಸಾರ್ವಜನಿಕ ಮೂಲಸೌಕರ್ಯ ದೋಷಗಳನ್ನು ಫೋಟೋ ಸಾಕ್ಷ್ಯದೊಂದಿಗೆ ಸಲ್ಲಿಸಿ. ಪುರಸಭೆಯ ನಿಯಮಗಳಿಂದ ವಿಲೇವಾರಿ ಮಾಡಲಾಗುತ್ತದೆ.'
+                      : 'Submit public infrastructure defects with verified photographic evidence. Triage severity and jurisdiction dispatch are automated by municipal rules.'}
                   </p>
                 </div>
 
@@ -1407,7 +1437,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center justify-between"
                   >
                     <span>{formError}</span>
-                    <button onClick={() => setFormError(null)} className="p-1 hover:opacity-75">
+                    <button onClick={() => setFormError(null)} className="p-1 hover:opacity-75 cursor-pointer">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -1417,7 +1447,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   {/* Category Selection */}
                   <div className="space-y-1.5">
                     <label htmlFor="intake-category" className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
-                      Issue Category *
+                      {lang === 'kn' ? 'ಸಮಸ್ಯೆಯ ವರ್ಗ *' : 'Issue Category *'}
                     </label>
                     <select
                       id="intake-category"
@@ -1804,9 +1834,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     <button
                       type="button"
                       onClick={handleResetForm}
-                      className="px-4 py-2.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
+                      className="px-4 py-2.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
                     >
-                      Clear Form
+                      {lang === 'kn' ? 'ಫಾರ್ಮ್ ಅಳಿಸಿ' : 'Clear Form'}
                     </button>
 
                     <button
@@ -1818,12 +1848,12 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                       {isSubmitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
-                          <span>Civic Mesh AI Auditing & Lodging...</span>
+                          <span>{lang === 'kn' ? 'ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Civic Mesh AI Auditing & Lodging...'}</span>
                         </>
                       ) : (
                         <>
                           <Send className="w-4 h-4" />
-                          <span>Submit Civic Report</span>
+                          <span>{lang === 'kn' ? 'ದೂರು ಸಲ್ಲಿಸಿ' : 'Submit Civic Report'}</span>
                         </>
                       )}
                     </button>
@@ -1839,18 +1869,22 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-stone-900 dark:text-white">My Civic Submissions</h2>
+                <h2 className="text-lg font-bold text-stone-900 dark:text-white">
+                  {lang === 'kn' ? 'ನನ್ನ ಸಲ್ಲಿಕೆಗಳು' : 'My Civic Submissions'}
+                </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
-                  Track resolution stages, field technician assignments, and verification proofs.
+                  {lang === 'kn'
+                    ? 'ಪರಿಹಾರ ಹಂತಗಳು, ಕ್ಷೇತ್ರ ತಂತ್ರಜ್ಞರ ನಿಯೋಜನೆ ಮತ್ತು ಪರಿಶೀಲನೆ ಪುರಾವೆಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ.'
+                    : 'Track resolution stages, field technician assignments, and verification proofs.'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onRefreshIssues}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Refresh Status</span>
+                <span>{lang === 'kn' ? 'ಸ್ಥಿತಿ ನವೀಕರಿಸಿ' : 'Refresh Status'}</span>
               </button>
             </div>
 
@@ -1860,18 +1894,22 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   <ListOrdered className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-stone-900 dark:text-white">No Grievances Lodged Yet</h3>
+                  <h3 className="text-sm font-bold text-stone-900 dark:text-white">
+                    {lang === 'kn' ? 'ಯಾವುದೇ ದೂರುಗಳು ದಾಖಲಾಗಿಲ್ಲ' : 'No Grievances Lodged Yet'}
+                  </h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 max-w-sm mx-auto">
-                    You haven&apos;t filed any civic grievances under &quot;{currentResidentName}&quot;. File a report using the intake form.
+                    {lang === 'kn'
+                      ? `"${currentResidentName}" ಹೆಸರಿನಲ್ಲಿ ಯಾವುದೇ ದೂರುಗಳು ದಾಖಲಾಗಿಲ್ಲ. ದೂರು ದಾಖಲಿಸಲು ಫಾರ್ಮ್ ಬಳಸಿ.`
+                      : `You haven't filed any civic grievances under "${currentResidentName}". File a report using the intake form.`}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab('intake')}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm cursor-pointer"
                 >
                   <FilePlus2 className="w-4 h-4" />
-                  <span>File First Grievance</span>
+                  <span>{lang === 'kn' ? 'ದೂರು ದಾಖಲಿಸಿ' : 'File First Grievance'}</span>
                 </button>
               </div>
             ) : (
@@ -1879,7 +1917,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 {mySubmissions.map((ticket) => {
                   const rank = (ticket.severityRank || getPriorityScore(ticket.category)) as SeverityRank;
                   const severityConfig = SEVERITY_LEVELS[rank];
-                  const inBuffer = isInsideBufferZone(ticket.coordinates?.lat, ticket.coordinates?.lng, ticket.isBufferZone);
+                  const inBuffer = Boolean(ticket.isBufferZone);
 
                   // STRICT PRIVACY RULE:
                   // Find the active citizen's own entry inside reporters array.
@@ -1896,30 +1934,30 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   const myReporterName = userReporter?.name || currentResidentName || ticket.reportedBy;
                   const isQuarantined = ticket.status === 'quarantined' || Boolean(ticket.isQuarantined);
 
-                  let statusBadgeText = 'Received';
+                  let statusBadgeText = lang === 'kn' ? 'ಬಾಕಿ ಇದೆ' : 'Received';
                   let statusBadgeClass = 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:border-stone-700';
 
                   if (isQuarantined) {
-                    statusBadgeText = 'Quarantined (Audit)';
+                    statusBadgeText = lang === 'kn' ? 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ' : 'Quarantined (Audit)';
                     statusBadgeClass = 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800';
                   } else if (ticket.status === 'resolved') {
                     statusBadgeText = ticket.verificationStatus === 'flagged_unverified' 
-                      ? 'Completed (Audit Pending)' 
-                      : 'Resolved & Verified';
+                      ? (lang === 'kn' ? 'ಪೂರ್ಣಗೊಂಡಿದೆ (ಪರಿಶೀಲನೆ ಬಾಕಿ)' : 'Completed (Audit Pending)') 
+                      : (lang === 'kn' ? 'ಪರಿಹರಿಸಲಾಗಿದೆ' : 'Resolved & Verified');
                     statusBadgeClass = ticket.verificationStatus === 'flagged_unverified'
                       ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
                       : 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800';
                   } else if (ticket.isBufferZone) {
-                    statusBadgeText = 'Buffer Coordination';
+                    statusBadgeText = lang === 'kn' ? 'ಗಡಿ ಸಮನ್ವಯ' : 'Buffer Coordination';
                     statusBadgeClass = 'bg-purple-50 text-purple-800 border-purple-300 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800';
                   } else if (ticket.status === 'in_progress') {
-                    statusBadgeText = 'In Progress';
+                    statusBadgeText = lang === 'kn' ? 'ಪ್ರಗತಿಯಲ್ಲಿದೆ' : 'In Progress';
                     statusBadgeClass = 'bg-blue-50 text-blue-800 border-blue-300 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-800';
                   } else if (ticket.status === 'assigned') {
-                    statusBadgeText = 'Assigned';
+                    statusBadgeText = lang === 'kn' ? 'ನಿಯೋಜಿಸಲಾಗಿದೆ' : 'Assigned';
                     statusBadgeClass = 'bg-indigo-50 text-indigo-800 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800';
                   } else {
-                    statusBadgeText = 'Received';
+                    statusBadgeText = lang === 'kn' ? 'ಬಾಕಿ ಇದೆ' : 'Received';
                     statusBadgeClass = 'bg-stone-100 text-stone-800 border-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:border-stone-700';
                   }
 
@@ -1945,11 +1983,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusBadgeClass}`}>
                             {isQuarantined && <Info className="w-3.5 h-3.5 text-rose-600" />}
-                            {!isQuarantined && statusBadgeText.includes('Resolved') && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                            {!isQuarantined && statusBadgeText.includes('Audit') && <Info className="w-3.5 h-3.5 text-amber-600" />}
-                            {!isQuarantined && statusBadgeText.includes('In Progress') && <Clock className="w-3.5 h-3.5 text-blue-600" />}
-                            {!isQuarantined && statusBadgeText === 'Assigned' && <Clock className="w-3.5 h-3.5 text-indigo-600" />}
-                            {!isQuarantined && statusBadgeText === 'Received' && <Layers className="w-3.5 h-3.5 text-stone-600" />}
+                            {!isQuarantined && (ticket.status === 'resolved') && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                            {!isQuarantined && ticket.verificationStatus === 'flagged_unverified' && <Info className="w-3.5 h-3.5 text-amber-600" />}
+                            {!isQuarantined && ticket.status === 'in_progress' && <Clock className="w-3.5 h-3.5 text-blue-600" />}
+                            {!isQuarantined && ticket.status === 'assigned' && <Clock className="w-3.5 h-3.5 text-indigo-600" />}
+                            {!isQuarantined && ticket.status !== 'resolved' && ticket.status !== 'in_progress' && ticket.status !== 'assigned' && <Layers className="w-3.5 h-3.5 text-stone-600" />}
                             <span>{statusBadgeText}</span>
                           </span>
                         </div>
@@ -1985,7 +2023,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
                         {ticket.assignedCrew && !isQuarantined && (
                           <span className="text-[11px] text-stone-600 dark:text-stone-300">
-                            Assigned Crew: <strong>{ticket.assignedCrew}</strong>
+                            {lang === 'kn' ? 'ನಿಯೋಜಿತ ಸಿಬ್ಬಂದಿ:' : 'Assigned Crew:'} <strong>{ticket.assignedCrew}</strong>
                           </span>
                         )}
                       </div>
@@ -1995,7 +2033,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         <div className="flex items-center gap-3 pt-2 border-t border-stone-100 dark:border-stone-800">
                           {myEvidencePhoto && (
                             <div>
-                              <span className="text-[10px] text-stone-400 block mb-1">Your On-Site Photo</span>
+                              <span className="text-[10px] text-stone-400 block mb-1">
+                                {lang === 'kn' ? 'ನಿಮ್ಮ ಛಾಯಾಚಿತ್ರ' : 'Your On-Site Photo'}
+                              </span>
                               <img
                                 src={myEvidencePhoto}
                                 alt="Your reported evidence"
@@ -2006,7 +2046,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           {ticket.resolvedImageUrl && !isQuarantined && (
                             <div>
                               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mb-1">
-                                Worker Completion Proof
+                                {lang === 'kn' ? 'ಪೂರ್ಣಗೊಳಿಸುವಿಕೆಯ ಪುರಾವೆ' : 'Worker Completion Proof'}
                               </span>
                               <img
                                 src={ticket.resolvedImageUrl}
@@ -2016,6 +2056,109 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                             </div>
                           )}
                         </div>
+                      )}
+
+                      {/* Citizen Resolution Feedback & Rating Loop */}
+                      {ticket.status === 'resolved' && (
+                        <>
+                          {ticket.citizenRating ? (
+                            /* Static Display of Existing Citizen Rating */
+                            <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                                  {lang === 'kn' ? 'ನಿಮ್ಮ ರೇಟಿಂಗ್:' : 'Your Rating:'}
+                                </span>
+                                <div className="flex items-center gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((starVal) => (
+                                    <Star
+                                      key={starVal}
+                                      className={`w-4 h-4 ${
+                                        starVal <= (ticket.citizenRating || 0)
+                                          ? 'fill-amber-400 text-amber-400'
+                                          : 'text-stone-300 dark:text-stone-600'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-extrabold text-stone-700 dark:text-stone-300">
+                                  ({ticket.citizenRating} / 5)
+                                </span>
+                              </div>
+                              {ticket.citizenFeedback && (
+                                <p className="text-xs italic text-stone-700 dark:text-stone-300 bg-white/70 dark:bg-stone-900/70 px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
+                                  &ldquo;{ticket.citizenFeedback}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            /* Interactive 5-Star Rating & Optional Feedback Input */
+                            <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-200 dark:border-amber-800/60 space-y-2.5">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                  <span className="text-xs font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
+                                    <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
+                                    <span>{lang === 'kn' ? 'ಪರಿಹಾರವನ್ನು ರೇಟ್ ಮಾಡಿ' : 'Rate Resolution'}</span>
+                                  </span>
+                                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                                    {lang === 'kn' ? 'ಈ ಪರಿಹಾರ ಕಾರ್ಯದಿಂದ ನೀವು ತೃಪ್ತರಾಗಿದ್ದೀರಾ?' : 'How satisfied are you with this repair?'}
+                                  </p>
+                                </div>
+
+                                {/* 5 Clickable Stars */}
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5].map((starVal) => {
+                                    const currentVal = pendingRatings[ticket.id] || 0;
+                                    const hoverVal = hoverRatings[ticket.id] || 0;
+                                    const isFilled = starVal <= (hoverVal || currentVal);
+
+                                    return (
+                                      <button
+                                        key={starVal}
+                                        type="button"
+                                        onClick={() => setPendingRatings((prev) => ({ ...prev, [ticket.id]: starVal }))}
+                                        onMouseEnter={() => setHoverRatings((prev) => ({ ...prev, [ticket.id]: starVal }))}
+                                        onMouseLeave={() => setHoverRatings((prev) => ({ ...prev, [ticket.id]: 0 }))}
+                                        className="p-1 hover:scale-115 transition-transform cursor-pointer"
+                                        title={`${starVal} Star${starVal > 1 ? 's' : ''}`}
+                                      >
+                                        <Star
+                                          className={`w-5 h-5 transition-colors ${
+                                            isFilled
+                                              ? 'fill-amber-400 text-amber-400 drop-shadow-xs'
+                                              : 'text-stone-300 dark:text-stone-600 hover:text-amber-300'
+                                          }`}
+                                        />
+                                      </button>
+                                    );
+                                  })}
+                                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 ml-1.5 min-w-[32px]">
+                                    {pendingRatings[ticket.id] ? `${pendingRatings[ticket.id]}/5` : ''}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Optional Comment Input & Submit Action */}
+                              <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                                <input
+                                  type="text"
+                                  value={pendingFeedbacks[ticket.id] || ''}
+                                  onChange={(e) => setPendingFeedbacks((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
+                                  placeholder={lang === 'kn' ? 'ಅಭಿಪ್ರಾಯ ಸೇರಿಸಿ (ಐಚ್ಛಿಕ)...' : 'Add feedback comment (optional)...'}
+                                  className="w-full text-xs px-3 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={!pendingRatings[ticket.id] || submittingRatingId === ticket.id}
+                                  onClick={() => handleRateTicket(ticket.id)}
+                                  className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-stone-950 font-bold text-xs rounded-lg shrink-0 transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                  <Star className="w-3.5 h-3.5 fill-stone-950 text-stone-950" />
+                                  <span>{lang === 'kn' ? 'ರೇಟಿಂಗ್ ಸಲ್ಲಿಸಿ' : 'Submit Rating'}</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   );
