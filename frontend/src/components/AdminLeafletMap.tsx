@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Layers, Crosshair, Navigation, Building2, MapPin, Search } from 'lucide-react';
+import { Layers, Crosshair, Navigation, Building2, MapPin, Search, Maximize2, Minimize2 } from 'lucide-react';
 import { CivicIssue } from '../types';
 import { MYSURU_JURISDICTIONS, getPriorityScore, isInsideBufferZone } from '../mockDatabase';
 
@@ -362,6 +362,17 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
   // Active filter for map layers
   const [activeZoneFilter, setActiveZoneFilter] = useState<'all' | 'mcc_zone' | 'town_panchayat' | 'gram_panchayat' | 'buffer_zone'>('all');
   const [selectedJurisdictionId, setSelectedJurisdictionId] = useState<string>('all');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Invalidate map dimensions when fullscreen toggles
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [isFullscreen]);
 
   // 1. Inject Leaflet CDN assets if not present
   useEffect(() => {
@@ -445,6 +456,19 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
     };
   }, [isLoaded]);
 
+  // Expose global callback for Leaflet popup HTML buttons
+  useEffect(() => {
+    (window as any).__civicMeshOpenReport = (issueId: string) => {
+      const target = issues.find((i) => i.id === issueId);
+      if (target && onSelectIssue) {
+        onSelectIssue(target);
+      }
+    };
+    return () => {
+      delete (window as any).__civicMeshOpenReport;
+    };
+  }, [issues, onSelectIssue]);
+
   // Count active incidents per jurisdiction
   const issuesCountByJurisdiction = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -481,6 +505,35 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
 
       const activeCount = issuesCountByJurisdiction[geo.id] || 0;
 
+      // Find matching issues for this jurisdiction circle/zone
+      const zoneIssues = issues.filter((iss) => {
+        if (iss.jurisdictionId === geo.id) return true;
+        const inBuf = Boolean(iss.isBufferZone);
+        if (geo.type === 'buffer_zone' && inBuf) return true;
+        const prefix = geo.name.toLowerCase().split(' (')[0];
+        if (iss.assignedDepot && iss.assignedDepot.toLowerCase().includes(prefix)) return true;
+        if (iss.location && iss.location.toLowerCase().includes(prefix)) return true;
+        return false;
+      });
+
+      const issueReportsList = zoneIssues.slice(0, 3).map((iss) => `
+        <button onclick="window.__civicMeshOpenReport && window.__civicMeshOpenReport('${iss.id}')" style="display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; padding: 5px 7px; margin-top: 4px; font-size: 11px; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; cursor: pointer; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background 0.15s;">
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;">${iss.title}</span>
+          <span style="color: #059669; font-weight: 700; font-size: 10px; margin-left: 4px; shrink-0;">Inspect &rarr;</span>
+        </button>
+      `).join('');
+
+      const reportsHtml = zoneIssues.length > 0
+        ? `
+          <div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+            <div style="font-weight: 700; font-size: 10px; color: #475569; text-transform: uppercase; margin-bottom: 3px;">
+              Active Grievance Reports (${zoneIssues.length})
+            </div>
+            ${issueReportsList}
+          </div>
+        `
+        : '';
+
       if (geo.type === 'buffer_zone' && geo.polygonCoords) {
         // Draw buffer corridor polygon
         const hasActiveBufferTicket = issues.some(i => Boolean(i.isBufferZone) && !['resolved', 'closed', 'quarantined'].includes(i.status));
@@ -516,6 +569,7 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
               <div><strong>Joint Workforce Pool:</strong> ${geo.baseWorkers} Personnel</div>
               <div><strong>Spillover Routing:</strong> ${isCorridorActive ? 'Active (MCC absorbs tasks)' : 'Standard Joint Patrol'}</div>
             </div>
+            ${reportsHtml}
           </div>
         `);
 
@@ -560,13 +614,18 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
               <div><strong>Assigned Workforce:</strong> ${geo.baseWorkers} Field Workers</div>
               <div><strong>Active Incidents:</strong> ${activeCount}</div>
             </div>
+            ${reportsHtml}
           </div>
         `);
+
+        circle.on('click', () => {
+          circle.openPopup();
+        });
 
         zonesGroupRef.current.addLayer(circle);
       }
     });
-  }, [isLoaded, activeZoneFilter, selectedJurisdictionId, bogadiCapacity, mccCapacity, issuesCountByJurisdiction]);
+  }, [isLoaded, activeZoneFilter, selectedJurisdictionId, bogadiCapacity, mccCapacity, issuesCountByJurisdiction, issues]);
 
   // 4. Render ticket pins on the map
   useEffect(() => {
@@ -799,20 +858,43 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           <button
             type="button"
             onClick={handleResetCenter}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-stone-200/60 dark:border-stone-700/60"
+            title="Reset to whole Mysuru District"
           >
-            <Crosshair className="w-3.5 h-3.5" />
+            <Crosshair className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
             <span>Reset View</span>
+          </button>
+
+          {/* Full Screen Mode Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen((prev) => !prev)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-stone-200/60 dark:border-stone-700/60"
+            title={isFullscreen ? 'Exit Full Screen' : 'View Map Full Screen'}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-amber-500" />
+                <span>Exit Full Screen</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Full Screen</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
       {/* Map Container */}
-      <div className="relative w-full h-84 sm:h-96 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900">
+      <div className={`relative w-full rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${
+        isFullscreen ? 'grow min-h-[78vh]' : 'h-84 sm:h-96'
+      }`}>
         {!isLoaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-100 dark:bg-stone-900 text-stone-500 z-20">
             <Navigation className="w-6 h-6 animate-spin text-emerald-600" />
-            <span className="text-xs">Loading Mysuru Jurisdictional Map...</span>
+            <span className="text-xs font-medium">Loading Mysuru Jurisdictional Map...</span>
           </div>
         )}
         <div ref={mapContainerRef} className="w-full h-full" id="admin-leaflet-container" />
