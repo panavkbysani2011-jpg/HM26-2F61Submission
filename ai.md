@@ -30,22 +30,22 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 | Tool | Model / plan | Used by | What we used it for |
 |---|---|---|---|
-| `Antigravity` | `Google Antigravity Agentic IDE` | `@panavkbysani2011-jpg`, `@agnidevaraja` | `Autonomous pair programming: scaffolding React components, Leaflet interactive layers, bilingual Kannada/English state wiring, and anti-slop UI design overhaul` |
-| `Gemini` | `Gemini 3.8 Flash / Gemini Pro` | `@panavkbysani2011-jpg` | `Prompt formulation, error handling patterns, and TypeScript interface reviews` |
-| `Google AI Studio` | `Web interface / Prototyping` | `@panavkbysani2011-jpg` | `System prompt testing and zero-tolerance negative constraint tuning for field worker resolution photo audits` |
-| `Google Julius` | `Analysis environment` | `@agnidevaraja` | `Exploratory geospatial coordinate analysis, evaluating Outer Ring Road boundary envelopes, and validating capacity threshold math across the 26 Mysuru jurisdictions` |
+| `Antigravity` | `Google Antigravity Agentic IDE` | `@panavkbysani2011-jpg`, `@agnidevaraja` | `Pair programming: building the React components, connecting Leaflet map layers, wiring up the Kannada and English language toggle, and cleaning up the interface layout` |
+| `Gemini` | `Gemini 3.8 Flash / Gemini Pro` | `@panavkbysani2011-jpg` | `Drafting verification prompts, writing error handling, and checking our TypeScript interfaces` |
+| `Google AI Studio` | `Web interface / Prototyping` | `@panavkbysani2011-jpg` | `Testing system prompts in the web playground and tuning the negative checks so non-civic photos like selfies or indoor shots get rejected during resolution audits` |
+| `Google Julius` | `Analysis environment` | `@agnidevaraja` | `Checking coordinate data for Mysuru Outer Ring Road boundaries and testing the capacity threshold math across our jurisdictions` |
 
 ## 2. Where AI Helped in the Codebase
 
 | Area / file | Level of AI help | What a human did |
 |---|---|---|
-| `frontend/src/components/` | `Medium: UI layout autocomplete` | `Wrote custom tab navigation, bilingual English and Kannada state wiring, and form validation` |
-| `frontend/src/utils/geminiVerification.ts` | `Medium: SDK call boilerplate` | `Wrote the audit criteria, zero-tolerance prompt rules, heuristic fallback logic, citizen review restructuring and profanity sanitization, and JSON parsing checks` |
-| `frontend/src/mockDatabase.ts` | `Low: Data structure scaffolding` | `Hand-wrote the Geo-Elastic Routing Engine (G-ERE), buffer zone bounding boxes, dynamic capacity math, and Inter-Agency Ledger` |
-| `frontend/src/firebase.ts` | `Low: Auth setup suggestions` | `Wrote session persistence, error handlers, and Firestore issue synchronization logic` |
+| `frontend/src/components/` | `Medium: UI layout autocomplete` | `Created the tab navigation, bilingual English and Kannada toggle, and handled citizen form validation` |
+| `frontend/src/utils/geminiVerification.ts` | `Medium: SDK call boilerplate` | `Wrote the photo verification criteria, fallback rules for when offline/no API key, review restructuring and sanitization logic, and JSON parsing checks` |
+| `frontend/src/mockDatabase.ts` | `Low: Data structure scaffolding` | `Designed and wrote the geo-elastic routing rules, buffer zone boundary boxes, capacity calculation, and the inter-agency ledger` |
+| `frontend/src/firebase.ts` | `Low: Auth setup suggestions` | `Wrote user session management, error handling, and syncing tickets with Firestore` |
 | `README / docs` | `None` | `Written completely by the team to explain the Mysuru local context and architecture` |
 
-**Commit convention (optional, recommended):** commits containing substantial AI-generated code are tagged `[ai]` in the message, e.g. `feat: ward status page [ai]`.
+Commit convention (optional, recommended): commits containing substantial AI-generated code are tagged `[ai]` in the message, e.g. `feat: ward status page [ai]`.
 
 ## 3. AI Inside the Product (runtime)
 
@@ -53,13 +53,13 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 | Model / API | What it does in our product | Hosted where | Trained / fine-tuned by us? |
 |---|---|---|---|
-| `Gemini 2.5 / 3.6 Flash (@google/genai SDK)` | `1. Audits field worker proof photos to verify civic resolution and reject selfies, flowers, pets, or indoor shots. 2. Moderates incoming citizen grievance text to flag profanity and gibberish. 3. Pre-save citizen review moderation: restructures rambling/confusing post-resolution comments into clear, professional summaries and sanitizes vulgarity/inappropriate language before database persistence.` | `Google Cloud Gemini API` | `No, prompt engineering with strict negative constraints & structured JSON output` |
+| `Gemini 3.6 Flash (@google/genai SDK)` | `1. Audits field worker proof photos to verify civic repairs and reject fake uploads like selfies, pets, or indoor shots. 2. Moderates citizen complaints to flag inappropriate content. 3. Pre-moderates citizen feedback to turn rambling reviews into clear, constructive summaries and clean out inappropriate language before saving.` | `Google Cloud Gemini API` | `No, customized using system prompts with negative examples and structured JSON output` |
 
-- **Accuracy we measured:** `Tested on 40 sample civic and non-civic photos: 100% rejection on selfies, plants, and indoor objects; 90% true positive verification on clear asphalt and debris cleanup photos`
-- **What happens when the model is wrong:** `If rejected or inconclusive, the ticket is flagged for audit and sent to the supervisor queue without silent dropping; if API key is missing or network fails, the system falls back to deterministic local rule-based heuristics`
-- **Does it work offline?** `No, the live Gemini API requires an internet connection; if offline, local regex and heuristic checks process the entry so workers can continue their shift`
-- **Citizen data sent to third parties:** `Only the complaint description text, category name, and uploaded resolution photos are sent to Google Gemini API endpoints; no personal phone numbers, names, or Aadhaar credentials are transmitted`
-- **Cost at city scale:** `At ~1,500 tickets per day across Mysuru, costs are under ₹200/day ($2.50/day) using Gemini Flash pricing, and fully zero during hackathon prototyping`
+- Accuracy we measured: Tested on 40 sample civic and non-civic photos: 100% rejection on selfies, plants, and indoor objects; 90% true positive verification on clear road repair and garbage cleanup photos
+- What happens when the model is wrong: If rejected or inconclusive, the ticket is flagged for audit and sent to the supervisor queue without getting lost; if the API key is missing or offline, our fallback rules step in
+- Does it work offline?: No, calling Gemini needs an internet connection. If offline, the app uses local pattern checks and heuristics so workers can keep doing their shift
+- Citizen data sent to third parties: Only the issue description text, category, and resolution photos are sent to Google Gemini API endpoints; no personal phone numbers, resident names, or IDs are shared
+- Cost at city scale: At around 1,500 reports a day across Mysuru, costs are under ₹200/day using Gemini Flash pricing, and free during testing
 
 ## 4. Key Prompts (optional, max 5)
 
@@ -83,5 +83,5 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 ---
 
-**Declaration:** We confirm this disclosure is complete, and every team member can explain the code listed above.
-**Signed:** `Panav K Bysani` on behalf of `SyntaxError-404` · `19-09-2026`
+Declaration: We confirm this disclosure is complete, and every team member can explain the code listed above.
+Signed: `Panav K Bysani` on behalf of `SyntaxError-404` · `19-09-2026`

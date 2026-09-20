@@ -1513,9 +1513,12 @@ export const adminUpdateIssue = (
   const updated = current.map((item) => {
     if (item.id === id) {
       const nextRank = updates.severityRank || item.severityRank;
+      const isNowQuarantined = updates.status ? updates.status === 'quarantined' : item.isQuarantined;
       return {
         ...item,
         ...updates,
+        isQuarantined: isNowQuarantined,
+        ...(isNowQuarantined ? { isFlagged: true } : (updates.status && updates.status !== 'quarantined' ? { isFlagged: false } : {})),
         ...(updates.severityRank ? { 
           severityRank: nextRank,
           loadWeight: nextRank,

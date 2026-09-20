@@ -322,16 +322,18 @@ export interface ModerationResult {
   sanitizedText: string;
 }
 
-const PROFANITY_AND_ABUSE_WORDS = [
-  'idiot', 'stupid', 'damn', 'fool', 'cheat', 'bastard', 'bloody', 
-  'bitch', 'asshole', 'crap', 'bullshit', 'fraudster', 'scam', 
-  'kill', 'murder', 'die', 'threat', 'corrupt pigs', 'nonsense'
+const REAL_PROFANITY_AND_ABUSE_WORDS = [
+  'idiot', 'stupid', 'bastard', 'bloody', 'bitch', 'asshole', 
+  'crap', 'bullshit', 'fraudster', 'scam', 'corrupt pigs', 
+  'fuck', 'fucking', 'shit', 'scumbag', 'bolimakane', 'gandu', 
+  'thika', 'bewarsi', 'soole', 'lofar'
 ];
 
 /**
  * Evaluates citizen grievance description for abusive language, profanity,
  * blatant spam, promotional links, or keyboard-mash gibberish.
- * Uses fast deterministic rules with Gemini AI multimodal/text analysis fallback.
+ * Distinguishes genuine civic safety warnings (e.g. "someone could die or get injured")
+ * from actual harassment, abuse, or spam.
  */
 export const moderateCitizenSubmission = async (
   description: string,
@@ -346,117 +348,41 @@ export const moderateCitizenSubmission = async (
       isFlagged: true,
       allowed: false,
       category: 'gibberish',
-      reason: 'Description is too brief or contains no meaningful detail.',
+      reason: 'Due to these inappropriate actions of yours (submitting an empty or incomplete report under 5 characters), this message has been flagged.',
       sanitizedText: text,
     };
   }
 
-  // Rule 2: Profanity and Abusive Lexicon Check
-  let sanitized = text;
-  let hasAbuse = false;
-  let detectedWord = '';
-
-  for (const word of PROFANITY_AND_ABUSE_WORDS) {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    if (regex.test(sanitized)) {
-      hasAbuse = true;
-      detectedWord = word;
-      sanitized = sanitized.replace(regex, '***');
-    }
-  }
-
-  if (hasAbuse) {
-    return {
-      isFlagged: true,
-      allowed: false,
-      category: 'profanity',
-      reason: `Inappropriate or abusive language detected ("${detectedWord}"). Routed to audit queue.`,
-      sanitizedText: sanitized,
-    };
-  }
-
-  // Rule 3: Repetitive Character Spam (e.g. "aaaaaaa", "xxxxxxxxx")
-  if (/(.)\1{6,}/i.test(text)) {
-    return {
-      isFlagged: true,
-      allowed: false,
-      category: 'spam',
-      reason: 'Repetitive character spam detected.',
-      sanitizedText: text,
-    };
-  }
-
-  // Rule 4: Repetitive Words Pattern (e.g. "test test test test")
-  if (/\b(\w+)\b(\s+\1\b){3,}/i.test(text)) {
-    return {
-      isFlagged: true,
-      allowed: false,
-      category: 'spam',
-      reason: 'Repetitive phrase spam detected.',
-      sanitizedText: text,
-    };
-  }
-
-  // Rule 5: Promotional Spam / External Hyperlinks
-  if (/(https?:\/\/|t\.me\/|bit\.ly\/|www\.|casino|crypto|viagra|telegram)/i.test(text)) {
-    return {
-      isFlagged: true,
-      allowed: false,
-      category: 'spam',
-      reason: 'Unsolicited promotional content or unauthorized links detected.',
-      sanitizedText: text,
-    };
-  }
-
-  // Rule 6: Keyboard Mashing & Gibberish (Long words with no vowels or random clusters)
-  const words = text.split(/\s+/);
-  for (const word of words) {
-    const cleanWord = word.replace(/[^a-zA-Z]/g, '');
-    if (cleanWord.length >= 8 && !/[aeiouy]/i.test(cleanWord)) {
-      return {
-        isFlagged: true,
-        allowed: false,
-        category: 'gibberish',
-        reason: 'Nonsensical text or keyboard-mash pattern detected.',
-        sanitizedText: text,
-      };
-    }
-    if (cleanWord.length > 25) {
-      return {
-        isFlagged: true,
-        allowed: false,
-        category: 'gibberish',
-        reason: 'Abnormally long non-standard word string detected.',
-        sanitizedText: text,
-      };
-    }
-  }
-
-  // Rule 7: Deep AI Moderation using Gemini (when API key is available)
+  // Rule 2: Deep AI Moderation using Gemini 3.6 Flash (when API key is available)
   if (isGeminiConfigured()) {
     try {
       const apiKey = getGeminiApiKey();
       const ai = new GoogleGenAI({ apiKey });
       const prompt = `You are a municipal grievance intake content auditor for Mysuru City Corporation (Civic Mesh).
 Analyze the following citizen grievance report description.
-Identify if it contains:
-1. Abusive language, hate speech, violent threats, or vulgar profanity.
-2. Blatant spam, advertising, or phishing links.
-3. Gibberish, keyboard-mash, or completely nonsensical text with no civic relevance.
+
+CRITICAL CIVIC SAFETY GUIDELINES:
+1. LEGITIMATE CIVIC REPORTS: Do NOT flag legitimate civic distress or hazard descriptions (e.g. "someone might die in an accident", "danger of electrocution", "threat to commuters"). Citizens warning about road deaths, vehicle damage, or life safety hazards are expressing normal civic concern, NOT abuse.
+2. VIOLATIONS TO FLAG:
+   - Personal harassment, verbal abuse, insults, or degrading attacks directed at municipal workers or officials (e.g., "you corrupt idiots", "useless staff").
+   - Explicit vulgar profanity, obscenities, slurs, or derogatory hate speech.
+   - Violent threats to harm individuals.
+   - Blatant promotional advertising, cryptocurrency, casino, or unauthorized external links.
+   - Keyboard-mashing or completely nonsensical gibberish with no civic meaning.
 
 Description: "${text}"
 Category: "${category || 'Civic Grievance'}"
 Location: "${location || 'Mysuru'}"
 
-Respond ONLY with valid JSON in this exact format:
+Respond strictly with valid JSON conforming to this schema (no markdown fences, raw JSON only):
 {
   "isFlagged": boolean,
   "category": "clean" | "profanity" | "abusive" | "spam" | "gibberish",
-  "reason": "Brief one-sentence explanation"
+  "reason": "string: If flagged, write: 'Due to these inappropriate actions of yours ([specific violation like abusive insults towards staff / explicit vulgar profanity / promotional links / repetitive gibberish]), this message has been flagged and quarantined for administrative review.'"
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [prompt],
       });
 
@@ -465,17 +391,109 @@ Respond ONLY with valid JSON in this exact format:
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed.isFlagged) {
+          const reasonMsg = parsed.reason && parsed.reason.includes('Due to these inappropriate actions')
+            ? parsed.reason
+            : `Due to these inappropriate actions of yours (${parsed.reason || 'content policy violation'}), this message has been flagged and quarantined for administrative review.`;
+
           return {
             isFlagged: true,
             allowed: false,
             category: parsed.category || 'abusive',
-            reason: parsed.reason || 'Flagged by Civic Mesh AI content moderation.',
+            reason: reasonMsg,
+            sanitizedText: text,
+          };
+        } else {
+          // Explicitly cleared by Gemini 3.6 Flash
+          return {
+            isFlagged: false,
+            allowed: true,
+            category: 'clean',
+            reason: 'Submission verified as clean civic grievance.',
             sanitizedText: text,
           };
         }
       }
     } catch (aiErr) {
-      console.warn('[AI Moderation] Gemini API check bypassed, rule-based check passed:', aiErr);
+      console.warn('[AI Moderation] Gemini 3.6 Flash check bypassed, applying heuristic rules:', aiErr);
+    }
+  }
+
+  // Rule 3: Profanity and Abusive Lexicon Check (deterministic heuristic)
+  let sanitized = text;
+  const matchedWords: string[] = [];
+
+  for (const word of REAL_PROFANITY_AND_ABUSE_WORDS) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    if (regex.test(sanitized)) {
+      matchedWords.push(word);
+      sanitized = sanitized.replace(regex, '***');
+    }
+  }
+
+  if (matchedWords.length > 0) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'profanity',
+      reason: `Due to these inappropriate actions of yours (abusive/vulgar language detected: "${matchedWords.join(', ')}"), this message has been flagged and quarantined for administrative review.`,
+      sanitizedText: sanitized,
+    };
+  }
+
+  // Rule 4: Promotional Spam / External Hyperlinks
+  if (/(https?:\/\/|t\.me\/|bit\.ly\/|www\.|casino|crypto|viagra|telegram)/i.test(text)) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'spam',
+      reason: 'Due to these inappropriate actions of yours (including unauthorized external links or promotional spam), this message has been flagged and quarantined for administrative review.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 5: Repetitive Character Spam (e.g. "aaaaaaa", "xxxxxxxxx")
+  if (/(.)\1{6,}/i.test(text)) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'spam',
+      reason: 'Due to these inappropriate actions of yours (repetitive character spam pattern), this message has been flagged and quarantined for administrative review.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 6: Repetitive Words Pattern (e.g. "test test test test")
+  if (/\b(\w+)\b(\s+\1\b){3,}/i.test(text)) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'spam',
+      reason: 'Due to these inappropriate actions of yours (repetitive phrase spam pattern), this message has been flagged and quarantined for administrative review.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 7: Keyboard Mashing & Gibberish (Long words with no vowels or random clusters)
+  const words = text.split(/\s+/);
+  for (const word of words) {
+    const cleanWord = word.replace(/[^a-zA-Z]/g, '');
+    if (cleanWord.length >= 8 && !/[aeiouy]/i.test(cleanWord)) {
+      return {
+        isFlagged: true,
+        allowed: false,
+        category: 'gibberish',
+        reason: 'Due to these inappropriate actions of yours (submitting nonsensical keyboard-mash text without meaningful civic description), this message has been flagged and quarantined for administrative review.',
+        sanitizedText: text,
+      };
+    }
+    if (cleanWord.length > 25) {
+      return {
+        isFlagged: true,
+        allowed: false,
+        category: 'gibberish',
+        reason: 'Due to these inappropriate actions of yours (abnormally long nonsensical character sequence), this message has been flagged and quarantined for administrative review.',
+        sanitizedText: text,
+      };
     }
   }
 
@@ -535,7 +553,7 @@ Respond STRICTLY with valid JSON (no markdown formatting, raw JSON only):
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [prompt],
       });
 

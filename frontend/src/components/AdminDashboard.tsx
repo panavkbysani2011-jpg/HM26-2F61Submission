@@ -247,6 +247,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       assignedDepot: modalNewDepot,
       severityRank: modalNewSeverity,
       adminNotes: modalAdminNotes.trim() || inspectingIssue.adminNotes,
+      isQuarantined: modalNewStatus === 'quarantined',
+      isFlagged: modalNewStatus === 'quarantined' ? inspectingIssue.isFlagged : false,
     };
     setInspectingIssue(updatedIssue);
 
@@ -335,6 +337,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span className="text-stone-300 dark:text-stone-700">•</span>
             <span>{issue.reportedBy || 'Resident'}</span>
           </div>
+          {issue.isQuarantined && issue.quarantineReason && (
+            <div className="mt-1 text-[11px] text-rose-700 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-200/60 dark:border-rose-900/40 line-clamp-1" title={issue.quarantineReason}>
+              Flagged: {issue.quarantineReason}
+            </div>
+          )}
         </div>
 
         {/* Status badge */}
@@ -500,8 +507,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <ShieldExclamationIcon className="w-4 h-4 text-rose-600" />
                         <span>Content Quarantined by Automated Safety Policy</span>
                       </div>
-                      <p className="text-[11px] text-rose-800 dark:text-rose-300 leading-relaxed">
-                        Flag Reason: Abusive phrasing or safety violation detected in citizen report text. Kept in isolated quarantine register until administrative review.
+                      <p className="text-[11px] text-rose-800 dark:text-rose-300 leading-relaxed font-medium">
+                        {inspectingIssue.quarantineReason || 'Due to inappropriate content policy violations, this message has been flagged and quarantined for administrative review.'}
+                      </p>
+                      <p className="text-[10px] text-stone-500 dark:text-stone-400">
+                        Held in administrative quarantine. It will NOT appear in field worker queues until administrative status is updated to Reported or In Progress.
                       </p>
                     </div>
                   )}

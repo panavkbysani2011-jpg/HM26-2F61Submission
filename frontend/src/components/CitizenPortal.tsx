@@ -60,7 +60,6 @@ import {
   Building2,
   Star,
   Crosshair,
-  Sun,
   RefreshCw,
   Bell
 } from 'lucide-react';
@@ -565,9 +564,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [geoAccuracy, setGeoAccuracy] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
 
-  // #29 High contrast theme mode
-  const [highContrastMode, setHighContrastMode] = useState<boolean>(false);
-
   // #10 Offline drafts state
   const [draftRestored, setDraftRestored] = useState<boolean>(false);
 
@@ -1029,8 +1025,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
       if (isQuarantined) {
         setToastType('info');
-        setToastMessage(`Submission Flagged: Your report has been quarantined for administrative review due to content safety policy (${quarantineReason}).`);
-        setTimeout(() => setToastMessage(null), 8000);
+        setToastMessage(quarantineReason || 'Due to inappropriate content policy violations, this message has been flagged and quarantined for administrative review.');
+        setTimeout(() => setToastMessage(null), 9000);
       } else if (result.grouped) {
         setToastType('info');
         setToastMessage('Your report has been logged and grouped with an existing active issue in the area.');
@@ -1380,20 +1376,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   {lang === 'kn' ? 'ಮೈಸೂರು ಮಹಾನಗರ ಪಾಲಿಕೆ' : 'Mysuru Municipal Corporation'}
                 </span>
-                {/* #29 High Contrast Mode Toggle */}
-                <button
-                  type="button"
-                  title={highContrastMode ? 'Disable high contrast mode' : 'Enable high contrast mode for bright sunlight'}
-                  onClick={() => setHighContrastMode(!highContrastMode)}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
-                    highContrastMode
-                      ? 'bg-stone-900 text-white border-stone-700'
-                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-300 dark:border-stone-600 hover:bg-stone-200 dark:hover:bg-stone-700'
-                  }`}
-                >
-                  <Sun className="w-3 h-3" />
-                  <span>{highContrastMode ? 'High Contrast ON' : 'High Contrast'}</span>
-                </button>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mt-1">
                 <span>{lang === 'kn' ? 'ದೃಢೀಕೃತ ನಿವಾಸಿ:' : 'Verified Resident:'}</span>
