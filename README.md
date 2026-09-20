@@ -3,7 +3,7 @@
 > HackMysuru 1.0 · Phase 1 · Civic Governance & Clean Mysuru
 > Team `SyntaxError-404` (`HM26-2F61`)
 
-| 📎 Submission links | 📋 Templates | 🏗️ Architecture | 🛡️ Hard constraints | ⚙️ Setup | 🤖 AI usage | ⚠️ Limitations |
+| Submission links | Templates | Architecture | Hard constraints | Setup | AI usage | Limitations |
 |---|---|---|---|---|---|---|
 | [resource.md](./resource.md) | [resource-templates/](./resource-templates/) | [docs/architecture.md](./docs/architecture.md) | [docs/constraints.md](./docs/constraints.md) | [docs/setup.md](./docs/setup.md) | [ai.md](./ai.md) | [docs/limitations.md](./docs/limitations.md) |
 

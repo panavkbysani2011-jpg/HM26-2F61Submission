@@ -69,8 +69,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const isBogadiOverloaded = bogadiCapacity > 100;
 
   // Primary workflow segment tab to eliminate cognitive overload
-  // Options: 'map' (GIS Telemetry), 'triage' (Resolution Queue), 'capacity' (26-Node Matrix), 'ledger' (Inter-Agency), 'all' (Expanded)
-  const [activeWorkflowTab, setActiveWorkflowTab] = useState<'map' | 'triage' | 'capacity' | 'ledger' | 'all'>('map');
+  // Options: 'map' (GIS Telemetry), 'triage' (Resolution Queue), 'capacity' (26-Node Matrix), 'ledger' (Inter-Agency)
+  const [activeWorkflowTab, setActiveWorkflowTab] = useState<'map' | 'triage' | 'capacity' | 'ledger'>('map');
 
   // Jurisdiction filter for Capacity Matrix
   const [jurisdictionTab, setJurisdictionTab] = useState<'all' | 'mcc' | 'town_panchayat' | 'gram_panchayat' | 'buffer_zone' | 'overloaded'>('all');
@@ -1063,24 +1063,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
 
           </div>
-
-          {/* View Toggle: All Sections Expanded */}
-          <button
-            type="button"
-            onClick={() => setActiveWorkflowTab(activeWorkflowTab === 'all' ? 'map' : 'all')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
-              activeWorkflowTab === 'all'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 font-bold'
-                : 'bg-white dark:bg-[#121214] text-stone-500 border-stone-200/80 dark:border-stone-800 hover:text-stone-800 dark:hover:text-stone-200'
-            }`}
-          >
-            <ArrowsPointingOutIcon className="w-3.5 h-3.5" />
-            <span>{activeWorkflowTab === 'all' ? 'Compact Tabbed Mode' : 'Expand All Modules'}</span>
-          </button>
         </div>
 
         {/* SECTION 1: GEOSPATIAL CORRIDOR TELEMETRY (LEAFLET MAP) */}
-        {(activeWorkflowTab === 'map' || activeWorkflowTab === 'all') && (
+        {activeWorkflowTab === 'map' && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1113,7 +1099,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
 
         {/* SECTION 2: MASTER CIVIC TRIAGE & RESOLUTION LEDGER */}
-        {(activeWorkflowTab === 'triage' || activeWorkflowTab === 'all') && (
+        {activeWorkflowTab === 'triage' && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1413,7 +1399,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
 
         {/* SECTION 3: MYSURU MUNICIPAL & PANCHAYAT LIVE CAPACITY MATRIX */}
-        {(activeWorkflowTab === 'capacity' || activeWorkflowTab === 'all') && (
+        {activeWorkflowTab === 'capacity' && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1574,7 +1560,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
 
         {/* SECTION 4: INTER-AGENCY CLEARING LEDGER */}
-        {(activeWorkflowTab === 'ledger' || activeWorkflowTab === 'all') && (
+        {activeWorkflowTab === 'ledger' && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

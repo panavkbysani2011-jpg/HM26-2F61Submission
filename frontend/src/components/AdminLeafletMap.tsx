@@ -366,13 +366,53 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
 
   // Invalidate map dimensions when fullscreen toggles
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const handleResize = () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.invalidateSize();
       }
-    }, 200);
-    return () => clearTimeout(timer);
+    };
+    const t1 = setTimeout(handleResize, 50);
+    const t2 = setTimeout(handleResize, 150);
+    const t3 = setTimeout(handleResize, 350);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [isFullscreen]);
+
+  // Handle escape key to exit fullscreen and prevent background scroll
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
+
+  // Observe container resizing for robust continuous rendering
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    observer.observe(mapContainerRef.current);
+    return () => observer.disconnect();
+  }, [isLoaded]);
 
   // 1. Inject Leaflet CDN assets if not present
   useEffect(() => {
@@ -759,7 +799,11 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${
+      isFullscreen 
+        ? 'fixed inset-0 z-[9999] w-screen h-screen bg-white dark:bg-[#09090b] p-4 sm:p-6 flex flex-col justify-between overflow-hidden shadow-2xl' 
+        : 'relative'
+    }`}>
       {/* Top Filter & Jurisdiction Selector Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -883,8 +927,9 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
       </div>
 
       {/* Map Container */}
-      <div className={`relative w-full rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${isFullscreen ? 'grow min-h-[78vh]' : 'h-84 sm:h-96'
-        }`}>
+      <div className={`relative w-full rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${
+        isFullscreen ? 'flex-1 w-full min-h-0 my-2' : 'h-84 sm:h-96'
+      }`}>
         {!isLoaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-100 dark:bg-stone-900 text-stone-500 z-20">
             <Navigation className="w-6 h-6 animate-spin text-emerald-600" />
