@@ -1,4 +1,4 @@
-# Presentation — 10-Slide Template (5% of total score)
+# Presentation - 10-Slide Template (5% of total score)
 
 [← Back to README](../README.md)
 

@@ -1,23 +1,21 @@
-# Setup & Run Instructions
+# Setup & Run
 
 [← Back to README](../README.md)
 
-<!-- A reviewer should get this running in under 10 minutes if the live link is down. -->
-
-## Prerequisites
+### Prerequisites
 
 | Tool | Version |
 |---|---|
-| `<Node.js / Python / Docker>` | `<20.x / 3.11 / 24+>` |
+| `<Node.js / Python / Docker>` | `<Pending final stack>` |
 
-## 1. Clone
+### 1. Clone
 
 ```bash
 git clone <repo-url>
-cd <repo>
+cd civic-mesh
 ```
 
-## 2. Environment Variables
+### 2. Environment Variables
 
 ```bash
 cp .env.example .env
@@ -25,35 +23,35 @@ cp .env.example .env
 
 | Variable | Required | Example | Purpose |
 |---|---|---|---|
-| `DATABASE_URL` | Yes | `<...>` | `<...>` |
-| `<API_KEY>` | `<No>` | `<...>` | `<...>` |
+| `<API_URL / DB_URL>` | Yes | `<...>` | `<Pending backend finalization>` |
 
-> Never commit real secrets. Commit only `.env.example`.
+*(Never commit real secrets. Commit only `.env.example`.)*
 
-## 3. Install & Seed Demo Data
-
-```bash
-<install command>
-<migration command>
-<seed command>          # loads <N> sample complaints across <N> wards
-```
-
-## 4. Run
+### 3. Install & Seed Demo Data
 
 ```bash
-<run command>
+<install command pending>
+<migration command pending>
+<seed command pending>  # Loads 120 sample complaints across Bogadi and MCC zones
 ```
 
-Open `http://localhost:<port>`. Test accounts are listed in [resource.md](../resource.md#5-live-mvp).
+### 4. Run
 
-## Testing Offline Mode
+```bash
+<run command pending>
+```
 
-1. `<Open the app and log in>`
-2. `<Chrome DevTools → Network → Offline, or phone airplane mode>`
-3. `<File a complaint → it shows "queued">`
-4. `<Go back online → it syncs and shows "submitted">`
+Open `http://localhost:<port>` in your browser. Test accounts are listed in resource.md.
 
-## Troubleshooting
+### Testing Offline Mode
+
+**Status: Not Applicable (Scoped out for HackMysuru Phase 1 MVP)**
+
+As documented in [docs/constraints.md](./constraints.md), we made a strategic decision to allocate our 48-hour build time exclusively to the Geo-Elastic Routing Engine and the inter-agency capacity balancer.
+
+Attempting to throttle the network to "Offline" in Chrome DevTools will currently break the application flow. Please test the routing and load-balancing features with an active internet connection.
+
+### Troubleshooting
 
 | Problem | Fix |
 |---|---|

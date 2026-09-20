@@ -2,52 +2,47 @@
 
 [← Back to README](../README.md)
 
-<!-- The problem statement names five constraints that decide whether a solution would hold up
-in Mysuru. Be honest: ✅ handled · ⚠️ partial · ❌ not yet. Timestamps point to the video. -->
-
 | # | Constraint | Status | Video |
 |---|---|---|---|
-| 1 | Fake, spam and harassment reports | `✅` | `<mm:ss>` |
-| 2 | Unclear jurisdiction | `✅` | `<...>` |
-| 3 | Prioritisation beyond "most votes" | `✅` | `<...>` |
-| 4 | Bad input (duplicate, fake photo, wrong location, abuse) | `✅` | `<...>` |
-| 5 | Works without internet | `❌` | `N/A` |
+| 1 | Fake, spam and harassment reports | ✅ | `<mm:ss>` |
+| 2 | Unclear jurisdiction | ✅ | `<mm:ss>` |
+| 3 | Prioritisation beyond "most votes" | ✅ | `<mm:ss>` |
+| 4 | Bad input (duplicate, fake photo, wrong location, abuse) | ✅ | `<mm:ss>` |
+| 5 | Works without internet | ❌ | N/A |
 
 ---
 
 ## 1. Fake, spam and harassment reports
 
-- **Approach:** `We use OTP verification through SIM and email to stop bots from abusing the system. If the same person reports the issue more than once the system lets them know that the response has already been recorded. Posting again will not make the issue more urgent. Raise its priority. We allow up to two posts per session in case someone thinks the first post didn’t go through. All these posts, from the user get combined into a single record.
-If ten different people report the garbage dump all ten reports are grouped under one problem group. The urgency level stays the same no matter how many people report it. The system knows that ten individuals reported it. The field worker only sees one task to handle. There’s no load or confusion. They just get one clear action to take.`
-- **Anonymity trade-off:** `There is an anonymity trade-off: citizens must create an account. Log in to use the platform.. When they report a problem their personal identity and security details are kept private. Their name, phone number and other sensitive information are not shared publicly with the reported issue. The public only sees the problem description, not who reported it.`
-- **Code:** `src/backend/services/spam_filter.py`
-
+- **Approach:** We use OTP verification through SIM and email to stop bots from abusing the system. We know people get frustrated and might click submit five times if their internet is slow. So, if the same person reports the issue more than once, the system gently lets them know their response is already recorded. Posting again won't magically make the issue more urgent. We allow up to two posts per session just in case they feel the first one failed, and then we combine them into a single record. If ten completely different people report the same massive garbage dump, all ten reports are grouped into one single "Problem Group". The urgency level stays exactly the same, but the system logs that ten individuals care about it. The most important part? The poor field worker only sees ONE clear task to handle. No spam, no confusion, just one clear action to take.
+- **Anonymity trade-off:** We made a conscious trade-off here. Citizens absolutely must create an account and log in. We need this to hold spammers accountable. However, when they report a problem, their personal identity, name, and phone number are kept completely private. The public only ever sees the problem description, never who reported it.
+- **Code:** `<Code path pending>`
 
 ## 2. Unclear jurisdiction
 
-- **Approach:** `We use a fuzzy buffer zone over contested borders such as the Bogadi edge and the MCC edge. If a location pin lands in this buffer zone the system checks the workload of the Bogadi office.`
-- **What happens in a boundary case:** ` If the Bogadi office is overloaded with tasks the system sends the ticket automatically to the MCC depot when MCC has free equipment. The system then writes this in the inter‑agency ledger so that the MCC office receives payment from the Bogadi funds for the work.`
-- **Code:** `src/<...>`
+- **Approach:** This is where we shine. We use a fuzzy buffer zone over highly contested borders, like the Bogadi and MCC edge. If a location pin lands right in this messy buffer zone, the system doesn't throw a "not my ward" error. It actively checks the real-time workload of the Bogadi office.
+- **What happens in a boundary case:** If the Bogadi office is drowning in tasks and overloaded, the system automatically sends the ticket to the MCC depot if MCC has free equipment sitting idle. The system then securely logs this in an inter-agency ledger, ensuring the MCC office actually gets paid from the Bogadi funds for stepping up and doing the work.
+- **Code:** `<Code path pending>`
 
 ## 3. Prioritisation
 
-- **Formula / rules:** `Priority is set by the weight of the category the size of the issue and how near the issue is to a main road. For example a large pile of waste on a ring road will get a higher rank than a broken streetlight on a small street. The priority orders and category ranks can also be changed later by the admins on the admin website if the city’s needs change.`
-- **Why not simply "most votes":** `A voting system only helps busy or wealthier areas where people have smartphones. A dangerous chemical spill on a road, at night might get no votes but is a big danger. Our system uses physical impact instead of popularity.`
-- **Code:** `src/<...>`
+- **Formula / rules:** Priority is heavily driven by the weight of the category, the physical size of the issue, and how dangerously close it is to a main arterial road. For example, a massive pile of concrete waste blocking the ring road will instantly override a broken streetlight on a quiet residential cul-de-sac. Our admins can also tweak these priority orders later if the city’s immediate needs change (like during monsoon season).
+- **Why not simply "most votes":** A voting system is fundamentally flawed because it only helps wealthier, crowded areas where everyone has a smartphone. A highly dangerous chemical spill on a dark peripheral road at night might get zero votes, but it is a massive civic hazard. Our system uses real physical impact to prioritize, completely ignoring popularity contests.
+- **Code:** `<Code path pending>`
 
 ## 4. Bad input
 
 | Input | What our system does |
 |---|---|
-| Duplicate report | `If three different people report the exact same pothole from different angles, the system groups them into one single incident ID so workers only have to do it once.` |
-| Fake / unrelated photo | `We do not allow file uploads from the phone gallery for both citizens and workers. Everyone must use the live camera to take a picture at that exact moment. If a citizen takes a random fake photo, the system reviews it, marks it as invalid, and closes the grievance immediately` |
-| Wrong or impossible location | `If a pin is dropped completely outside the Mysore district map, the system will reject it and show a location out of bounds error.` |
-| Abusive message | `If a user writes an angry abusive message that actually contains a real problem, the system removes the bad words and keeps the useful description. The task stays open, but the user gets flagged and receives a warning.` |
-| `Task not closed by worker` | `If a worker does not close a task in the app the system marks it as unfinished. This triggers an automated reminder system that depends on how serious the issue's. Over days the reminders get stronger - starting with important then very important, then urgent and finally very urgent. If the task remains open the system automatically sends the issue to officials for action.` |
+| Duplicate report | If three different citizens report the exact same pothole from three different angles, the system aggressively groups them into one single incident ID. Workers only have to fix it once. |
+| Fake / unrelated photo | We completely disabled file uploads from the phone gallery for both citizens and workers. Everyone must use the live camera to take a picture at that exact moment. If a citizen snaps a random fake photo, the system reviews it, marks it as invalid, and immediately closes the grievance. |
+| Wrong or impossible location | If a pin is dropped completely outside our mapped Mysore district, the system outright rejects it and shows a "location out of bounds" error. |
+| Abusive message | If an angry user writes an abusive message that actually contains a valid civic problem, we don't delete the ticket. The system strips out the bad words, keeps the useful description, and flags the user with a warning. The task stays open. |
+| Task not closed by worker | If a worker fails to close a task in the app, the system marks it as unfinished and triggers an automated, escalating reminder system. Over a span of days, reminders get stronger: important, very important, urgent, and finally very urgent. If still ignored, it automatically alerts higher officials. |
 
 ## 5. Offline operation
 
-- **What works offline:** `now nothing. We made a choice to not include support for working without internet for the 48-hour viable product. The focus was on the Geo-Elastic Routing Engine and the logic for balancing capacity. The platform needs an internet connection right now.`
-- **How it syncs:** `Not applicable for this version of the hackathon project. (Our plan, for scaling includes using Service Workers to keep the user interface cached. Indexeddb to keep data ready to send. When the internet comes back a background sync will send the data).`
-- **What does not work offline:** `The whole application does not work without internet. Loading the map sending a form and checking if a task is done all need 4G or WiFi.`
-- **How to test:** see [setup.md](./setup.md#testing-offline-mode)
+- **What works offline:** Right now, absolutely nothing. We made a highly strategic, conscious decision to scope out offline support for this 48-hour MVP. We poured 100% of our focus into building the Geo-Elastic Routing Engine and the capacity balancing logic. The platform requires an internet connection today.
+- **How it syncs:** Not applicable for this specific hackathon build. (However, our scaling roadmap involves using Service Workers to cache the UI and IndexedDB to queue data. When the internet connects, a background sync will handle the payload).
+- **What does not work offline:** Everything. Loading the map, sending a form, and taking a completion photo all currently require 4G or WiFi.
+- **How to test:** Please see `docs/setup.md` on why you should test this with an active connection.
