@@ -98,8 +98,8 @@ npm install --legacy-peer-deps && npm run dev
 
 | Name | Role | GitHub |
 |---|---|---|
-| `Panav K Bysani` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture` | `@panavkbysani2011-jpg` |
-| `Achalesh Ramana Kiral Kooloth` | `Co-Developer · Field Worker UI & Data Model Verification` | `@agnidevaraja` |
+| `Panav K Bysani` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture & Field Worker UI` | `@panavkbysani2011-jpg` |
+| `Achalesh Ramana Kiral Kooloth` | `Co-Developer · Data Model Verification & Backend devoloper` | `@agnidevaraja` |
 
 ## License
 
