@@ -203,8 +203,7 @@ export const MysuruLeafletMap: React.FC<MysuruLeafletMapProps> = ({
       const markerIcon = L.divIcon({
         className: 'custom-existing-issue-pin',
         html: `
-          <div style="width: 14px; height: 14px; border-radius: 9999px; background: ${
-            issue.status === 'resolved' ? '#10b981' : issue.priority === 'critical' ? '#ef4444' : '#f59e0b'
+          <div style="width: 14px; height: 14px; border-radius: 9999px; background: ${issue.status === 'resolved' ? '#10b981' : issue.priority === 'critical' ? '#ef4444' : '#f59e0b'
           }; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);"></div>
         `,
         iconSize: [14, 14],
@@ -217,9 +216,8 @@ export const MysuruLeafletMap: React.FC<MysuruLeafletMapProps> = ({
 
       marker.bindPopup(`
         <div style="font-family: inherit; font-size: 12px; color: #1c1917; line-height: 1.4; max-width: 220px;">
-          <div style="font-weight: 800; font-size: 10px; color: ${
-            issue.status === 'resolved' ? '#059669' : '#dc2626'
-          }; text-transform: uppercase;">
+          <div style="font-weight: 800; font-size: 10px; color: ${issue.status === 'resolved' ? '#059669' : '#dc2626'
+        }; text-transform: uppercase;">
             ${issue.status.replace('_', ' ')} • Priority ${issue.priority}
           </div>
           <div style="font-weight: 700; font-size: 12px; margin: 2px 0;">${issue.title}</div>
@@ -291,9 +289,8 @@ export const MysuruLeafletMap: React.FC<MysuruLeafletMapProps> = ({
       </div>
 
       {/* Map Container */}
-      <div className={`relative w-full rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${
-        isFullscreen ? 'grow min-h-[75vh]' : 'h-72 sm:h-80'
-      }`}>
+      <div className={`relative w-full rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${isFullscreen ? 'grow min-h-[75vh]' : 'h-72 sm:h-80'
+        }`}>
         {!isLoaded && !mapError && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-100 dark:bg-stone-900 text-stone-500 z-20">
             <Navigation className="w-6 h-6 animate-spin text-emerald-600" />

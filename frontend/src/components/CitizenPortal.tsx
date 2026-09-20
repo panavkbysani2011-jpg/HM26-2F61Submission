@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  CivicIssue, 
-  CivicCategory, 
+import {
+  CivicIssue,
+  CivicCategory,
   CIVIC_CATEGORIES,
   UserSession,
   SeverityRank
 } from '../types';
-import { 
-  submitCitizenReport, 
+import {
+  submitCitizenReport,
   SubmitReportResult,
   BORDER_HOTSPOTS,
   BorderHotspot,
@@ -25,22 +25,22 @@ import { MysuruLeafletMap } from './MysuruLeafletMap';
 import { compressImage } from '../utils/imageCompressor';
 import { moderateCitizenSubmission, moderateAndSanitizeCitizenReview } from '../utils/geminiVerification';
 import { AnimatedFileUpload } from './ui/AnimatedFileUpload';
-import { 
-  signInCitizenWithGoogle, 
-  signInCitizenWithNameAndEmail, 
-  signOutAll 
+import {
+  signInCitizenWithGoogle,
+  signInCitizenWithNameAndEmail,
+  signOutAll
 } from '../firebase';
-import { 
-  User, 
-  Camera, 
-  MapPin, 
-  CheckCircle2, 
-  Layers, 
-  Clock, 
-  ArrowLeft, 
-  Copy, 
-  Check, 
-  X, 
+import {
+  User,
+  Camera,
+  MapPin,
+  CheckCircle2,
+  Layers,
+  Clock,
+  ArrowLeft,
+  Copy,
+  Check,
+  X,
   RotateCcw,
   ListOrdered,
   FilePlus2,
@@ -997,7 +997,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
       }
 
       const formattedCoordsStr = `${selectedCoords.lat.toFixed(5)}, ${selectedCoords.lng.toFixed(5)}`;
-      
+
       // Auto-detect jurisdiction automatically based on location & coordinates
       const autoDetectedDepot = detectJurisdiction(locationName, selectedCoords);
 
@@ -1085,9 +1085,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
     const matchesName = userNameLower
       ? Boolean(
-          (issue.reportedBy && issue.reportedBy.toLowerCase() === userNameLower) ||
-          (issue.reporters && issue.reporters.some((r) => r.name && r.name.toLowerCase() === userNameLower))
-        )
+        (issue.reportedBy && issue.reportedBy.toLowerCase() === userNameLower) ||
+        (issue.reporters && issue.reporters.some((r) => r.name && r.name.toLowerCase() === userNameLower))
+      )
       : false;
 
     const matchesDemoSeed =
@@ -1111,7 +1111,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const combinedPlaces: MysuruPlace[] = [
     ...localMatches,
     ...liveSearchResults.filter(
-      (live) => !localMatches.some((loc) => 
+      (live) => !localMatches.some((loc) =>
         loc.name.toLowerCase().includes(live.name.toLowerCase()) ||
         live.name.toLowerCase().includes(loc.name.toLowerCase()) ||
         (Math.abs(loc.coords.lat - live.coords.lat) < 0.001 && Math.abs(loc.coords.lng - live.coords.lng) < 0.001)
@@ -1129,7 +1129,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
         {showResidentLogin && (
           <div className="fixed inset-0 z-[50] w-screen h-[100dvh] overflow-hidden backdrop-blur-sm bg-stone-950/80 flex items-center justify-center p-3 sm:p-4">
             <div className="relative my-auto bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in zoom-in-95">
-              
+
               {/* Header with Title and Dismiss/Back Action */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -1333,11 +1333,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
         {toastMessage && (
           <div
             id="citizen-notification-banner"
-            className={`p-4 rounded-xl shadow-md border text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-3 ${
-              toastType === 'info'
+            className={`p-4 rounded-xl shadow-md border text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-3 ${toastType === 'info'
                 ? 'bg-blue-50 dark:bg-blue-950/90 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800'
                 : 'bg-emerald-50 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1389,7 +1388,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 )}
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {session?.authProvider === 'google' 
+                  {session?.authProvider === 'google'
                     ? (lang === 'kn' ? 'ಗೂಗಲ್ ಪರಿಶೀಲಿತ ನಾಗರಿಕ' : 'Google Verified Citizen')
                     : (lang === 'kn' ? 'ದೃಢೀಕೃತ ನಿವಾಸಿ' : 'Verified Resident')}
                 </span>
@@ -1436,11 +1435,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               setActiveTab('intake');
               setSubmittedResult(null);
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'intake'
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'intake'
                 ? 'bg-stone-900 dark:bg-emerald-700 text-white shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-100 dark:bg-stone-800'
-            }`}
+              }`}
           >
             <FilePlus2 className="w-4 h-4" />
             <span>{lang === 'kn' ? 'ದೂರು ದಾಖಲಿಸಿ' : 'File Grievance'}</span>
@@ -1450,11 +1448,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
             id="tab-my-submissions"
             type="button"
             onClick={() => setActiveTab('submissions')}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'submissions'
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'submissions'
                 ? 'bg-stone-900 dark:bg-emerald-700 text-white shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-100 dark:bg-stone-800'
-            }`}
+              }`}
           >
             <ListOrdered className="w-4 h-4" />
             <span>{lang === 'kn' ? 'ನನ್ನ ಸಲ್ಲಿಕೆಗಳು' : 'My Submissions'}</span>
@@ -1576,7 +1573,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     {lang === 'kn' ? 'ನಾಗರಿಕ ಕುಂದುಕೊರತೆ ದೂರು ದಾಖಲಿಸಿ' : 'Lodge Municipal Civic Grievance'}
                   </h2>
                   <p className="text-xs text-stone-500 dark:text-stone-400">
-                    {lang === 'kn' 
+                    {lang === 'kn'
                       ? 'ಸಾರ್ವಜನಿಕ ಮೂಲಸೌಕರ್ಯ ದೋಷಗಳನ್ನು ಫೋಟೋ ಸಾಕ್ಷ್ಯದೊಂದಿಗೆ ಸಲ್ಲಿಸಿ. ಪುರಸಭೆಯ ನಿಯಮಗಳಿಂದ ವಿಲೇವಾರಿ ಮಾಡಲಾಗುತ್ತದೆ.'
                       : 'Submit public infrastructure defects with verified photographic evidence. Triage severity and jurisdiction dispatch are automated by municipal rules.'}
                   </p>
@@ -1642,7 +1639,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                       <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                       <span className="font-semibold">Offline draft restored.</span>
                       <span>Your previous unsaved report has been reloaded.</span>
-                      <button type="button" onClick={() => { setDescription(''); setDraftRestored(false); try { localStorage.removeItem('civic_mesh_citizen_draft'); } catch(e){} }} className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 cursor-pointer">Discard</button>
+                      <button type="button" onClick={() => { setDescription(''); setDraftRestored(false); try { localStorage.removeItem('civic_mesh_citizen_draft'); } catch (e) { } }} className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 cursor-pointer">Discard</button>
                     </div>
                   )}
 
@@ -1746,24 +1743,23 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                                 <div className="truncate">
                                   <div className="font-semibold text-stone-900 dark:text-white flex items-center gap-1.5">
                                     <span className="truncate">{loc.name}</span>
-                                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-sm shrink-0 ${
-                                      loc.category === 'circle'
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-sm shrink-0 ${loc.category === 'circle'
                                         ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
                                         : loc.category === 'shop'
-                                        ? 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300'
-                                        : loc.category === 'landmark'
-                                        ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
-                                        : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
-                                    }`}>
+                                          ? 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300'
+                                          : loc.category === 'landmark'
+                                            ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
+                                            : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                      }`}>
                                       {loc.category === 'circle'
                                         ? 'Circle'
                                         : loc.category === 'shop'
-                                        ? 'Shop / Market'
-                                        : loc.category === 'landmark'
-                                        ? 'Landmark'
-                                        : loc.category === 'address'
-                                        ? 'Live Address'
-                                        : 'Locality'}
+                                          ? 'Shop / Market'
+                                          : loc.category === 'landmark'
+                                            ? 'Landmark'
+                                            : loc.category === 'address'
+                                              ? 'Live Address'
+                                              : 'Locality'}
                                     </span>
                                   </div>
                                   {loc.subtext && (
@@ -1806,10 +1802,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                         <span>Quick Border Hotspots (Boundary Testing):</span>
                       </div>
-                      
+
                       <div className="flex flex-wrap items-center gap-2">
                         {BORDER_HOTSPOTS.map((spot) => {
-                          const isSpotSelected = 
+                          const isSpotSelected =
                             Math.abs(selectedCoords.lat - spot.lat) < 0.001 &&
                             Math.abs(selectedCoords.lng - spot.lng) < 0.001;
 
@@ -1819,11 +1815,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                               id={`hotspot-${spot.id}`}
                               type="button"
                               onClick={() => handleSelectHotspot(spot)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
-                                isSpotSelected
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${isSpotSelected
                                   ? 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-700 shadow-xs font-bold'
                                   : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700'
-                              }`}
+                                }`}
                               title={spot.description}
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
@@ -1999,32 +1994,32 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     </label>
 
                     <div className="flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={handleResetForm}
-                      className="px-4 py-2.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
-                    >
-                      {lang === 'kn' ? 'ಫಾರ್ಮ್ ಅಳಿಸಿ' : 'Clear Form'}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={handleResetForm}
+                        className="px-4 py-2.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
+                      >
+                        {lang === 'kn' ? 'ಫಾರ್ಮ್ ಅಳಿಸಿ' : 'Clear Form'}
+                      </button>
 
-                    <button
-                      id="submit-civic-report"
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md transition-all active:scale-98 disabled:opacity-60 cursor-pointer"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-white" />
-                          <span>{lang === 'kn' ? 'ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Lodging report...'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          <span>{lang === 'kn' ? 'ದೂರು ಸಲ್ಲಿಸಿ' : 'Submit Civic Report'}</span>
-                        </>
-                      )}
-                    </button>
+                      <button
+                        id="submit-civic-report"
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md transition-all active:scale-98 disabled:opacity-60 cursor-pointer"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
+                            <span>{lang === 'kn' ? 'ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Lodging report...'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>{lang === 'kn' ? 'ದೂರು ಸಲ್ಲಿಸಿ' : 'Submit Civic Report'}</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </form>
@@ -2108,8 +2103,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     statusBadgeText = lang === 'kn' ? 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ' : 'Quarantined (Audit)';
                     statusBadgeClass = 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800';
                   } else if (ticket.status === 'resolved') {
-                    statusBadgeText = ticket.verificationStatus === 'flagged_unverified' 
-                      ? (lang === 'kn' ? 'ಪೂರ್ಣಗೊಂಡಿದೆ (ಪರಿಶೀಲನೆ ಬಾಕಿ)' : 'Completed (Audit Pending)') 
+                    statusBadgeText = ticket.verificationStatus === 'flagged_unverified'
+                      ? (lang === 'kn' ? 'ಪೂರ್ಣಗೊಂಡಿದೆ (ಪರಿಶೀಲನೆ ಬಾಕಿ)' : 'Completed (Audit Pending)')
                       : (lang === 'kn' ? 'ಪರಿಹರಿಸಲಾಗಿದೆ' : 'Resolved & Verified');
                     statusBadgeClass = ticket.verificationStatus === 'flagged_unverified'
                       ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
@@ -2240,11 +2235,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                                     {[1, 2, 3, 4, 5].map((starVal) => (
                                       <Star
                                         key={starVal}
-                                        className={`w-4 h-4 ${
-                                          starVal <= (ticket.citizenRating || 0)
+                                        className={`w-4 h-4 ${starVal <= (ticket.citizenRating || 0)
                                             ? 'fill-amber-400 text-amber-400'
                                             : 'text-stone-300 dark:text-stone-600'
-                                        }`}
+                                          }`}
                                       />
                                     ))}
                                   </div>
@@ -2295,11 +2289,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                                         title={`${starVal} Star${starVal > 1 ? 's' : ''}`}
                                       >
                                         <Star
-                                          className={`w-5 h-5 transition-colors ${
-                                            isFilled
+                                          className={`w-5 h-5 transition-colors ${isFilled
                                               ? 'fill-amber-400 text-amber-400 drop-shadow-xs'
                                               : 'text-stone-300 dark:text-stone-600 hover:text-amber-300'
-                                          }`}
+                                            }`}
                                         />
                                       </button>
                                     );
@@ -2342,58 +2335,58 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           )}
                         </>
                       )}
-                        {/* #21 Re-open request (72-hour window from resolution) */}
-                        {ticket.status === 'resolved' && (() => {
-                          if (!ticket.resolvedAt) return null;
-                          const resolvedMs = new Date(ticket.resolvedAt).getTime();
-                          const windowMs = 72 * 3600 * 1000;
-                          const canReopen = Date.now() - resolvedMs < windowMs;
-                          const hoursLeft = Math.max(0, Math.round((resolvedMs + windowMs - Date.now()) / 3600000));
-                          if (!canReopen) return null;
-                          return (
-                            <div className="mt-2 pt-2 border-t border-stone-100 dark:border-stone-800">
-                              {reopeningId === ticket.id ? (
-                                <div className="flex flex-col gap-2">
-                                  <label className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
-                                    Why should this be re-opened? ({hoursLeft}h window remaining)
-                                  </label>
-                                  <textarea
-                                    value={reopenReason[ticket.id] || ''}
-                                    onChange={e => setReopenReason(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                                    rows={2}
-                                    className="text-xs px-3 py-2 bg-white dark:bg-stone-900 border border-rose-200 dark:border-rose-800 rounded-lg text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-rose-400 resize-none"
-                                    placeholder="Describe what is still unresolved..."
-                                  />
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => setReopeningId(null)}
-                                      className="px-3 py-1.5 text-[11px] font-medium text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
-                                    >Cancel</button>
-                                    <button
-                                      type="button"
-                                      disabled={!(reopenReason[ticket.id]?.trim())}
-                                      onClick={() => handleReopenTicket(ticket.id)}
-                                      className="px-4 py-1.5 text-[11px] font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-lg transition-colors cursor-pointer"
-                                    >
-                                      <RotateCcw className="w-3 h-3 inline mr-1" />
-                                      Confirm Re-open
-                                    </button>
-                                  </div>
+                      {/* #21 Re-open request (72-hour window from resolution) */}
+                      {ticket.status === 'resolved' && (() => {
+                        if (!ticket.resolvedAt) return null;
+                        const resolvedMs = new Date(ticket.resolvedAt).getTime();
+                        const windowMs = 72 * 3600 * 1000;
+                        const canReopen = Date.now() - resolvedMs < windowMs;
+                        const hoursLeft = Math.max(0, Math.round((resolvedMs + windowMs - Date.now()) / 3600000));
+                        if (!canReopen) return null;
+                        return (
+                          <div className="mt-2 pt-2 border-t border-stone-100 dark:border-stone-800">
+                            {reopeningId === ticket.id ? (
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
+                                  Why should this be re-opened? ({hoursLeft}h window remaining)
+                                </label>
+                                <textarea
+                                  value={reopenReason[ticket.id] || ''}
+                                  onChange={e => setReopenReason(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                                  rows={2}
+                                  className="text-xs px-3 py-2 bg-white dark:bg-stone-900 border border-rose-200 dark:border-rose-800 rounded-lg text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-rose-400 resize-none"
+                                  placeholder="Describe what is still unresolved..."
+                                />
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setReopeningId(null)}
+                                    className="px-3 py-1.5 text-[11px] font-medium text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
+                                  >Cancel</button>
+                                  <button
+                                    type="button"
+                                    disabled={!(reopenReason[ticket.id]?.trim())}
+                                    onClick={() => handleReopenTicket(ticket.id)}
+                                    className="px-4 py-1.5 text-[11px] font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <RotateCcw className="w-3 h-3 inline mr-1" />
+                                    Confirm Re-open
+                                  </button>
                                 </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setReopeningId(ticket.id)}
-                                  className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
-                                >
-                                  <RotateCcw className="w-3 h-3" />
-                                  Issue not resolved? Re-open ({hoursLeft}h left)
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })()}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setReopeningId(ticket.id)}
+                                className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                Issue not resolved? Re-open ({hoursLeft}h left)
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}

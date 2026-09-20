@@ -1,39 +1,39 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CivicIssue, UserSession, DepartmentCapacity, SeverityRank } from '../types';
 import { compressImage } from '../utils/imageCompressor';
-import { 
-  getPriorityScore, 
+import {
+  getPriorityScore,
   resolveIssueWithProof,
-  SEVERITY_LEVELS 
+  SEVERITY_LEVELS
 } from '../mockDatabase';
-import { 
-  verifyFieldWorkerProof, 
-  GeminiVerificationResult 
+import {
+  verifyFieldWorkerProof,
+  GeminiVerificationResult
 } from '../utils/geminiVerification';
-import { 
-  WrenchIcon as Wrench, 
-  CheckCircleIcon as CheckCircle2, 
-  ClockIcon as Clock, 
-  MapPinIcon as MapPin, 
-  ArrowLeftIcon as ArrowLeft, 
-  CameraIcon as Camera, 
-  ExclamationCircleIcon as AlertCircle, 
-  PlayCircleIcon as PlayCircle, 
-  CheckIcon as Check, 
-  TruckIcon as Truck, 
-  FireIcon as Flame, 
-  XMarkIcon as X, 
-  ArrowUpTrayIcon as Upload, 
-  ExclamationTriangleIcon as AlertTriangle, 
-  VideoCameraIcon as Video, 
-  ShieldCheckIcon as ShieldCheck, 
-  InformationCircleIcon as Info, 
-  SparklesIcon as Sparkles, 
-  ArrowTopRightOnSquareIcon as ExternalLink, 
-  ChevronRightIcon as ChevronRight, 
-  ClipboardDocumentIcon as Copy, 
-  PaperAirplaneIcon as Navigation, 
-  UserGroupIcon as Users 
+import {
+  WrenchIcon as Wrench,
+  CheckCircleIcon as CheckCircle2,
+  ClockIcon as Clock,
+  MapPinIcon as MapPin,
+  ArrowLeftIcon as ArrowLeft,
+  CameraIcon as Camera,
+  ExclamationCircleIcon as AlertCircle,
+  PlayCircleIcon as PlayCircle,
+  CheckIcon as Check,
+  TruckIcon as Truck,
+  FireIcon as Flame,
+  XMarkIcon as X,
+  ArrowUpTrayIcon as Upload,
+  ExclamationTriangleIcon as AlertTriangle,
+  VideoCameraIcon as Video,
+  ShieldCheckIcon as ShieldCheck,
+  InformationCircleIcon as Info,
+  SparklesIcon as Sparkles,
+  ArrowTopRightOnSquareIcon as ExternalLink,
+  ChevronRightIcon as ChevronRight,
+  ClipboardDocumentIcon as Copy,
+  PaperAirplaneIcon as Navigation,
+  UserGroupIcon as Users
 } from '@heroicons/react/24/outline';
 import { useLanguage } from '../context/LanguageContext';
 import { StarIcon as Star } from '@heroicons/react/24/solid';
@@ -58,12 +58,12 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   const { lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [completionNotice, setCompletionNotice] = useState<string | null>(null);
-  
+
   // Dedicated Task Detail & Resolution Modal
   const [selectedDetailTask, setSelectedDetailTask] = useState<CivicIssue | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<boolean>(false);
   const [pendingPhotoPreview, setPendingPhotoPreview] = useState<string | null>(null);
-  
+
   // Civic Mesh AI Verification states
   const [isVerifyingWithAI, setIsVerifyingWithAI] = useState<boolean>(false);
   const [aiVerificationResult, setAiVerificationResult] = useState<GeminiVerificationResult | null>(null);
@@ -138,7 +138,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
     if (!workerJurisdictionId) return true;
     if (i.assignedJurisdictionId === workerJurisdictionId) return true;
     if (i.targetJurisdictionId === workerJurisdictionId) return true;
-    
+
     // Check if assignedCrewLead matches worker name
     if (i.assignedCrewLead && i.assignedCrewLead.toLowerCase().includes(workerName.toLowerCase())) return true;
 
@@ -324,8 +324,8 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
       }
       auditNote = `Civic Mesh AI (${aiVerificationResult.confidence}% confidence): ${aiVerificationResult.detectedSubject}. ${aiVerificationResult.reason}${adminOverrideEnabled ? ' [Admin Override Active]' : ''}`;
     } else {
-      auditNote = adminOverrideEnabled 
-        ? 'Resolution verified via Administrative Override.' 
+      auditNote = adminOverrideEnabled
+        ? 'Resolution verified via Administrative Override.'
         : 'Resolution marked Unverified (Pending Supervisor Review).';
     }
 
@@ -393,12 +393,12 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
           const isResolved = selectedDetailTask.status === 'resolved';
 
           return (
-            <div 
-              id="task-detail-modal-backdrop" 
+            <div
+              id="task-detail-modal-backdrop"
               className="fixed inset-0 z-[50] w-screen h-[100dvh] overflow-hidden backdrop-blur-sm bg-stone-950/80 flex items-center justify-center p-3 sm:p-4"
             >
-              <div 
-                id="task-detail-card" 
+              <div
+                id="task-detail-card"
                 className="bg-white dark:bg-stone-900 border-2 border-stone-200 dark:border-stone-800 rounded-2xl max-w-2xl w-full shadow-2xl space-y-0 animate-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden"
               >
                 {/* Header */}
@@ -447,7 +447,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
 
                 {/* Scrollable Content Body */}
                 <div className="overflow-y-auto p-5 sm:p-6 space-y-6 flex-1">
-                  
+
                   {/* Grievance Description & Meta Grid */}
                   <div className="space-y-3">
                     <div className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
@@ -717,11 +717,10 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                                 </div>
                               </div>
                             ) : aiVerificationResult ? (
-                              <div className={`p-3.5 rounded-xl border space-y-1.5 text-xs ${
-                                aiVerificationResult.isVerified
+                              <div className={`p-3.5 rounded-xl border space-y-1.5 text-xs ${aiVerificationResult.isVerified
                                   ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
                                   : 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100'
-                              }`}>
+                                }`}>
                                 <div className="flex items-center justify-between">
                                   <span className="font-bold flex items-center gap-1.5">
                                     {aiVerificationResult.isVerified ? (
@@ -870,11 +869,10 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                                   {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
                                       key={star}
-                                      className={`w-3.5 h-3.5 ${
-                                        star <= (selectedDetailTask.citizenRating || 0)
+                                      className={`w-3.5 h-3.5 ${star <= (selectedDetailTask.citizenRating || 0)
                                           ? 'fill-amber-400 text-amber-400'
                                           : 'text-stone-300 dark:text-stone-600'
-                                      }`}
+                                        }`}
                                     />
                                   ))}
                                 </div>
@@ -970,11 +968,10 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
             <button
               id="tab-active-tasks"
               onClick={() => setActiveTab('active')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer ${
-                activeTab === 'active'
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer ${activeTab === 'active'
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-sm'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-200/70 dark:bg-stone-800'
-              }`}
+                }`}
             >
               <span>{lang === 'kn' ? 'ಸಕ್ರಿಯ ಕಾರ್ಯಗಳು' : 'Active Work Orders'}</span>
               <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-amber-400 text-stone-950 font-extrabold">
@@ -985,11 +982,10 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
             <button
               id="tab-completed-tasks"
               onClick={() => setActiveTab('completed')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer ${
-                activeTab === 'completed'
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer ${activeTab === 'completed'
                   ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-950 shadow-sm'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white bg-stone-200/70 dark:bg-stone-800'
-              }`}
+                }`}
             >
               <span>{lang === 'kn' ? 'ಪರಿಹರಿಸಲಾಗಿದೆ' : 'Resolved Log'}</span>
               <span className="text-[11px] opacity-75">({completedTasks.length})</span>
@@ -1037,15 +1033,14 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                         handleOpenTaskDetail(task);
                       }
                     }}
-                    className={`bg-white dark:bg-[#121214] border rounded-2xl p-6 shadow-xs cursor-pointer group hover:shadow-sm transition-all select-none ${
-                      rank === 5
+                    className={`bg-white dark:bg-[#121214] border rounded-2xl p-6 shadow-xs cursor-pointer group hover:shadow-sm transition-all select-none ${rank === 5
                         ? 'border-rose-300 dark:border-rose-900/90 bg-rose-50/20 dark:bg-rose-950/10 hover:border-rose-400'
                         : rank === 4
-                        ? 'border-orange-300 dark:border-orange-900/80 hover:border-orange-400'
-                        : rank === 3
-                        ? 'border-amber-300 dark:border-amber-900/70 hover:border-amber-400'
-                        : 'border-stone-200/80 dark:border-stone-800 hover:border-blue-500 dark:hover:border-blue-500'
-                    }`}
+                          ? 'border-orange-300 dark:border-orange-900/80 hover:border-orange-400'
+                          : rank === 3
+                            ? 'border-amber-300 dark:border-amber-900/70 hover:border-amber-400'
+                            : 'border-stone-200/80 dark:border-stone-800 hover:border-blue-500 dark:hover:border-blue-500'
+                      }`}
                   >
                     {/* Header: Ticket ID & Severity */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-100 dark:border-stone-800">
@@ -1104,11 +1099,10 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                     <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-stone-500 dark:text-stone-400">Current State:</span>
-                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md capitalize ${
-                          isUnderway
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md capitalize ${isUnderway
                             ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200'
                             : 'bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-200'
-                        }`}>
+                          }`}>
                           {task.status.replace('_', ' ')}
                         </span>
                       </div>

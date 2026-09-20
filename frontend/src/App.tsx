@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ViewType, UserSession, CivicIssue, DepartmentCapacity } from './types';
-import { 
-  getStoredIssues, 
-  updateIssueStatus, 
-  getStoredDepartments, 
-  getStoredSession, 
-  setStoredSession, 
-  resetToSeedData 
+import {
+  getStoredIssues,
+  updateIssueStatus,
+  getStoredDepartments,
+  getStoredSession,
+  setStoredSession,
+  resetToSeedData
 } from './mockDatabase';
 import { auth, onAuthStateChanged, signOutAll, testFirestoreConnection, FirebaseUser } from './firebase';
 import { Navbar } from './components/Navbar';

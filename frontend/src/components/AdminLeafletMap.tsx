@@ -584,12 +584,12 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           weight: 2,
         });
 
-        const typeLabel = 
-          geo.type === 'mcc_zone' 
-            ? 'MCC Zone' 
-            : geo.type === 'town_panchayat' 
-            ? 'Town Panchayat / TMC' 
-            : 'Gram Panchayat';
+        const typeLabel =
+          geo.type === 'mcc_zone'
+            ? 'MCC Zone'
+            : geo.type === 'town_panchayat'
+              ? 'Town Panchayat / TMC'
+              : 'Gram Panchayat';
 
         circle.bindTooltip(
           `<div style="font-family: inherit; font-size: 11px; padding: 2px;">
@@ -641,17 +641,17 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
       const effectiveDepot = isSpillover ? 'MCC Zone 3' : (issue.assignedDepot || (inBuffer ? 'Bogadi Panchayat' : 'MCC Zone 3'));
       const score = (issue.severityRank || getPriorityScore(issue.category)) as number;
 
-      const pinColor = isSpillover 
-        ? '#dc2626' 
-        : score === 5 
-        ? '#dc2626' 
-        : score === 4 
-        ? '#ea580c' 
-        : score === 3 
-        ? '#d97706' 
-        : score === 2 
-        ? '#2563eb' 
-        : '#78716c';
+      const pinColor = isSpillover
+        ? '#dc2626'
+        : score === 5
+          ? '#dc2626'
+          : score === 4
+            ? '#ea580c'
+            : score === 3
+              ? '#d97706'
+              : score === 2
+                ? '#2563eb'
+                : '#78716c';
 
       const customPin = L.divIcon({
         className: 'custom-admin-ticket-pin',
@@ -766,22 +766,20 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           <button
             type="button"
             onClick={() => { setActiveZoneFilter('all'); setSelectedJurisdictionId('all'); }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-              activeZoneFilter === 'all'
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${activeZoneFilter === 'all'
                 ? 'bg-stone-900 text-white dark:bg-white dark:text-stone-900'
                 : 'bg-stone-100 text-stone-700 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300'
-            }`}
+              }`}
           >
             All 26 Jurisdictions
           </button>
           <button
             type="button"
             onClick={() => { setActiveZoneFilter('mcc_zone'); setSelectedJurisdictionId('all'); }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
-              activeZoneFilter === 'mcc_zone'
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${activeZoneFilter === 'mcc_zone'
                 ? 'bg-emerald-700 text-white'
                 : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300'
-            }`}
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>9 MCC Zones</span>
@@ -789,11 +787,10 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           <button
             type="button"
             onClick={() => { setActiveZoneFilter('town_panchayat'); setSelectedJurisdictionId('all'); }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
-              activeZoneFilter === 'town_panchayat'
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${activeZoneFilter === 'town_panchayat'
                 ? 'bg-blue-700 text-white'
                 : 'bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300'
-            }`}
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-blue-500" />
             <span>4 Town Panchayats</span>
@@ -801,11 +798,10 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           <button
             type="button"
             onClick={() => { setActiveZoneFilter('gram_panchayat'); setSelectedJurisdictionId('all'); }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
-              activeZoneFilter === 'gram_panchayat'
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${activeZoneFilter === 'gram_panchayat'
                 ? 'bg-purple-700 text-white'
                 : 'bg-purple-50 text-purple-800 hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300'
-            }`}
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-purple-500" />
             <span>8 Gram Panchayats</span>
@@ -813,11 +809,10 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
           <button
             type="button"
             onClick={() => { setActiveZoneFilter('buffer_zone'); setSelectedJurisdictionId('all'); }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
-              activeZoneFilter === 'buffer_zone'
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${activeZoneFilter === 'buffer_zone'
                 ? 'bg-amber-700 text-white'
                 : 'bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300'
-            }`}
+              }`}
           >
             <span className="w-2 h-2 rounded-sm bg-amber-500" />
             <span>5 Buffer Corridors</span>
@@ -888,9 +883,8 @@ export const AdminLeafletMap: React.FC<AdminLeafletMapProps> = ({
       </div>
 
       {/* Map Container */}
-      <div className={`relative w-full rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${
-        isFullscreen ? 'grow min-h-[78vh]' : 'h-84 sm:h-96'
-      }`}>
+      <div className={`relative w-full rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 shadow-inner bg-stone-100 dark:bg-stone-900 ${isFullscreen ? 'grow min-h-[78vh]' : 'h-84 sm:h-96'
+        }`}>
         {!isLoaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-100 dark:bg-stone-900 text-stone-500 z-20">
             <Navigation className="w-6 h-6 animate-spin text-emerald-600" />

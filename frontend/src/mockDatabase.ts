@@ -928,10 +928,10 @@ export const calculateDynamicCapacities = (issues: CivicIssue[]): DynamicJurisdi
     // Filter issues belonging to this jurisdiction that are still active (not resolved, closed, or quarantined)
     const activeIssues = issues.filter((iss) => {
       if (
-        iss.status === 'resolved' || 
-        iss.status === 'closed' || 
-        iss.status === 'quarantined' || 
-        iss.isQuarantined || 
+        iss.status === 'resolved' ||
+        iss.status === 'closed' ||
+        iss.status === 'quarantined' ||
+        iss.isQuarantined ||
         iss.verificationStatus === 'quarantined'
       ) {
         return false;
@@ -983,11 +983,11 @@ export const calculateDynamicCapacities = (issues: CivicIssue[]): DynamicJurisdi
       ? 0
       : activeIssues.reduce((sum, iss) => sum + (iss.loadWeight || iss.severityRank || 2), 0);
     // Baseline capacity: Bogadi = 20 (22 load = 110%), MCC Zone 3 = 29 (13 load = 45%), others = workers * 1.8
-    const maxCapacity = jur.id === 'tp-bogadi' 
-      ? 20 
-      : jur.id === 'mcc-zone-3' 
-      ? 29 
-      : Math.max(10, Math.round(jur.baseWorkers * 1.8));
+    const maxCapacity = jur.id === 'tp-bogadi'
+      ? 20
+      : jur.id === 'mcc-zone-3'
+        ? 29
+        : Math.max(10, Math.round(jur.baseWorkers * 1.8));
     const capacityPercent = maxCapacity > 0 ? Math.round((activeLoad / maxCapacity) * 100) : 0;
     const isOverloaded = capacityPercent > 100;
 
@@ -1098,19 +1098,19 @@ const freeLocalStorageSpace = () => {
       if (
         key &&
         (key.startsWith('civic_mesh_issues_v1') ||
-         key.startsWith('civic_mesh_issues_v2') ||
-         key.startsWith('civic_mesh_issues_v3') ||
-         (key.startsWith('civic_') &&
-          key !== ISSUES_STORAGE_KEY &&
-          key !== DEPARTMENTS_STORAGE_KEY &&
-          key !== SESSION_STORAGE_KEY &&
-          key !== 'civic_theme'))
+          key.startsWith('civic_mesh_issues_v2') ||
+          key.startsWith('civic_mesh_issues_v3') ||
+          (key.startsWith('civic_') &&
+            key !== ISSUES_STORAGE_KEY &&
+            key !== DEPARTMENTS_STORAGE_KEY &&
+            key !== SESSION_STORAGE_KEY &&
+            key !== 'civic_theme'))
       ) {
         keysToRemove.push(key);
       }
     }
     keysToRemove.forEach((k) => {
-      try { localStorage.removeItem(k); } catch {}
+      try { localStorage.removeItem(k); } catch { }
     });
   } catch {
     // Ignore storage iteration issues
@@ -1140,8 +1140,8 @@ const compactIssuesForStorage = (issues: CivicIssue[], maxRecentWithFullPhotos =
     const fallbackSvg: string = isSvgImg
       ? (issue.imageUrl || SAMPLE_DEBRIS_PHOTO)
       : (issue.category === 'Potholes' || issue.category === 'Roads & Pavement'
-          ? SAMPLE_POTHOLE_PHOTO
-          : issue.category === 'Drainage' || issue.category === 'Water & Drainage'
+        ? SAMPLE_POTHOLE_PHOTO
+        : issue.category === 'Drainage' || issue.category === 'Water & Drainage'
           ? SAMPLE_DRAINAGE_PHOTO
           : SAMPLE_DEBRIS_PHOTO);
 
@@ -1324,17 +1324,17 @@ export const submitCitizenReport = (data: {
   const matchingIndex = isQuarantined
     ? -1
     : current.findIndex((issue) => {
-        if (
-          issue.status === 'resolved' ||
-          issue.status === 'closed' ||
-          issue.status === 'quarantined' ||
-          issue.isQuarantined
-        ) {
-          return false;
-        }
-        if (issue.category !== data.category) return false;
-        return isNearby(issue.coordinates, data.coordinates);
-      });
+      if (
+        issue.status === 'resolved' ||
+        issue.status === 'closed' ||
+        issue.status === 'quarantined' ||
+        issue.isQuarantined
+      ) {
+        return false;
+      }
+      if (issue.category !== data.category) return false;
+      return isNearby(issue.coordinates, data.coordinates);
+    });
 
   if (matchingIndex !== -1) {
     const existing = current[matchingIndex];
@@ -1345,13 +1345,13 @@ export const submitCitizenReport = (data: {
       existing.reporters && existing.reporters.length > 0
         ? [...existing.reporters]
         : [
-            {
-              name: existing.reportedBy,
-              email: 'citizen@mysuru.gov.in',
-              timestamp: existing.reportedAt,
-              imageUrl: existing.imageUrl,
-            },
-          ];
+          {
+            name: existing.reportedBy,
+            email: 'citizen@mysuru.gov.in',
+            timestamp: existing.reportedAt,
+            imageUrl: existing.imageUrl,
+          },
+        ];
 
     // Add new reporter entry
     existingReporters.push(newReporterEntry);
@@ -1360,8 +1360,8 @@ export const submitCitizenReport = (data: {
       existing.images && existing.images.length > 0
         ? [...existing.images]
         : existing.imageUrl
-        ? [existing.imageUrl]
-        : [];
+          ? [existing.imageUrl]
+          : [];
 
     if (data.imageUrl && !existingImages.includes(data.imageUrl)) {
       existingImages.push(data.imageUrl);
@@ -1417,8 +1417,8 @@ export const submitCitizenReport = (data: {
   const dynamicRoute = (inBuffer && bufferZoneId) ? routeBufferZoneTicket(bufferZoneId, current) : null;
 
   // Dynamically inherit assigned crew, lead and vehicle from WORKER_ROSTER
-  const assignedJurisdictionId = dynamicRoute 
-    ? dynamicRoute.targetJurisdictionId 
+  const assignedJurisdictionId = dynamicRoute
+    ? dynamicRoute.targetJurisdictionId
     : detectJurisdictionId(data.location, data.coordinates);
 
   const assignedWorker = WORKER_ROSTER[assignedJurisdictionId] || WORKER_ROSTER['mcc-zone-3'];
@@ -1472,8 +1472,8 @@ export const submitCitizenReport = (data: {
 };
 
 export const updateIssueStatus = (
-  id: string, 
-  status: IssueStatus, 
+  id: string,
+  status: IssueStatus,
   crew?: string,
   vehicle?: string
 ): CivicIssue[] => {
@@ -1519,7 +1519,7 @@ export const adminUpdateIssue = (
         ...updates,
         isQuarantined: isNowQuarantined,
         ...(isNowQuarantined ? { isFlagged: true } : (updates.status && updates.status !== 'quarantined' ? { isFlagged: false } : {})),
-        ...(updates.severityRank ? { 
+        ...(updates.severityRank ? {
           severityRank: nextRank,
           loadWeight: nextRank,
           priority: (nextRank >= 5 ? 'critical' : nextRank === 4 ? 'high' : nextRank === 3 ? 'medium' : 'low') as IssuePriority,
@@ -1698,7 +1698,7 @@ export interface ClearingLedgerSummary {
 }
 
 export const calculateClearingLedger = (
-  issues: CivicIssue[], 
+  issues: CivicIssue[],
   _bogadiCapacityPercent?: number
 ): ClearingLedgerSummary => {
   const capacities = calculateDynamicCapacities(issues);
@@ -1720,9 +1720,9 @@ export const calculateClearingLedger = (
     // Only count actual active buffer tickets (issue.isBufferZone === true)
     const bufTickets = issues.filter(issue => {
       if (
-        issue.status === 'closed' || 
-        issue.status === 'resolved' || 
-        issue.status === 'quarantined' || 
+        issue.status === 'closed' ||
+        issue.status === 'resolved' ||
+        issue.status === 'quarantined' ||
         issue.isQuarantined
       ) {
         return false;
