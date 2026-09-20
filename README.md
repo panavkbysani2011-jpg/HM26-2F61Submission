@@ -69,9 +69,9 @@ Full disclosure: **[ai.md](./ai.md)**
 
 <!-- The full 1-page Decision Log is a PDF on Google Drive, linked in resource.md. ≤ 3 lines here. -->
 
-- Chose: `Dynamic capacity-based spillover with an automated Inter-Agency Clearing Ledger`, over: `Rigid point-in-polygon assignment`
-- Because: `Strict administrative borders cause boundary complaints to be rejected due to local equipment and fuel budget exhaustion`
-- First thing to break at city scale: `Live Firestore socket listeners across 10,000+ simultaneous connections (mitigated by paginated queries and ticket caching)`
+- Chose: `A capacity‑based routing engine that uses a 500‑meter border buffer zone and an inter‑agency ledger. This engine automatically routes tickets to depots that are underloaded when a home office goes beyond one hundred percent capacity.`, over: `Rigid point-in-polygon assignment`
+- Because: `Strict administrative borders cause boundary complaints to be rejected due to local equipment and fuel budget exhaustion, it speeds up cleanup and avoids disputes. It uses nearby trucks so it tackles public health risks faster.`
+- First thing to break at city scale: `The first thing that may break at city scale is system‑wide capacity saturation during a city‑wide waste spike, such, as Dasara. If adjacent zones all hit one hundred percent capacity at the time the spillover logic could loop forever.`
 
 Full decision log: **[resource.md](./resource.md#4-submission-artifacts-google-drive)** · Template: **[decision-log-template.md](./resource-templates/decision-log-template.md)**
 
