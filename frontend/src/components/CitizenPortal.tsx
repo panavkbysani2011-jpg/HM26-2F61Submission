@@ -23,6 +23,7 @@ import {
 import { MysuruLeafletMap } from './MysuruLeafletMap';
 import { compressImage } from '../utils/imageCompressor';
 import { moderateCitizenSubmission } from '../utils/geminiVerification';
+import { AnimatedFileUpload } from './ui/AnimatedFileUpload';
 import { 
   signInCitizenWithGoogle, 
   signInCitizenWithNameAndEmail, 
@@ -828,6 +829,23 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAnimatedFileSelect = async (file: File) => {
+    try {
+      const compressed = await compressImage(file, 800, 600, 0.65);
+      setImagePreview(compressed);
+      setFormError(null);
+      stopLiveCamera();
+    } catch (err) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+        setFormError(null);
+        stopLiveCamera();
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -1780,50 +1798,25 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                       <p className="text-xs text-amber-600 dark:text-amber-400">{cameraError}</p>
                     )}
 
-                    {/* Image Preview Card */}
-                    {imagePreview ? (
-                      <div className="relative rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden bg-stone-900 group max-w-sm">
-                        <img
-                          src={imagePreview}
-                          alt="Captured civic evidence"
-                          className="w-full h-48 object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleRemovePhoto}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 shadow-sm"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Remove / Retake</span>
-                          </button>
-                        </div>
-                        <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/70 text-white text-[10px] font-mono flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                          <span>Audit Evidence Verified</span>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Camera Actions Bar */
-                      <div className="flex flex-wrap items-center gap-3">
+                    {/* Animated Drag-and-Drop File Upload & Camera Alternative */}
+                    <AnimatedFileUpload
+                      onFileSelect={handleAnimatedFileSelect}
+                      previewUrl={imagePreview}
+                      onRemove={handleRemovePhoto}
+                      label={lang === 'kn' ? 'ಛಾಯಾಚಿತ್ರ ಸಾಕ್ಷ್ಯವನ್ನು ಇಲ್ಲಿ ಎಳೆಯಿರಿ ಅಥವಾ ಬ್ರೌಸ್ ಮಾಡಿ' : 'Drop photographic evidence here, or click to browse'}
+                      sublabel={lang === 'kn' ? 'ಜೆಪಿಜಿ, ಪಿಎನ್‌ಜಿ, ವೆಬ್‌ಪಿ ಬೆಂಬಲಿಸುತ್ತದೆ' : 'Supports JPG, PNG, WEBP up to 10MB'}
+                    />
+
+                    {!imagePreview && (
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           id="btn-start-camera"
                           type="button"
                           onClick={startLiveCamera}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all active:scale-95 cursor-pointer"
                         >
                           <Video className="w-4 h-4" />
-                          <span>Open Live Camera</span>
-                        </button>
-
-                        <button
-                          id="btn-upload-evidence"
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 transition-colors"
-                        >
-                          <Camera className="w-4 h-4 text-stone-500" />
-                          <span>Upload Photo (Desktop)</span>
+                          <span>{lang === 'kn' ? 'ಲೈವ್ ಕ್ಯಾಮೆರಾ ಬಳಸಿ' : 'Open Live Camera'}</span>
                         </button>
                       </div>
                     )}

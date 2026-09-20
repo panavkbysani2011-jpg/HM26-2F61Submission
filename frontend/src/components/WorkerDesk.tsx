@@ -12,31 +12,31 @@ import {
   GeminiVerificationResult 
 } from '../utils/geminiVerification';
 import { 
-  Wrench, 
-  CheckCircle2, 
-  Clock, 
-  MapPin, 
-  ArrowLeft, 
-  Camera, 
-  AlertCircle, 
-  PlayCircle, 
-  Check, 
-  Truck,
-  Flame,
-  X,
-  Upload,
-  AlertTriangle,
-  Video,
-  StopCircle,
-  ShieldCheck,
-  Info,
-  Sparkles,
-  ExternalLink,
-  ChevronRight,
-  Copy,
-  Navigation,
-  Users
-} from 'lucide-react';
+  WrenchIcon as Wrench, 
+  CheckCircleIcon as CheckCircle2, 
+  ClockIcon as Clock, 
+  MapPinIcon as MapPin, 
+  ArrowLeftIcon as ArrowLeft, 
+  CameraIcon as Camera, 
+  ExclamationCircleIcon as AlertCircle, 
+  PlayCircleIcon as PlayCircle, 
+  CheckIcon as Check, 
+  TruckIcon as Truck, 
+  FireIcon as Flame, 
+  XMarkIcon as X, 
+  ArrowUpTrayIcon as Upload, 
+  ExclamationTriangleIcon as AlertTriangle, 
+  VideoCameraIcon as Video, 
+  StopCircleIcon as StopCircle, 
+  ShieldCheckIcon as ShieldCheck, 
+  InformationCircleIcon as Info, 
+  SparklesIcon as Sparkles, 
+  ArrowTopRightOnSquareIcon as ExternalLink, 
+  ChevronRightIcon as ChevronRight, 
+  ClipboardDocumentIcon as Copy, 
+  PaperAirplaneIcon as Navigation, 
+  UserGroupIcon as Users 
+} from '@heroicons/react/24/outline';
 import { useLanguage } from '../context/LanguageContext';
 
 interface WorkerDeskProps {
@@ -359,7 +359,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-stone-100 dark:bg-stone-950 py-8 px-4 sm:px-6 lg:px-8 text-stone-900 dark:text-stone-100 transition-colors">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#f8f9fa] dark:bg-[#09090b] py-8 px-4 sm:px-6 lg:px-8 text-stone-900 dark:text-stone-100 transition-colors">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Completion Toast Notification */}
@@ -869,14 +869,14 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
         })()}
 
         {/* Worker Desk Header */}
-        <div className="bg-white dark:bg-stone-900 border-2 border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white dark:bg-[#121214] border border-stone-200/80 dark:border-stone-800 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
               <Wrench className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-stone-950 dark:text-white">
+                <h1 className="text-2xl font-extrabold tracking-tight text-stone-950 dark:text-white font-display">
                   {lang === 'kn' ? 'ಕಾರ್ಮಿಕ ಪೋರ್ಟಲ್' : 'Worker Desk'}
                 </h1>
                 <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-800">
@@ -992,14 +992,14 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                         handleOpenTaskDetail(task);
                       }
                     }}
-                    className={`bg-white dark:bg-stone-900 border-2 rounded-2xl p-6 shadow-sm cursor-pointer group hover:shadow-md hover:border-blue-400 dark:hover:border-blue-600 transition-all select-none ${
+                    className={`bg-white dark:bg-[#121214] border rounded-2xl p-6 shadow-xs cursor-pointer group hover:shadow-sm transition-all select-none ${
                       rank === 5
-                        ? 'border-rose-400 dark:border-rose-900/90 bg-rose-50/20 dark:bg-rose-950/10'
+                        ? 'border-rose-300 dark:border-rose-900/90 bg-rose-50/20 dark:bg-rose-950/10 hover:border-rose-400'
                         : rank === 4
-                        ? 'border-orange-300 dark:border-orange-900/80'
+                        ? 'border-orange-300 dark:border-orange-900/80 hover:border-orange-400'
                         : rank === 3
-                        ? 'border-amber-300 dark:border-amber-900/70'
-                        : 'border-stone-200 dark:border-stone-800'
+                        ? 'border-amber-300 dark:border-amber-900/70 hover:border-amber-400'
+                        : 'border-stone-200/80 dark:border-stone-800 hover:border-blue-500 dark:hover:border-blue-500'
                     }`}
                   >
                     {/* Header: Ticket ID & Severity */}
@@ -1033,7 +1033,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
 
                     {/* Body: Title & Incident Details */}
                     <div className="py-4 space-y-2">
-                      <h2 className="text-lg font-bold text-stone-950 dark:text-white tracking-tight leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <h2 className="text-lg font-bold text-stone-950 dark:text-white tracking-tight leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-display">
                         {task.title}
                       </h2>
                       <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed font-normal line-clamp-2">
