@@ -106,9 +106,6 @@ export interface CivicIssue {
   clearingCost?: number; // In INR (₹) for inter-agency clearing
   adminNotes?: string;
   resolutionNotes?: string;
-  citizenRating?: number; // 1 to 5 stars
-  citizenFeedback?: string;
-  ratedAt?: string;
 }
 
 export interface DepartmentCapacity {
