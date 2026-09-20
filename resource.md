@@ -59,7 +59,7 @@ HOW TO FILL THIS FILE
 
 | # | Artifact | Google Drive Link | File Name | SHA-256 (first 16 chars) |
 |---|---|---|---|---|
-| 1 | [Pitch + Code Walkthrough Video](./resource-templates/video-guide.md) (≤ 10 min, MP4) | `<https://drive.google.com/file/d/.../view>` | `<TeamID>_video.mp4` | `<a1b2c3d4e5f60718>` |
+| 1 | [Pitch + Code Walkthrough Video](./resource-templates/video-guide.md) (≤ 10 min, MP4) | `https://drive.google.com/file/d/1hzMyY53bdbpqPNgUIfUuwwHlkevJNm-O/view?usp=sharing` | `HM26-2F61-Video_submission .mp4` | `96F0F2246AAFCCFC` |
 | 2 | [Decision Log](./resource-templates/decision-log-template.md) (1 page, PDF) | `https://drive.google.com/file/d/1oIYLrhtufzGANXFGIlYpQyVJX4IQqlkN/view?usp=sharing` | `HM26-2F61_Decision_Log.pdf` | `FB99E85A35D2F6CD` |
 | 3 | [Presentation](./resource-templates/presentation-template.md) (≤ 10 slides, PDF) | `https://drive.google.com/file/d/1bvnGhHIBM5CBMaFYnR-pffOg4qeFVzFv/view?usp=sharing` | `HM26-2F61_presentation.pdf ` | `c5e1a320b94f066` |
 
