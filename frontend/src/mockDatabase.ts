@@ -1660,7 +1660,7 @@ export const resetToSeedData = () => {
   return { issues: freshIssues, departments: freshDepts };
 };
 
-// Inter-Agency Clearing Ledger Calculations (Universal — NOT hardcoded to Bogadi/Zone 3)
+// Inter-Agency Clearing Ledger Calculations (Universal - NOT hardcoded to Bogadi/Zone 3)
 export interface ClearingLedgerEntry {
   debtorJurisdiction: string;
   creditorJurisdiction: string;

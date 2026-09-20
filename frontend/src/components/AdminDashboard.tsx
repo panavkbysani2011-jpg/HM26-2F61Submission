@@ -1251,7 +1251,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           />
         </div>
 
-        {/* Master Civic Triage Ledger — Three-Tier Accordion with Global Search */}
+        {/* Master Civic Triage Ledger - Three-Tier Accordion with Global Search */}
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-stone-100 dark:border-stone-800 space-y-4">

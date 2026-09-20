@@ -20,20 +20,20 @@ in Mysuru. Be honest: ✅ handled · ⚠️ partial · ❌ not yet. Timestamps p
 - **Approach:** `We use OTP verification through SIM and email to stop bots from abusing the system. If the same person reports the issue more than once the system lets them know that the response has already been recorded. Posting again will not make the issue more urgent. Raise its priority. We allow up to two posts per session in case someone thinks the first post didn’t go through. All these posts, from the user get combined into a single record.
 If ten different people report the garbage dump all ten reports are grouped under one problem group. The urgency level stays the same no matter how many people report it. The system knows that ten individuals reported it. The field worker only sees one task to handle. There’s no load or confusion. They just get one clear action to take.`
 - **Anonymity trade-off:** `There is an anonymity trade-off: citizens must create an account. Log in to use the platform.. When they report a problem their personal identity and security details are kept private. Their name, phone number and other sensitive information are not shared publicly with the reported issue. The public only sees the problem description, not who reported it.`
-- **Code:** `src/backend/services/spam_filter.py`
+- **Code:** `frontend/src/utils/geminiVerification.ts` (`moderateCitizenSubmission`), `frontend/src/components/CitizenPortal.tsx`
 
 
 ## 2. Unclear jurisdiction
 
 - **Approach:** `We use a fuzzy buffer zone over contested borders such as the Bogadi edge and the MCC edge. If a location pin lands in this buffer zone the system checks the workload of the Bogadi office.`
 - **What happens in a boundary case:** ` If the Bogadi office is overloaded with tasks the system sends the ticket automatically to the MCC depot when MCC has free equipment. The system then writes this in the inter‑agency ledger so that the MCC office receives payment from the Bogadi funds for the work.`
-- **Code:** `src/<...>`
+- **Code:** `frontend/src/mockDatabase.ts` (`detectJurisdiction`, `isInsideBufferZone`), `frontend/src/components/AdminLeafletMap.tsx`
 
 ## 3. Prioritisation
 
 - **Formula / rules:** `Priority is set by the weight of the category the size of the issue and how near the issue is to a main road. For example a large pile of waste on a ring road will get a higher rank than a broken streetlight on a small street. The priority orders and category ranks can also be changed later by the admins on the admin website if the city’s needs change.`
 - **Why not simply "most votes":** `A voting system only helps busy or wealthier areas where people have smartphones. A dangerous chemical spill on a road, at night might get no votes but is a big danger. Our system uses physical impact instead of popularity.`
-- **Code:** `src/<...>`
+- **Code:** `frontend/src/mockDatabase.ts` (`getPriorityScore`, `SEVERITY_LEVELS`)
 
 ## 4. Bad input
 
