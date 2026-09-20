@@ -30,9 +30,10 @@ If you used no AI at all, say so explicitly in the Summary and delete the rest.
 
 | Tool | Model / plan | Used by | What we used it for |
 |---|---|---|---|
-| `ChatGPT` | `GPT-4o, Free tier` | `@panavkbysani2011-jpg` | `Debugging Tailwind CSS v4 configurations, regex for input filters, and leaflet canvas map setups` |
-| `GitHub Copilot` | `Copilot Free / Student` | `@agnidevaraja` | `Code completion for repetitive TypeScript interfaces and React form handlers` |
-| `Cursor / Claude` | `Claude 3.5 Sonnet` | `@panavkbysani2011-jpg` | `Scaffolding initial component layouts and SVG icon alignments` |
+| `Antigravity` | `Google Antigravity Agentic IDE` | `@panavkbysani2011-jpg`, `@agnidevaraja` | `Autonomous pair programming: scaffolding React components, Leaflet interactive layers, bilingual Kannada/English state wiring, and anti-slop UI design overhaul` |
+| `Gemini` | `Gemini 2.5 Flash / Gemini Pro` | `@panavkbysani2011-jpg` | `Prompt formulation, error handling patterns, and TypeScript interface reviews` |
+| `Google AI Studio` | `Web interface / Prototyping` | `@panavkbysani2011-jpg` | `System prompt testing and zero-tolerance negative constraint tuning for field worker resolution photo audits` |
+| `Google Julius` | `Analysis environment` | `@agnidevaraja` | `Exploratory geospatial coordinate analysis, evaluating Outer Ring Road boundary envelopes, and validating capacity threshold math across the 26 Mysuru jurisdictions` |
 
 ## 2. Where AI Helped in the Codebase
 

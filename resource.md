@@ -1,4 +1,4 @@
-# HackMysuru 1.0 — Phase 1 Submission Index
+# HackMysuru 1.0 - Phase 1 Submission Index
 
 > **This is the landing file for your submission.** Reviewers open this file first.
 > Every evaluation artifact is uploaded to **Google Drive** and linked below. No files in the repo, no other platforms.
@@ -22,14 +22,14 @@ HOW TO FILL THIS FILE
 |---|---|
 | Team ID (from dashboard) | `HM26-2F61` |
 | Team Name | `SyntaxError-404` |
-| School | `10X International School>` |
+| School | `10X International School` |
 | Team Leader | `Panav K Bysani` · `panavkbysani2011@gmail.com` · `9036378191` |
 | Repository | `https://github.com/panavkbysani2011-jpg/HM26-2F61Submission` |
 
 | # | Member | Program & Year | GitHub Handle | Primary Role |
 |---|---|---|---|---|
-| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg>` | `<backend / ML / frontend / ...>` |
-| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `<...>` |
+| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture` |
+| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `Co-Developer · Field Worker UI & Data Model Verification` |
 
 ---
 
@@ -91,11 +91,11 @@ Paste the first 16 characters.
 
 | Field | Value |
 |---|---|
-| Live URL | `<https://...>` |
-| Platform | `<Web / PWA / Android APK link on Drive / ...>` |
-| Test login (if any) | Citizen: `<user / pass>` · Staff: `<user / pass>` · Admin: `<user / pass>` |
-| Sample data loaded? | `<Yes — 120 synthetic complaints across 6 wards>` |
-| How to test offline mode | `<one line>`. Full steps in [docs/setup.md](./docs/setup.md#testing-offline-mode) |
+| Live URL | `Local development & evaluation (Vite dev server) · See docs/setup.md` |
+| Platform | `Responsive Web / Progressive Web Application (PWA)` |
+| Test login (if any) | `No login credentials required · 1-click access to Citizen Portal, Field Worker Desk, and Admin Dashboard` |
+| Sample data loaded? | `Yes · 18 seed complaints across 26 Mysuru jurisdictions and 5 contested buffer zones` |
+| How to test offline mode | `Toggle Chrome DevTools Offline mode; app uses local cache, geocoding fallbacks, and rule heuristics. Full steps in docs/setup.md#6-testing-offline--low-connectivity-behavior` |
 | If the live link is down | Follow [docs/setup.md](./docs/setup.md) |
 
 ---
@@ -104,11 +104,11 @@ Paste the first 16 characters.
 
 <!-- Tell a reviewer exactly what to click to see your core value. Keep it to 3–5 steps. -->
 
-1. `<Open the live URL and log in as Citizen>`
-2. `<Report a blocked drain at the pre-filled boundary location>`
-3. `<Observe the routing decision + confidence score>`
-4. `<Log in as Staff → see it in the panchayat queue → mark resolved>`
-5. `<Open the public ward map → status now shows Resolved>`
+1. `Launch the application at http://localhost:5173 and click "Launch Citizen Portal"`
+2. `Select a category (e.g. C&D Debris), search or click "KR Circle" or "Ballal Circle", attach a photo, and submit to observe the Geo-Elastic priority scoring and tracking ID.`
+3. `Navigate back and click "Launch Admin Dashboard" to view the 26-zone capacity matrix, observe the Bogadi - MCC Zone 3 spillover routing, and inspect the Inter-Agency Clearing Ledger vouchers.`
+4. `Click "Open Field Worker Desk", select a Bogadi or MCC Zone 3 field profile, and inspect the task queue with GPS proximity range lock and on-site camera audit.`
+5. `Return to the Citizen Portal with your tracking ID to view the verified resolution and test the 5-star rating feedback loop.`
 
 ---
 

@@ -52,16 +52,16 @@ Keep the section ORDER below. Reviewers look for each section in the same place 
 
 ## 4. Architecture
 
-`<One-sentence summary, e.g. "Offline-first PWA → REST API → PostgreSQL/PostGIS, with a rules-based routing service.">`
+A client-side progressive web application integrating interactive Leaflet GIS mapping, a deterministic Geo-Elastic Routing Engine (G-ERE), and Google Gemini multimodal vision verification backed by real-time state synchronization.
 
 ➡️ Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
 
 ## 5. Tech Stack & AI Usage
 
-**Stack:** `<React PWA · FastAPI · PostgreSQL + PostGIS · Render>` (full rationale in [docs/architecture.md](./docs/architecture.md#tech-stack))
+**Stack:** `React 19 · TypeScript · Tailwind CSS · Leaflet GIS · Google Gemini API (@google/genai) · Vite` (full rationale in [docs/architecture.md](./docs/architecture.md#tech-stack))
 
-**AI tools used in development:** `<ChatGPT, Copilot, ...>`
-**AI inside the product:** `<e.g. YOLOv8 for bin detection / none>`
+**AI tools used in development:** `Gemini, Antigravity, Google AI Studio, Google Julius`
+**AI inside the product:** `Google Gemini 2.5 / 3.6 Flash via @google/genai for field worker resolution photo verification and citizen text moderation`
 
 ➡️ Full disclosure: **[ai.md](./ai.md)**
 
@@ -69,17 +69,17 @@ Keep the section ORDER below. Reviewers look for each section in the same place 
 
 <!-- The full 1-page Decision Log is a PDF on Google Drive, linked in resource.md. ≤ 3 lines here. -->
 
-- **Chose:** `<approach>`, **over:** `<rejected alternative>`
-- **Because:** `<the trade-off in one line>`
-- **First thing to break at city scale:** `<one line>`
+- **Chose:** `Dynamic capacity-based spillover with an automated Inter-Agency Clearing Ledger`, **over:** `Rigid point-in-polygon assignment`
+- **Because:** `Strict administrative borders cause boundary complaints to be rejected due to local equipment and fuel budget exhaustion`
+- **First thing to break at city scale:** `Live Firestore socket listeners across 10,000+ simultaneous connections (mitigated by paginated queries and ticket caching)`
 
 ➡️ Full decision log: **[resource.md](./resource.md#4-submission-artifacts-google-drive)** · Template: **[decision-log-template.md](./resource-templates/decision-log-template.md)**
 
 ## 7. Setup & Run
 
 ```bash
-git clone <repo-url> && cd <repo>
-<one-line install> && <one-line run>
+git clone https://github.com/panavkbysani2011-jpg/HM26-2F61Submission.git && cd HM26-2F61Submission/frontend
+npm install --legacy-peer-deps && npm run dev
 ```
 
 ➡️ Prerequisites, environment variables, seed data and offline testing: **[docs/setup.md](./docs/setup.md)**
@@ -98,8 +98,8 @@ git clone <repo-url> && cd <repo>
 
 | Name | Role | GitHub |
 |---|---|---|
-| `Panav K Bysani` | `<...>` | `@panavkbysani2011-jpg` |
-| `Achalesh Ramana Kiral Kooloth` | `<...>` | `@agnidevaraja` |
+| `Panav K Bysani` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture` | `@panavkbysani2011-jpg` |
+| `Achalesh Ramana Kiral Kooloth` | `Co-Developer · Field Worker UI & Data Model Verification` | `@agnidevaraja` |
 
 ## License
 
