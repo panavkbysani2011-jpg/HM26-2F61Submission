@@ -92,23 +92,21 @@ Paste the first 16 characters.
 | Field | Value |
 |---|---|
 | Live URL | `<https://...>` |
-| Platform | `<Web / PWA / Android APK link on Drive / ...>` |
-| Test login (if any) | Citizen: `<user / pass>` · Staff: `<user / pass>` · Admin: `<user / pass>` |
-| Sample data loaded? | `<Yes — 120 synthetic complaints across 6 wards>` |
-| How to test offline mode | `<one line>`. Full steps in [docs/setup.md](./docs/setup.md#testing-offline-mode) |
+| Platform | Web Platform (React 19 + TypeScript + Vite) |
+| Test login (if any) | Citizen: `1-Click Selection` · Worker: `1-Click Dispatch Roster` · Admin: `admin` / `devpass2026` |
+| Sample data loaded? | Yes — Seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity) |
+| How to test offline mode | N/A — No offline mode (Civic Mesh operates as an online cloud-synchronized municipal dispatch and inter-agency clearing mesh) |
 | If the live link is down | Follow [docs/setup.md](./docs/setup.md) |
 
 ---
 
 ## 6. Quick Reviewer Path (≤ 3 minutes)
 
-<!-- Tell a reviewer exactly what to click to see your core value. Keep it to 3–5 steps. -->
-
-1. `<Open the live URL and log in as Citizen>`
-2. `<Report a blocked drain at the pre-filled boundary location>`
-3. `<Observe the routing decision + confidence score>`
-4. `<Log in as Staff → see it in the panchayat queue → mark resolved>`
-5. `<Open the public ward map → status now shows Resolved>`
+1. **Intake at Contested Boundary**: Launch app → click **Citizen Portal** (1-click resident select) → choose pre-filled boundary location (*Bogadi Ring Road Junction*) → observe real-time AI geo-elastic boundary detection and duplicate clustering → click **Submit Civic Report**.
+2. **Cross-Jurisdictional Spillover**: Notice the ticket automatically re-routes from overloaded Bogadi Town Panchayat (110% load) to adjacent MCC Zone 3 under dynamic capacity balancing.
+3. **Field Worker Execution**: Switch to **Worker Desk** (1-click dispatch roster) → select MCC Zone 3 operator (*Manjunatha S.*) → open the active work order and click **Submit Completion**.
+4. **Citizen Feedback Loop**: Return to Citizen Portal → open **My Submissions** tab → rate the resolved ticket with 5 stars and optional feedback comment.
+5. **Municipal Oversight & Clearing Ledger**: Open **Admin Dashboard** (login with `admin` / `devpass2026`) → inspect the dynamic Capacity Matrix, GIS buffer corridor polygons, citizen satisfaction rating, and automated Inter-Agency Clearing Ledger debit.
 
 ---
 
