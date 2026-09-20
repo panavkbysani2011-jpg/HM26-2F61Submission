@@ -48,7 +48,7 @@ export const HoverFeatureCards: React.FC<HoverFeatureCardsProps> = ({
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${item.iconBgClass}`}>
                   {item.icon}
                 </div>
-                <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${item.badgeClass}`}>
+                <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${item.badgeClass}`}>
                   {item.badge}
                 </span>
               </div>

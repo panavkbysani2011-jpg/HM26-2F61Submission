@@ -45,19 +45,14 @@ export const CivicMeshLogo: React.FC<CivicMeshLogoProps> = ({
   return (
     <div className={`inline-flex flex-col select-none ${className}`}>
       <div className="inline-flex items-baseline gap-1 font-display">
-        {/* 'Civic' with styled 'C' */}
+        {/* 'Civic' in one solid color */}
         <span className={`${current.text} ${current.tracking} font-extrabold text-stone-900 dark:text-white leading-none`}>
-          <span className="text-emerald-600 dark:text-emerald-400">C</span>ivic
+          Civic
         </span>
 
-        {/* 'Mesh' with styled 'M' */}
+        {/* 'Mesh' in one solid emerald accent color */}
         <span className={`${current.text} ${current.tracking} font-extrabold text-emerald-600 dark:text-emerald-400 leading-none`}>
-          <span className="text-amber-500 dark:text-amber-400">M</span>esh
-        </span>
-
-        {/* Active Civic Node Dot */}
-        <span className="relative flex items-center justify-center ml-0.5 self-center">
-          <span className={`inline-block ${current.dot} rounded-full bg-emerald-500`}></span>
+          Mesh
         </span>
       </div>
 

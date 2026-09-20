@@ -107,7 +107,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Hero Section */}
         <section className="text-center space-y-6 pt-2">
           {/* Municipal Coordination Indicator */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 text-stone-800 dark:text-stone-200 tracking-wide shadow-2xs font-mono">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 text-stone-800 dark:text-stone-200 tracking-wide shadow-2xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>MCC & Peripheral Panchayats Joint Network</span>
             <span className="text-stone-300 dark:text-stone-700">•</span>
@@ -148,7 +148,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <span className="text-xs font-mono font-bold px-3 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                 G-ERE Routing Active
               </span>
             </div>
@@ -289,12 +289,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 03
               </div>
               <h3 className="text-base font-bold font-display text-stone-900 dark:text-white">
-                {lang === 'kn' ? '3. ಜಿಪಿಎಸ್ ಲಾಕ್ ಮತ್ತು ಎಐ ಪರಿಶೀಲನೆ' : '3. GPS Lock & AI Photo Audit'}
+                {lang === 'kn' ? '3. ಜಿಪಿಎಸ್ ಲಾಕ್ ಮತ್ತು ಫೋಟೋ ರುಜುವಾತು' : '3. GPS Lock & Photographic Proof Audit'}
               </h3>
               <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed font-sans">
                 {lang === 'kn'
-                  ? 'ಕಾರ್ಮಿಕರು 50 ಮೀಟರ್ ವ್ಯಾಪ್ತಿಯಲ್ಲಿ ಮಾತ್ರ ಕ್ಯಾಮೆರಾ ಮೂಲಕ ಕಾರ್ಯ ಪೂರ್ಣಗೊಳಿಸಬಹುದು.'
-                  : 'Field workers must be within 50 meters of the incident site to capture photo proof. Multimodal AI audits ensure genuine civic resolution before closing the ticket.'}
+                  ? 'ಕಾರ್ಮಿಕರು 50 ಮೀಟರ್ ವ್ಯಾಪ್ತಿಯಲ್ಲಿ ಮಾತ್ರ ಕ್ಯಾಮೆರಾ ಮೂಲಕ ಕಾರ್ಯ ಪೂರ್ಣಗೊಳಿಸಬಹುದು. ಅಧಿಕೃತ ಪರಿಶೀಲನೆ ನಂತರವೇ ಟಿಕೆಟ್ ಮುಕ್ತಾಯಗೊಳ್ಳುತ್ತದೆ.'
+                  : 'Field workers must be within 50 meters of the incident site to capture resolution proof photos. Proximity verification and audit standards ensure genuine civic resolution before closing the ticket.'}
               </p>
             </div>
           </div>

@@ -425,7 +425,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                           Buffer Zone
                         </span>
                       )}
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border uppercase tracking-wider ${severityMeta.badgeClass}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border uppercase tracking-wider ${severityMeta.badgeClass}`}>
                         <span className={`w-2 h-2 rounded-full ${severityMeta.dotColor}`} />
                         <span>Rank {rank} • {severityMeta.name}</span>
                       </span>
@@ -656,7 +656,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                               <button
                                 type="button"
                                 onClick={captureFrameFromLiveVideo}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-md active:scale-95 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-md active:scale-95 cursor-pointer"
                               >
                                 <Camera className="w-4 h-4" />
                                 <span>Take Photo</span>
@@ -664,7 +664,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                               <button
                                 type="button"
                                 onClick={stopLiveCamera}
-                                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-stone-800 text-white cursor-pointer"
+                                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-800 text-white cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -879,7 +879,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                 <h1 className="text-2xl font-extrabold tracking-tight text-stone-950 dark:text-white font-display">
                   {lang === 'kn' ? 'ಕಾರ್ಮಿಕ ಪೋರ್ಟಲ್' : 'Worker Desk'}
                 </h1>
-                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-800">
+                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-800">
                   {workerJurisdictionName}
                 </span>
               </div>
@@ -932,7 +932,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
               }`}
             >
               <span>{lang === 'kn' ? 'ಸಕ್ರಿಯ ಕಾರ್ಯಗಳು' : 'Active Work Orders'}</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[11px] bg-amber-400 text-stone-950 font-extrabold">
+              <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-amber-400 text-stone-950 font-extrabold">
                 {activeTasks.length}
               </span>
             </button>
@@ -1021,7 +1021,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                       {/* Severity Badge */}
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border uppercase tracking-wider ${severityMeta.badgeClass}`}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold border uppercase tracking-wider ${severityMeta.badgeClass}`}
                         >
                           {rank === 5 && <Flame className="w-3.5 h-3.5 text-rose-600 animate-pulse" />}
                           {rank === 4 && <AlertCircle className="w-3.5 h-3.5 text-orange-600" />}
@@ -1059,7 +1059,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                     <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-stone-500 dark:text-stone-400">Current State:</span>
-                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full capitalize ${
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md capitalize ${
                           isUnderway
                             ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200'
                             : 'bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-200'

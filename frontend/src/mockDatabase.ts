@@ -1747,3 +1747,91 @@ export const calculateClearingLedger = (
     totalDebit,
   };
 };
+
+// Citizen GPS Landmark Snapping
+const MYSURU_SNAP_LANDMARKS = [
+  { name: 'KR Circle', lat: 12.3088, lng: 76.6531 },
+  { name: 'Bogadi Ring Road Junction', lat: 12.3020, lng: 76.6180 },
+  { name: 'Alanahalli T-Junction', lat: 12.2830, lng: 76.6920 },
+  { name: 'Kukkarahalli Lake North Gate', lat: 12.3090, lng: 76.6340 },
+  { name: 'Chamundi Hill Foothills', lat: 12.2740, lng: 76.6710 },
+  { name: 'Bannimantap Highway Circle', lat: 12.3350, lng: 76.6490 },
+  { name: 'Saraswathipuram Park', lat: 12.3010, lng: 76.6320 },
+  { name: 'Hebbal Industrial Area', lat: 12.3550, lng: 76.6120 },
+  { name: 'Kuvempunagar Bus Stand', lat: 12.2850, lng: 76.6280 },
+  { name: 'Hootagalli Industrial Junction', lat: 12.3390, lng: 76.5770 },
+];
+
+export const snapToMysuruLandmark = (lat: number, lng: number): { landmark: string; distanceMeters: number } => {
+  let closest = MYSURU_SNAP_LANDMARKS[0];
+  let minDistSq = Number.MAX_VALUE;
+  for (const lm of MYSURU_SNAP_LANDMARKS) {
+    const dSq = Math.pow(lat - lm.lat, 2) + Math.pow(lng - lm.lng, 2);
+    if (dSq < minDistSq) { minDistSq = dSq; closest = lm; }
+  }
+  const distanceMeters = Math.round(Math.sqrt(minDistSq) * 111000);
+  return { landmark: distanceMeters < 50 ? closest.name : ('Near ' + closest.name + ' (~' + distanceMeters + 'm)'), distanceMeters };
+};
+
+// Citizen Reopen Request Handler (72h Grace Window)
+export const citizenReopenIssue = (id: string, reason: string): boolean => {
+  const current = getStoredIssues();
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  const updated = current.map((item) => {
+    if (item.id === id || item.trackingId === id) {
+      return {
+        ...item,
+        status: 'in_progress' as const,
+        verificationStatus: 'pending' as const,
+        adminNotes: ('Reopened by Resident: ' + reason),
+        updatedAt: now,
+      };
+    }
+    return item;
+  });
+  saveStoredIssues(updated);
+  return true;
+};
+
+// Worker Defect Reclassification Handler  
+export const workerReclassifyIssue = (id: string, category: CivicCategory): CivicIssue[] => {
+  const current = getStoredIssues();
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  const rank = getPriorityScore(category);
+  const updated = current.map((item) => {
+    if (item.id === id) {
+      return {
+        ...item,
+        category,
+        severityRank: rank,
+        loadWeight: rank,
+        priority: (rank >= 5 ? 'critical' : rank === 4 ? 'high' : rank === 3 ? 'medium' : 'low') as IssuePriority,
+        clearingCost: SEVERITY_LEVELS[rank]?.defaultCost || 2500,
+        adminNotes: ((item.adminNotes || '') + ' [Field Reclassified to ' + category + ']').trim(),
+        updatedAt: now,
+      };
+    }
+    return item;
+  });
+  saveStoredIssues(updated);
+  return updated;
+};
+
+// Worker Task Deferral / Next Shift Rollover Handler
+export const workerDeferIssue = (id: string, reason: string): CivicIssue[] => {
+  const current = getStoredIssues();
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  const updated = current.map((item) => {
+    if (item.id === id) {
+      return {
+        ...item,
+        status: 'assigned' as const,
+        adminNotes: ((item.adminNotes || '') + ' [Shift Deferred: ' + reason + ']').trim(),
+        updatedAt: now,
+      };
+    }
+    return item;
+  });
+  saveStoredIssues(updated);
+  return updated;
+};

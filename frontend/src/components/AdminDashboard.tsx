@@ -500,7 +500,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-900 dark:text-rose-200 text-xs space-y-1">
                       <div className="flex items-center gap-2 font-bold text-sm">
                         <ShieldExclamationIcon className="w-4 h-4 text-rose-600" />
-                        <span>Content Quarantined by AI Safety Filter</span>
+                        <span>Content Quarantined by Automated Safety Policy</span>
                       </div>
                       <p className="text-[11px] text-rose-800 dark:text-rose-300 leading-relaxed">
                         Flag Reason: Abusive phrasing or safety violation detected in citizen report text. Kept in isolated quarantine register until administrative review.
@@ -569,7 +569,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             onClick={() => setLightboxImage({
                               url: inspectingIssue.resolvedImageUrl!,
                               title: 'Field Worker Resolution Proof',
-                              subtitle: `Verified by Civic Mesh AI • ${inspectingIssue.resolvedAt || 'Timestamp logged'}`
+                              subtitle: `Verified by Photographic Proof Audit • ${inspectingIssue.resolvedAt || 'Timestamp logged'}`
                             })}
                             className="group/img relative h-32 rounded-lg overflow-hidden border border-emerald-300 dark:border-emerald-800 bg-black cursor-pointer"
                           >
@@ -596,13 +596,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Civic Mesh Multimodal AI Audit Card */}
+                  {/* Civic Mesh Visual Verification Audit Card */}
                   {inspectingIssue.aiAuditDetails && (
                     <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 text-xs space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200">
                           <SparklesIcon className="w-4 h-4 text-emerald-600" />
-                          <span>Civic Mesh Multimodal Visual Verification</span>
+                          <span>Civic Mesh Visual Remediation Audit</span>
                         </div>
                         <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-extrabold">
                           {inspectingIssue.aiAuditDetails.isApproved ? 'Remediation Verified' : 'Audit Pending'}
@@ -816,7 +816,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h1 className="text-2xl font-extrabold tracking-tight text-stone-900 dark:text-white font-display">
                   Municipal Administrative Console
                 </h1>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Real-Time Civic Mesh</span>
                 </span>
@@ -1195,12 +1195,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             Quarantined &amp; Flagged
                           </h3>
                           <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                            Tickets caught by AI content safety filter for abusive language or spam
+                            Tickets caught by automated content safety filter for abusive language or spam
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                           {quarantinedIssues.length}
                         </span>
                         {expandedSections.quarantined ? (
@@ -1214,7 +1214,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="px-6 pb-4 space-y-3">
                         {quarantinedIssues.length === 0 ? (
                           <div className="text-center py-6 text-xs text-stone-400 dark:text-stone-500 italic">
-                            No quarantined tickets. AI content filters have not flagged any reports.
+                            No quarantined tickets. Content safety filters have not flagged any reports.
                           </div>
                         ) : (
                           <>
@@ -1272,7 +1272,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                           {clusteredIssues.length}
                         </span>
                         {expandedSections.clustered ? (
@@ -1344,7 +1344,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
                           {standardIssues.length}
                         </span>
                         {expandedSections.standard ? (

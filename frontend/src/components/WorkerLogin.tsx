@@ -109,7 +109,7 @@ export const WorkerLogin: React.FC<WorkerLoginProps> = ({
                 <ArrowLeft className="w-4 h-4" />
                 <span>{lang === 'kn' ? 'ಪೋರ್ಟಲ್ ಹಬ್' : 'Portal Hub'}</span>
               </button>
-              <span className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              <span className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 {lang === 'kn' ? 'ಕಾರ್ಮಿಕ ಪೋರ್ಟಲ್ ಪ್ರವೇಶ' : 'Worker Portal Authentication'}
               </span>
             </div>
@@ -118,8 +118,8 @@ export const WorkerLogin: React.FC<WorkerLoginProps> = ({
             </h1>
             <p className="text-sm text-stone-600 dark:text-stone-400 mt-1 max-w-2xl">
               {lang === 'kn'
-                ? 'ಸ್ಥಳೀಯ ಕಾರ್ಯ ಸರತಿ ಸಾಲುಗಳು, ಮಾರ್ಗ ತೆರವು ಪ್ರೋಟೋಕಾಲ್‌ಗಳು ಮತ್ತು AI ರಿಪೇರಿ ಪರಿಶೀಲನಾ ಡೆಸ್ಕ್ ಪ್ರವೇಶಿಸಲು ಕ್ಷೇತ್ರ ಕಾರ್ಯಾಚರಣೆಗಳ ಪ್ರೊಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ.'
-                : 'Select a field operations profile below to access real-time localized task queues, route-clearing protocols, and Civic Mesh AI repair verification desk.'}
+                ? 'ಸ್ಥಳೀಯ ಕಾರ್ಯ ಸರತಿ ಸಾಲುಗಳು, ಮಾರ್ಗ ತೆರವು ಪ್ರೋಟೋಕಾಲ್‌ಗಳು ಮತ್ತು ರಿಪೇರಿ ಪರಿಶೀಲನಾ ಡೆಸ್ಕ್ ಪ್ರವೇಶಿಸಲು ಕ್ಷೇತ್ರ ಕಾರ್ಯಾಚರಣೆಗಳ ಪ್ರೊಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ.'
+                : 'Select a field operations profile below to access real-time localized task queues, route-clearing protocols, and Civic Mesh repair verification desk.'}
             </p>
           </div>
 

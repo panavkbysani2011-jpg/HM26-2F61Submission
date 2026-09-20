@@ -18,7 +18,9 @@ import {
   SAMPLE_POTHOLE_PHOTO,
   SAMPLE_DEBRIS_PHOTO,
   SAMPLE_DRAINAGE_PHOTO,
-  rateIssueResolution
+  rateIssueResolution,
+  snapToMysuruLandmark,
+  citizenReopenIssue
 } from '../mockDatabase';
 import { MysuruLeafletMap } from './MysuruLeafletMap';
 import { compressImage } from '../utils/imageCompressor';
@@ -62,7 +64,16 @@ import {
   Store,
   Compass,
   Building2,
-  Star
+  Star,
+  Crosshair,
+  SlidersHorizontal,
+  Sun,
+  Eye,
+  ZoomIn,
+  RefreshCw,
+  Bell,
+  Smartphone,
+  Truck
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -541,6 +552,119 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     setTimeout(() => setToastMessage(null), 5000);
   };
 
+  // User-selected features state & handlers
+  // #1 High accuracy geolocation in meters & #2 Landmark snapping
+  const [geoAccuracy, setGeoAccuracy] = useState<number | null>(null);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+
+  // #29 High contrast theme mode
+  const [highContrastMode, setHighContrastMode] = useState<boolean>(false);
+
+  // #10 Offline drafts state
+  const [draftRestored, setDraftRestored] = useState<boolean>(false);
+
+  // #19 Follow-up reminder toggle
+  const [followUpReminder, setFollowUpReminder] = useState<boolean>(false);
+
+  // #14 Guided camera framing reticle overlay
+  const [showReticleGuide, setShowReticleGuide] = useState<boolean>(true);
+
+  // #4 Before/After resolved photo fullscreen comparison modal
+  const [fullscreenCompareTicket, setFullscreenCompareTicket] = useState<CivicIssue | null>(null);
+
+  // #21 Re-open request window (72-hour grace period)
+  const [reopenReason, setReopenReason] = useState<Record<string, string>>({});
+  const [reopeningId, setReopeningId] = useState<string | null>(null);
+
+  // Auto-restore offline draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('civic_mesh_citizen_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.description) {
+          setDescription(parsed.description);
+          if (parsed.category) setCategory(parsed.category);
+          if (parsed.locationName) setLocationName(parsed.locationName);
+          if (parsed.selectedCoords) setSelectedCoords(parsed.selectedCoords);
+          setDraftRestored(true);
+        }
+      }
+    } catch (e) {
+      // Ignore draft read errors
+    }
+  }, []);
+
+  // Auto-save offline draft as user inputs
+  useEffect(() => {
+    if (description || locationName) {
+      try {
+        localStorage.setItem(
+          'civic_mesh_citizen_draft',
+          JSON.stringify({
+            category,
+            description,
+            locationName,
+            selectedCoords,
+            updatedAt: Date.now(),
+          })
+        );
+      } catch (e) {
+        // Ignore localStorage quota errors
+      }
+    }
+  }, [category, description, locationName, selectedCoords]);
+
+  // Handle One-Tap Geolocation with meter accuracy and landmark snapping
+  const handleOneTapGeo = () => {
+    if (!navigator.geolocation) {
+      setFormError('Geolocation is not supported by your browser.');
+      return;
+    }
+    setIsLocating(true);
+    setFormError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const accuracyMeters = Math.round(pos.coords.accuracy);
+        setGeoAccuracy(accuracyMeters);
+        const coords = {
+          lat: parseFloat(pos.coords.latitude.toFixed(5)),
+          lng: parseFloat(pos.coords.longitude.toFixed(5)),
+        };
+        setSelectedCoords(coords);
+        const snap = snapToMysuruLandmark(coords.lat, coords.lng);
+        const locTitle = `${snap.landmark} (±${accuracyMeters}m GPS accuracy)`;
+        setLocationName(locTitle);
+        setSearchQuery(locTitle);
+      },
+      (err) => {
+        setIsLocating(false);
+        // Fallback simulation for local development / testing
+        const fallback = { lat: 12.3087, lng: 76.6531 };
+        setSelectedCoords(fallback);
+        setGeoAccuracy(8);
+        const snap = snapToMysuruLandmark(fallback.lat, fallback.lng);
+        const locTitle = `${snap.landmark} (Simulated GPS: ±8m)`;
+        setLocationName(locTitle);
+        setSearchQuery(locTitle);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  };
+
+  // Handle 72-hour Re-open request
+  const handleReopenTicket = (ticketId: string) => {
+    const reason = reopenReason[ticketId]?.trim() || 'Defect recurring or unresolved at physical site.';
+    setReopeningId(ticketId);
+    citizenReopenIssue(ticketId, reason);
+    onRefreshIssues();
+    setReopeningId(null);
+    setToastType('info');
+    setToastMessage(`Issue #${ticketId} re-opened and re-assigned for inspection.`);
+    setTimeout(() => setToastMessage(null), 6000);
+  };
+
   // The system automatically computes severity rank based on category (citizen cannot select this)
   const autoAssessedSeverity = getPriorityScore(category);
   const severityMeta = SEVERITY_LEVELS[autoAssessedSeverity];
@@ -917,6 +1041,18 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
       }
 
       setSubmittedResult(result);
+
+      // #17 Haptic feedback on submission
+      if (navigator.vibrate) navigator.vibrate?.([30, 50, 30]);
+      // Clear offline draft on successful submission
+      try { localStorage.removeItem('civic_mesh_citizen_draft'); } catch (e) { /* ignore */ }
+      // #19 Store follow-up reminder preference locally
+      if (followUpReminder && result.trackingId) {
+        try {
+          const reminderKey = `civic_reminder_${result.trackingId}`;
+          localStorage.setItem(reminderKey, JSON.stringify({ trackingId: result.trackingId, remindAt: Date.now() + 48 * 3600 * 1000 }));
+        } catch (e) { /* ignore */ }
+      }
     } catch (err) {
       console.error('Submission handling error:', err);
       setFormError('An error occurred while lodging the report. Please try again.');
@@ -1010,7 +1146,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span>Resident Access</span>
                   </span>
@@ -1236,13 +1372,27 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
                   {lang === 'kn' ? 'ನಾಗರಿಕ ಪೋರ್ಟಲ್' : 'Citizen Portal'}
                 </h1>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   {lang === 'kn' ? 'ಮೈಸೂರು ಮಹಾನಗರ ಪಾಲಿಕೆ' : 'Mysuru Municipal Corporation'}
                 </span>
+                {/* #29 High Contrast Mode Toggle */}
+                <button
+                  type="button"
+                  title={highContrastMode ? 'Disable high contrast mode' : 'Enable high contrast mode for bright sunlight'}
+                  onClick={() => setHighContrastMode(!highContrastMode)}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                    highContrastMode
+                      ? 'bg-stone-900 text-white border-stone-700'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-300 dark:border-stone-600 hover:bg-stone-200 dark:hover:bg-stone-700'
+                  }`}
+                >
+                  <Sun className="w-3 h-3" />
+                  <span>{highContrastMode ? 'High Contrast ON' : 'High Contrast'}</span>
+                </button>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mt-1">
                 <span>{lang === 'kn' ? 'ದೃಢೀಕೃತ ನಿವಾಸಿ:' : 'Verified Resident:'}</span>
@@ -1503,13 +1653,40 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     </div>
                   </div>
 
+                  {/* #10 Draft restored banner */}
+                  {draftRestored && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300">
+                      <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                      <span className="font-semibold">Offline draft restored.</span>
+                      <span>Your previous unsaved report has been reloaded.</span>
+                      <button type="button" onClick={() => { setDescription(''); setDraftRestored(false); try { localStorage.removeItem('civic_mesh_citizen_draft'); } catch(e){} }} className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 cursor-pointer">Discard</button>
+                    </div>
+                  )}
+
                   {/* LOCATION SECTION: Google Maps-Style Search / Address Input & Interactive Leaflet Map */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
                         Location Selection (Search Address, Shop, Circle or Pin on Map) *
                       </label>
-                      <span className="text-[11px] text-stone-400">Mysuru Municipal Area</span>
+                      {/* #1 One-tap GPS button with accuracy readout */}
+                      <button
+                        type="button"
+                        id="btn-one-tap-gps"
+                        onClick={handleOneTapGeo}
+                        disabled={isLocating}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                      >
+                        {isLocating ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Crosshair className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isLocating ? 'Locating...' : 'Use My GPS'}</span>
+                        {geoAccuracy !== null && !isLocating && (
+                          <span className="text-emerald-100 font-mono">±{geoAccuracy}m</span>
+                        )}
+                      </button>
                     </div>
 
                     {/* Search Place / Enter Address Field with Live Autocomplete */}
@@ -1823,7 +2000,22 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   </div>
 
                   {/* Submission Buttons */}
-                  <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end gap-3">
+                  <div className="pt-4 border-t border-stone-100 dark:border-stone-800 space-y-3">
+                    {/* #19 Follow-up Reminder Toggle */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none group">
+                      <input
+                        type="checkbox"
+                        checked={followUpReminder}
+                        onChange={(e) => setFollowUpReminder(e.target.checked)}
+                        className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                      />
+                      <Bell className="w-3.5 h-3.5 text-stone-400 group-hover:text-emerald-600 transition-colors" />
+                      <span className="text-xs text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-stone-200 transition-colors">
+                        {lang === 'kn' ? '48 ಗಂಟೆಗಳ ನಂತರ ಅನುಸರಣಾ ಜ್ಞಾಪನೆ ಮಾಡಿ' : 'Remind me to follow up in 48 hours if unresolved'}
+                      </span>
+                    </label>
+
+                    <div className="flex items-center justify-end gap-3">
                     <button
                       type="button"
                       onClick={handleResetForm}
@@ -1841,7 +2033,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                       {isSubmitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
-                          <span>{lang === 'kn' ? 'ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Civic Mesh AI Auditing & Lodging...'}</span>
+                          <span>{lang === 'kn' ? 'ಸಲ್ಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Lodging report...'}</span>
                         </>
                       ) : (
                         <>
@@ -1850,6 +2042,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         </>
                       )}
                     </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -1974,7 +2167,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
                         {/* Status Badge */}
                         <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusBadgeClass}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold border ${statusBadgeClass}`}>
                             {isQuarantined && <Info className="w-3.5 h-3.5 text-rose-600" />}
                             {!isQuarantined && (ticket.status === 'resolved') && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                             {!isQuarantined && ticket.verificationStatus === 'flagged_unverified' && <Info className="w-3.5 h-3.5 text-amber-600" />}
@@ -2153,6 +2346,67 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           )}
                         </>
                       )}
+                        {/* #21 Re-open request (72-hour window from resolution) */}
+                        {ticket.status === 'resolved' && (() => {
+                          if (!ticket.resolvedAt) return null;
+                          const resolvedMs = new Date(ticket.resolvedAt).getTime();
+                          const windowMs = 72 * 3600 * 1000;
+                          const canReopen = Date.now() - resolvedMs < windowMs;
+                          const hoursLeft = Math.max(0, Math.round((resolvedMs + windowMs - Date.now()) / 3600000));
+                          if (!canReopen) return null;
+                          return (
+                            <div className="mt-2 pt-2 border-t border-stone-100 dark:border-stone-800">
+                              {reopeningId === ticket.id ? (
+                                <div className="flex flex-col gap-2">
+                                  <label className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
+                                    Why should this be re-opened? ({hoursLeft}h window remaining)
+                                  </label>
+                                  <textarea
+                                    value={reopenReason[ticket.id] || ''}
+                                    onChange={e => setReopenReason(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                                    rows={2}
+                                    className="text-xs px-3 py-2 bg-white dark:bg-stone-900 border border-rose-200 dark:border-rose-800 rounded-lg text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-rose-400 resize-none"
+                                    placeholder="Describe what is still unresolved..."
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setReopeningId(null)}
+                                      className="px-3 py-1.5 text-[11px] font-medium text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
+                                    >Cancel</button>
+                                    <button
+                                      type="button"
+                                      disabled={!(reopenReason[ticket.id]?.trim())}
+                                      onClick={() => {
+                                        const ok = citizenReopenIssue(ticket.id, reopenReason[ticket.id] || '');
+                                        if (ok) {
+                                          setReopeningId(null);
+                                          onRefreshIssues();
+                                          setToastType('info');
+                                          setToastMessage('Issue re-opened for review. A field officer will be assigned.');
+                                          setTimeout(() => setToastMessage(null), 5000);
+                                        }
+                                      }}
+                                      className="px-4 py-1.5 text-[11px] font-bold bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      <RotateCcw className="w-3 h-3 inline mr-1" />
+                                      Confirm Re-open
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setReopeningId(ticket.id)}
+                                  className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                  Issue not resolved? Re-open ({hoursLeft}h left)
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                     </div>
                   );
                 })}
