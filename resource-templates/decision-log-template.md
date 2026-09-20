@@ -1,4 +1,4 @@
-# Decision Log — Template (25% of total score)
+# Decision Log Template (25% of total score)
 
 [← Back to README](../README.md)
 

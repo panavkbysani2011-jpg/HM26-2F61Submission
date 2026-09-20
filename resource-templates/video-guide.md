@@ -1,4 +1,4 @@
-# Video Guide — Pitch + System Design (45% of score rides on this)
+# Video Guide Pitch + System Design (45% of score rides on this)
 
 [← Back to README](../README.md)
 
@@ -23,7 +23,7 @@
 
 ---
 
-## Part 1 — Product Pitch (2:00–3:00)
+## Part 1 Product Pitch (2:00–3:00)
 
 | Time | Segment | Must show / say |
 |---|---|---|
@@ -35,7 +35,7 @@
 
 > The problem statement says judges will test bad input and airplane mode live. In Phase 1 the video *is* your live demo, so these two segments are **mandatory**.
 
-## Part 2 — Code & System Design (5:00–7:00)
+## Part 2 Code & System Design (5:00–7:00)
 
 | Time | Segment | Must show / say |
 |---|---|---|

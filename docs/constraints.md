@@ -3,15 +3,15 @@
 [← Back to README](../README.md)
 
 <!-- The problem statement names five constraints that decide whether a solution would hold up
-in Mysuru. Be honest: ✅ handled · ⚠️ partial · ❌ not yet. Timestamps point to the video. -->
+in Mysuru. Be honest: handled · partial · not yet. Timestamps point to the video. -->
 
 | # | Constraint | Status | Video |
 |---|---|---|---|
-| 1 | Fake, spam and harassment reports | `✅` | `<mm:ss>` |
-| 2 | Unclear jurisdiction | `✅` | `<...>` |
-| 3 | Prioritisation beyond "most votes" | `✅` | `<...>` |
-| 4 | Bad input (duplicate, fake photo, wrong location, abuse) | `✅` | `<...>` |
-| 5 | Works without internet | `❌` | `N/A` |
+| 1 | Fake, spam and harassment reports | `` | `<mm:ss>` |
+| 2 | Unclear jurisdiction | `` | `<...>` |
+| 3 | Prioritisation beyond "most votes" | `` | `<...>` |
+| 4 | Bad input (duplicate, fake photo, wrong location, abuse) | `` | `<...>` |
+| 5 | Works without internet | `` | `N/A` |
 
 ---
 
