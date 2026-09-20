@@ -91,7 +91,7 @@ Paste the first 16 characters.
 
 | Field | Value |
 |---|---|
-| Live URL | `<https://...>` |
+| Live URL | `https://civicmesh.vercel.app/` |
 | Platform | Web Platform (React 19 + TypeScript + Vite) |
 | Test login (if any) | Citizen: 1-Click Selection · Worker: 21-Zone Dispatch Roster · Admin: admin / devpass2026 · Language: English / ಕನ್ನಡ Toggle |
 | Sample data loaded? | Yes — Pre-seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity, buffer zones at 0 active tasks) |
@@ -112,13 +112,13 @@ Paste the first 16 characters.
 
 ---
 
-## 7. Declaration
+## 7. Declaration(X means agreed)
 
-- [ ] All Drive links open in an incognito window with **Viewer** access (no "Request access").
-- [ ] The video is one continuous recording, ≤ 10 minutes, Part 1 then Part 2.
-- [ ] The decision log is one page and written by us in our own words.
-- [ ] All AI tools used (development and in-product) are disclosed in [`ai.md`](./ai.md).
-- [ ] No code specific to this challenge was written before 18 Sept 2026, 00:00 IST.
-- [ ] We will not modify or replace any linked file after 20 Sept 2026, 23:59 IST.
+- [X] All Drive links open in an incognito window with **Viewer** access (no "Request access").
+- [X] The video is one continuous recording, ≤ 10 minutes, Part 1 then Part 2.
+- [X] The decision log is one page and written by us in our own words.
+- [X] All AI tools used (development and in-product) are disclosed in [`ai.md`](./ai.md).
+- [X] No code specific to this challenge was written before 18 Sept 2026, 00:00 IST.
+- [X] We will not modify or replace any linked file after 20 Sept 2026, 23:59 IST.
 
 Submitted by: `Panav K Bysani` · Date/Time (IST): `<20-09-2026 21:40>`
