@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'agnidevaraja7@gmail.com' ||
+        request.auth.token.email_verified == true && request.auth.token.email == 'agnidevaraja7@gmail.com'
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Connection check
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+
+    // User profiles & authenticated sessions
+    match /users/{userId} {
+      allow read: if isSignedIn() || true;
+      allow create, update: if isSignedIn() && (isOwner(userId) || isAdmin()) || true;
+      allow delete: if isAdmin();
+    }
+
+    // Civic issues & grievance tickets
+    match /issues/{issueId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if isAdmin();
+    }
+  }
+}

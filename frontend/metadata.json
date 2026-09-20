@@ -1,0 +1,6 @@
+{
+  "name": "Civic Mesh",
+  "description": "Civic issue resolution platform with dynamic capacity balancing across citizens, field workers, and municipal administration.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

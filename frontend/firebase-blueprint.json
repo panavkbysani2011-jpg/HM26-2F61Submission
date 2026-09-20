@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profile and session for citizens, municipal workers, or district admins",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user or resident identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Official or personal email address",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["citizen", "worker", "admin"],
+          "description": "System access role"
+        },
+        "badge": {
+          "type": "string",
+          "description": "Verification badge or role designation",
+          "maxLength": 80
+        },
+        "vehicle": {
+          "type": "string",
+          "description": "Assigned field vehicle if municipal worker",
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when account was first initialized"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Timestamp of most recent authentication session"
+        }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "CivicIssue": {
+      "title": "CivicIssue",
+      "description": "Civic grievance or infrastructure defect report filed in Mysuru jurisdiction",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique system issue identifier"
+        },
+        "trackingId": {
+          "type": "string",
+          "description": "Citizen-facing grievance tracking number (e.g. MYS-2026-XXXX)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Short summary of the civic incident",
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "description": "Civic grievance category",
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed notes regarding the municipal defect",
+          "maxLength": 1000
+        },
+        "location": {
+          "type": "string",
+          "description": "Locality or landmark in Mysuru district",
+          "maxLength": 200
+        },
+        "coordinates": {
+          "type": "object",
+          "description": "Geographical latitude and longitude coordinates",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          },
+          "required": ["lat", "lng"]
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Calculated priority score"
+        },
+        "severityRank": {
+          "type": "number",
+          "enum": [1, 2, 3, 4, 5],
+          "description": "Strict 1 to 5 severity rank"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["reported", "assigned", "in_progress", "resolved", "closed"],
+          "description": "Workflow progression status"
+        },
+        "reportedBy": {
+          "type": "string",
+          "description": "Name of citizen reporter",
+          "maxLength": 100
+        },
+        "reporterEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of citizen reporter",
+          "maxLength": 150
+        },
+        "assignedCrew": {
+          "type": "string",
+          "description": "Assigned field dispatch team or worker name",
+          "maxLength": 100
+        },
+        "assignedVehicle": {
+          "type": "string",
+          "description": "Assigned vehicle registration number",
+          "maxLength": 60
+        },
+        "assignedDepot": {
+          "type": "string",
+          "description": "Assigned municipal zone or panchayat depot",
+          "maxLength": 100
+        },
+        "reportedAt": {
+          "type": "string",
+          "description": "Date and time when report was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Date and time of most recent modification"
+        },
+        "loadWeight": {
+          "type": "number",
+          "description": "Municipal workload weight units (1 to 5)"
+        },
+        "isBufferZone": {
+          "type": "boolean",
+          "description": "Flag indicating if incident is inside a contested boundary buffer corridor"
+        },
+        "isFlagged": {
+          "type": "boolean",
+          "description": "Flag indicating anomalous photo audit evidence"
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": ["verified", "flagged_unverified", "pending"],
+          "description": "Visual completion verification state"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Photographic evidence attached during intake"
+        },
+        "resolvedImageUrl": {
+          "type": "string",
+          "description": "Photographic proof uploaded upon work order completion"
+        }
+      },
+      "required": ["title", "category", "location", "status", "reportedBy"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and authenticated session registry"
+    },
+    "/issues/{issueId}": {
+      "schema": "CivicIssue",
+      "description": "Civic grievance tickets and dispatched work orders"
+    }
+  }
+}

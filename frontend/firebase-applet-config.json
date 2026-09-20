@@ -1,0 +1,12 @@
+{
+  "projectId": "civic-mesh",
+  "appId": "1:323568173592:web:66a6d63107d4bf6d9cb96d",
+  "apiKey": "AIzaSyBdeZ83NQdMo-SO9zUVGS6TiXHb2vtPSoQ",
+  "authDomain": "civic-mesh.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "civic-mesh.firebasestorage.app",
+  "messagingSenderId": "323568173592",
+  "measurementId": "G-3E07NBXWB7",
+  "oAuthClientId": "",
+  "recaptchaSiteKey": ""
+}
