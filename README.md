@@ -43,10 +43,10 @@ Keep the section ORDER below. Reviewers look for each section in the same place 
 
 **Core flow:**
 1. `A citizen drops a pin, selects a category, enters basic details (e.g., C&D debris, Pothole), and uploads a photo on the public portal.`
-2. `The System Auto-calculates a severity rank between 1–5. If the home zone (e.g., Bogadi) is at more than 100% capacity, the system spillover-routes the ticket to the nearest idle depot (e.g., MCC Zone 3) which is at (e.g., around 45%) and logs a debit from the home zone, and a credit to the spillover zone in the Inter-Agency Ledger.`
-3. `Panchayat office gets this task, views it, and prepares to work on it, by assigning it to an field worker.`
+2. `The System Auto-calculates a severity rank between 1–5. If the home zone (e.g., Bogadi) is at more than 100% capacity, the system spillover-routes the ticket to the nearest idle depot (e.g., MCC Zone 3 at ~43% load) and logs a debit from the home zone, and a credit to the spillover zone in the Inter-Agency Ledger.`
+3. `The ticket automatically inherits the designated field crew lead and utility vehicle from the performing jurisdiction's worker roster (e.g., Manjunatha S., Canter KA-09-G-4412).`
 4. `Staff - The field worker views a task list, travels to the site, and closes the ticket using a GPS-locked, camera-only capture (within a 50m radius).`
-5. `Citizens receives a realtime update that the issue was resolved with verified photo proof, citizens content.`
+5. `Citizen receives a real-time update that the issue was resolved with verified photo proof, and submits satisfaction feedback via a 5-star rating loop.`
 
 **Screenshots:** `<2–4 images under docs/images/, each < 1 MB>`
 
@@ -61,7 +61,7 @@ A client-side progressive web application integrating interactive Leaflet GIS ma
 **Stack:** `React 19 · TypeScript · Tailwind CSS · Leaflet GIS · Google Gemini API (@google/genai) · Vite` (full rationale in [docs/architecture.md](./docs/architecture.md#tech-stack))
 
 **AI tools used in development:** `Gemini, Antigravity, Google AI Studio, Google Julius`
-**AI inside the product:** `Google Gemini 2.5 / 3.6 Flash via @google/genai for field worker resolution photo verification and citizen text moderation`
+**AI inside the product:** `Google Gemini 3.6 Flash via @google/genai for field worker resolution photo verification and citizen text moderation`
 
 ➡️ Full disclosure: **[ai.md](./ai.md)**
 

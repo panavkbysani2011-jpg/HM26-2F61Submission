@@ -57,7 +57,7 @@ http://localhost:5173
   - **Citizen Portal**: Public grievance reporting and tracking.
   - **Field Worker Desk**: 21-jurisdiction task dispatch, distance lock, and camera verification.
   - **Admin Command Dashboard**: 26-zone capacity matrix, contested corridor maps, and inter-agency clearing ledger.
-- **Reset Demo Data**: Click the **Reset Demo** button in the top navigation bar at any point to restore the original 18 seed tickets, buffer zones, and fleet capacity states.
+- **Reset Demo Data**: Click the **Reset Demo** button in the top navigation bar at any point to restore the original 6 seed tickets, buffer zones, and fleet capacity states (Bogadi TP at 110% load, MCC Zone 3 at 43% load, and contested buffer zones at 0 active tasks).
 
 ## 5. Production Build Verification
 
