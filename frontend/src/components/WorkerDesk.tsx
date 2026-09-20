@@ -30,7 +30,11 @@ import {
   StopCircle,
   ShieldCheck,
   Info,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  ChevronRight,
+  Copy,
+  Navigation
 } from 'lucide-react';
 
 interface WorkerDeskProps {
@@ -51,11 +55,12 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [completionNotice, setCompletionNotice] = useState<string | null>(null);
   
-  // Active resolving work order dialog
-  const [activeResolvingIssue, setActiveResolvingIssue] = useState<CivicIssue | null>(null);
+  // Dedicated Task Detail & Resolution Modal
+  const [selectedDetailTask, setSelectedDetailTask] = useState<CivicIssue | null>(null);
+  const [copiedTrackingId, setCopiedTrackingId] = useState<boolean>(false);
   const [pendingPhotoPreview, setPendingPhotoPreview] = useState<string | null>(null);
   
-  // Gemini AI Verification states
+  // Civic Mesh AI Verification states
   const [isVerifyingWithAI, setIsVerifyingWithAI] = useState<boolean>(false);
   const [aiVerificationResult, setAiVerificationResult] = useState<GeminiVerificationResult | null>(null);
 
@@ -76,6 +81,24 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   const workerName = session?.name || 'Manjunatha S.';
   const workerDepot = 'MCC Depot 3';
   const workerVehicle = session?.vehicle || 'Canter KA-09-G-4412';
+
+  // Helper: Open location in Google Maps
+  const getGoogleMapsUrl = (task: CivicIssue) => {
+    if (task.coordinates && typeof task.coordinates.lat === 'number' && typeof task.coordinates.lng === 'number') {
+      return `https://www.google.com/maps/search/?api=1&query=${task.coordinates.lat},${task.coordinates.lng}`;
+    }
+    const query = `${task.location}, Mysuru, Karnataka, India`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  };
+
+  // Helper: Copy tracking ID
+  const handleCopyTrackingId = (id: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(id);
+      setCopiedTrackingId(true);
+      setTimeout(() => setCopiedTrackingId(false), 2000);
+    }
+  };
 
   // Stop camera stream safely
   const stopLiveCamera = () => {
@@ -104,20 +127,40 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
   });
   const deduplicatedIssues = Array.from(uniqueIssuesMap.values());
 
-  const activeTasks = deduplicatedIssues.filter((i) => i.status !== 'resolved');
-  const completedTasks = deduplicatedIssues.filter((i) => i.status === 'resolved');
+  const activeTasks = deduplicatedIssues.filter(
+    (i) => i.status !== 'resolved' && i.status !== 'quarantined' && !i.isQuarantined
+  );
+  const completedTasks = deduplicatedIssues.filter(
+    (i) => i.status === 'resolved' && !i.isQuarantined
+  );
 
-  // Trigger Completion Modal for task
-  const handleInitiateCompletion = (task: CivicIssue) => {
-    setActiveResolvingIssue(task);
-    setPendingPhotoPreview(null);
+  // Trigger Task Detail View
+  const handleOpenTaskDetail = (task: CivicIssue) => {
+    setSelectedDetailTask(task);
+    setPendingPhotoPreview(task.resolvedImageUrl || null);
     setResolutionError(null);
     setAiVerificationResult(null);
-    setIsCameraActive(false);
+    stopLiveCamera();
   };
 
-  // Trigger Gemini AI Multimodal verification on the uploaded or captured photo
-  const triggerGeminiVerification = async (photoDataUrl: string, issue: CivicIssue) => {
+  // Close Task Detail View
+  const handleCloseTaskDetail = () => {
+    setSelectedDetailTask(null);
+    setPendingPhotoPreview(null);
+    setAiVerificationResult(null);
+    setResolutionError(null);
+    stopLiveCamera();
+  };
+
+  // Transition task into In Progress from inside Task Detail
+  const handleStartWorkFromDetail = () => {
+    if (!selectedDetailTask) return;
+    onUpdateStatus(selectedDetailTask.id, 'in_progress', `${workerName} (${workerDepot})`);
+    setSelectedDetailTask((prev) => (prev ? { ...prev, status: 'in_progress' } : null));
+  };
+
+  // Trigger Civic Mesh AI Multimodal verification on the uploaded or captured photo
+  const triggerCivicMeshAiVerification = async (photoDataUrl: string, issue: CivicIssue) => {
     setIsVerifyingWithAI(true);
     setResolutionError(null);
     try {
@@ -131,7 +174,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
       });
       setAiVerificationResult(result);
     } catch (err: any) {
-      console.warn('Gemini verification execution error:', err);
+      console.warn('Civic Mesh AI verification execution error:', err);
     } finally {
       setIsVerifyingWithAI(false);
     }
@@ -198,8 +241,8 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
       setPendingPhotoPreview(dataUrl);
       setResolutionError(null);
       stopLiveCamera();
-      if (activeResolvingIssue) {
-        triggerGeminiVerification(dataUrl, activeResolvingIssue);
+      if (selectedDetailTask) {
+        triggerCivicMeshAiVerification(dataUrl, selectedDetailTask);
       }
     }
   };
@@ -213,8 +256,8 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
         setPendingPhotoPreview(compressed);
         setResolutionError(null);
         stopLiveCamera();
-        if (activeResolvingIssue) {
-          triggerGeminiVerification(compressed, activeResolvingIssue);
+        if (selectedDetailTask) {
+          triggerCivicMeshAiVerification(compressed, selectedDetailTask);
         }
       } catch (err) {
         console.warn('Worker photo compression fallback:', err);
@@ -224,8 +267,8 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
           setPendingPhotoPreview(base64);
           setResolutionError(null);
           stopLiveCamera();
-          if (activeResolvingIssue) {
-            triggerGeminiVerification(base64, activeResolvingIssue);
+          if (selectedDetailTask) {
+            triggerCivicMeshAiVerification(base64, selectedDetailTask);
           }
         };
         reader.readAsDataURL(file);
@@ -235,19 +278,19 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
 
   // Confirm completion with audit logic
   const handleConfirmResolution = async () => {
-    if (!activeResolvingIssue) return;
+    if (!selectedDetailTask) return;
 
     if (!pendingPhotoPreview) {
       setResolutionError('On-site photographic completion proof is compulsory. Please take or upload a photo.');
       return;
     }
 
-    const ticketId = activeResolvingIssue.id;
-    const ticketRef = activeResolvingIssue.trackingId || activeResolvingIssue.id;
+    const ticketId = selectedDetailTask.id;
+    const ticketRef = selectedDetailTask.trackingId || selectedDetailTask.id;
 
     // Determine verification status:
     // If admin override is checked -> verified
-    // If admin override is NOT checked -> follows Gemini AI verification verdict (or unverified if AI rejected/flagged)
+    // If admin override is NOT checked -> follows Civic Mesh AI verification verdict (or unverified if AI rejected/flagged)
     let isVerified = adminOverrideEnabled;
     let isFlagged = !adminOverrideEnabled;
     let auditNote = '';
@@ -257,7 +300,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
         isVerified = aiVerificationResult.isVerified;
         isFlagged = !aiVerificationResult.isVerified;
       }
-      auditNote = `Gemini AI (${aiVerificationResult.confidence}% confidence): ${aiVerificationResult.detectedSubject}. ${aiVerificationResult.reason}${adminOverrideEnabled ? ' [Admin Override Active]' : ''}`;
+      auditNote = `Civic Mesh AI (${aiVerificationResult.confidence}% confidence): ${aiVerificationResult.detectedSubject}. ${aiVerificationResult.reason}${adminOverrideEnabled ? ' [Admin Override Active]' : ''}`;
     } else {
       auditNote = adminOverrideEnabled 
         ? 'Resolution verified via Administrative Override.' 
@@ -278,7 +321,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
 
     onUpdateStatus(ticketId, 'resolved', `${workerName} (${workerDepot})`);
 
-    setActiveResolvingIssue(null);
+    setSelectedDetailTask(null);
     setPendingPhotoPreview(null);
     setAiVerificationResult(null);
     stopLiveCamera();
@@ -320,277 +363,483 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
           </div>
         )}
 
-        {/* Work Order Completion Modal with Live Camera & Admin Override */}
-        {activeResolvingIssue && (
-          <div className="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-200 dark:border-stone-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                    <Camera className="w-5 h-5 text-amber-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-stone-950 dark:text-white">Complete Work Order</h3>
-                    <p className="text-xs text-stone-500 font-mono">{activeResolvingIssue.trackingId || activeResolvingIssue.id}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setActiveResolvingIssue(null);
-                    setPendingPhotoPreview(null);
-                    setAiVerificationResult(null);
-                    stopLiveCamera();
-                  }}
-                  className="p-1 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 rounded-lg"
-                  aria-label="Close dialog"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        {/* Dedicated Task Detail View (Full Modal with Citizen Workflow Data & Integrated Resolution Flow) */}
+        {selectedDetailTask && (() => {
+          const rank = (selectedDetailTask.severityRank || getPriorityScore(selectedDetailTask.category)) as SeverityRank;
+          const severityMeta = SEVERITY_LEVELS[rank] || SEVERITY_LEVELS[3];
+          const isUnderway = selectedDetailTask.status === 'in_progress';
+          const isResolved = selectedDetailTask.status === 'resolved';
 
-              <div className="space-y-1.5 bg-stone-50 dark:bg-stone-800/50 p-3.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
-                <div className="font-bold text-stone-900 dark:text-white">
-                  {activeResolvingIssue.title}
-                </div>
-                <div className="text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                  <span>{activeResolvingIssue.location}</span>
-                </div>
-              </div>
-
-              {resolutionError && (
-                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-semibold">
-                  {resolutionError}
-                </div>
-              )}
-
-              {/* Photo Evidence Section */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-emerald-600" />
-                    <span>On-Site Completion Photograph * (Compulsory)</span>
-                  </label>
-                  <span className="text-[10px] font-mono text-stone-400">Audit Proof</span>
-                </div>
-
-                {/* Explanatory note */}
-                <div className="p-2.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-700 flex items-start gap-2 text-[11px] text-stone-600 dark:text-stone-400">
-                  <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                  <span>
-                    Capture on-site resolution evidence (e.g. cleared waste, repaired surface). Desktop file upload is enabled for workstation testing.
-                  </span>
-                </div>
-
-                {/* Hidden File Input */}
-                <input
-                  ref={fileInputRef}
-                  id="worker-photo-input"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhotoUploaded}
-                  className="hidden"
-                />
-
-                <canvas ref={canvasRef} className="hidden" />
-
-                {/* Live Camera Viewfinder */}
-                {isCameraActive && (
-                  <div className="relative rounded-xl overflow-hidden bg-black border-2 border-emerald-500 shadow-md">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-56 object-cover"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={captureFrameFromLiveVideo}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-md active:scale-95"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>Take Photo</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={stopLiveCamera}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-stone-800 text-white"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {cameraError && (
-                  <p className="text-xs text-amber-600">{cameraError}</p>
-                )}
-
-                {/* Photo Preview Card with Gemini AI Status */}
-                {pendingPhotoPreview ? (
-                  <div className="space-y-3">
-                    <div className="relative rounded-xl overflow-hidden border-2 border-emerald-500/50 max-h-52 bg-stone-950 group">
-                      <img
-                        src={pendingPhotoPreview}
-                        alt="Work completed evidence"
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          return (
+            <div 
+              id="task-detail-modal-backdrop" 
+              className="fixed inset-0 z-[50] w-screen h-[100dvh] overflow-hidden backdrop-blur-sm bg-stone-950/80 flex items-center justify-center p-3 sm:p-4"
+            >
+              <div 
+                id="task-detail-card" 
+                className="bg-white dark:bg-stone-900 border-2 border-stone-200 dark:border-stone-800 rounded-2xl max-w-2xl w-full shadow-2xl space-y-0 animate-in zoom-in-95 max-h-[92vh] flex flex-col overflow-hidden"
+              >
+                {/* Header */}
+                <div className="p-4 sm:p-5 border-b border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-800/40 flex items-start justify-between gap-3 shrink-0">
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-stone-900 dark:text-stone-100 bg-stone-200/80 dark:bg-stone-800 px-2.5 py-0.5 rounded flex items-center gap-1.5">
+                        <span>{selectedDetailTask.trackingId || selectedDetailTask.id}</span>
                         <button
                           type="button"
-                          onClick={() => {
-                            setPendingPhotoPreview(null);
-                            setAiVerificationResult(null);
-                          }}
-                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm"
+                          onClick={() => handleCopyTrackingId(selectedDetailTask.trackingId || selectedDetailTask.id)}
+                          className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition-colors cursor-pointer"
+                          title="Copy Tracking ID"
                         >
-                          Remove / Retake
+                          {copiedTrackingId ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
+                      </span>
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700">
+                        {selectedDetailTask.category}
+                      </span>
+                      {selectedDetailTask.isBufferZone && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                          Buffer Zone
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border uppercase tracking-wider ${severityMeta.badgeClass}`}>
+                        <span className={`w-2 h-2 rounded-full ${severityMeta.dotColor}`} />
+                        <span>Rank {rank} • {severityMeta.name}</span>
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-stone-950 dark:text-white leading-snug">
+                      {selectedDetailTask.title}
+                    </h3>
+                  </div>
+
+                  <button
+                    id="btn-close-task-detail"
+                    type="button"
+                    onClick={handleCloseTaskDetail}
+                    className="p-1.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors shrink-0 cursor-pointer"
+                    aria-label="Close task details"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Scrollable Content Body */}
+                <div className="overflow-y-auto p-5 sm:p-6 space-y-6 flex-1">
+                  
+                  {/* Grievance Description & Meta Grid */}
+                  <div className="space-y-3">
+                    <div className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                      Grievance Details &amp; Citizen Context
+                    </div>
+                    <div className="p-3.5 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+                      {selectedDetailTask.description}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80">
+                        <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Reported By</span>
+                        <strong className="text-stone-900 dark:text-white">{selectedDetailTask.reportedBy || 'Resident Citizen'}</strong>
                       </div>
-                      <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/75 text-white text-[10px] font-mono flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Evidence Attached</span>
+                      <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80">
+                        <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Logged Timestamp</span>
+                        <strong className="text-stone-900 dark:text-white">{selectedDetailTask.reportedAt}</strong>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80">
+                        <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Jurisdiction / Depot</span>
+                        <strong className="text-stone-900 dark:text-white">{selectedDetailTask.assignedDepot || (selectedDetailTask.isBufferZone ? 'Buffer Zone Area' : 'MCC Jurisdiction')}</strong>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80">
+                        <span className="text-stone-500 dark:text-stone-400 block text-[11px]">Assigned Vehicle / Crew</span>
+                        <strong className="text-stone-900 dark:text-white font-mono">{selectedDetailTask.assignedVehicle || workerVehicle}</strong>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Gemini AI Verification Feedback Display */}
-                    {isVerifyingWithAI ? (
-                      <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3 text-xs text-blue-900 dark:text-blue-200 animate-pulse">
-                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                  {/* Location & Google Maps Integration */}
+                  <div className="p-4 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                    <div className="space-y-1">
+                      <div className="text-xs font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>Incident Site Location</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-stone-800 dark:text-stone-200 font-medium">
+                        {selectedDetailTask.location}
+                      </p>
+                    </div>
+                    <a
+                      id="btn-open-google-maps"
+                      href={getGoogleMapsUrl(selectedDetailTask)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors shrink-0"
+                    >
+                      <Navigation className="w-4 h-4" />
+                      <span>Open Location in Google Maps</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                    </a>
+                  </div>
+
+                  {/* Original Citizen Photographic Evidence */}
+                  {(() => {
+                    const taskImages = (selectedDetailTask.images && selectedDetailTask.images.length > 0)
+                      ? selectedDetailTask.images
+                      : (selectedDetailTask.imageUrl ? [selectedDetailTask.imageUrl] : []);
+
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                            <Camera className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+                            <span>Original Citizen Photographic Evidence ({taskImages.length})</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-stone-400">Citizen Submission</span>
+                        </div>
+                        {taskImages.length > 0 ? (
+                          <div className="space-y-2">
+                            <div className="relative rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-950 max-h-60">
+                              <img
+                                src={taskImages[0]}
+                                alt="Original citizen evidence"
+                                className="w-full h-52 object-cover"
+                              />
+                              <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/75 text-white text-[10px] font-mono flex items-center gap-1">
+                                <span>Primary Grievance Photographic Record</span>
+                              </div>
+                            </div>
+                            {taskImages.length > 1 && (
+                              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                                {taskImages.map((img, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-stone-300 dark:border-stone-700 relative"
+                                  >
+                                    <img src={img} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
+                                    <span className="absolute bottom-0.5 right-0.5 text-[8px] font-bold px-1 rounded bg-black/70 text-white">
+                                      #{idx + 1}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 text-center text-xs text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800/30">
+                            No photographic evidence was attached by the citizen during initial submission.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Status Timeline */}
+                  <div className="space-y-2.5">
+                    <div className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                      Lifecycle Status Timeline
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {/* Step 1: Reported */}
+                      <div className="space-y-1">
+                        <div className="h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">1. Reported</span>
+                      </div>
+                      {/* Step 2: Dispatched */}
+                      <div className="space-y-1">
+                        <div className={`h-1.5 rounded-full ${selectedDetailTask.status !== 'reported' ? 'bg-emerald-500' : 'bg-stone-200 dark:bg-stone-700'}`} />
+                        <span className={`text-[10px] font-bold block ${selectedDetailTask.status !== 'reported' ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400'}`}>2. Dispatched</span>
+                      </div>
+                      {/* Step 3: In Progress */}
+                      <div className="space-y-1">
+                        <div className={`h-1.5 rounded-full ${isUnderway || isResolved ? 'bg-blue-500' : 'bg-stone-200 dark:bg-stone-700'}`} />
+                        <span className={`text-[10px] font-bold block ${isUnderway ? 'text-blue-600 dark:text-blue-400' : isResolved ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400'}`}>3. In Progress</span>
+                      </div>
+                      {/* Step 4: AI Verified */}
+                      <div className="space-y-1">
+                        <div className={`h-1.5 rounded-full ${isResolved ? 'bg-emerald-500' : 'bg-stone-200 dark:bg-stone-700'}`} />
+                        <span className={`text-[10px] font-bold block ${isResolved ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400'}`}>4. AI Verified</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ACTION FLOW: State-driven in-screen controls */}
+                  <div className="pt-2 border-t border-stone-200 dark:border-stone-800 space-y-4">
+                    {resolutionError && (
+                      <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-semibold">
+                        {resolutionError}
+                      </div>
+                    )}
+
+                    {/* State 1: Task Not Yet Started */}
+                    {!isUnderway && !isResolved && (
+                      <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="space-y-0.5">
-                          <p className="font-bold flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                            <span>Gemini AI Analyzing Resolution Photo...</span>
-                          </p>
-                          <p className="text-[11px] text-blue-700 dark:text-blue-300">
-                            Auditing civic scene authenticity and verifying category resolution proof.
+                          <h4 className="text-xs font-bold text-blue-950 dark:text-blue-200">Ready to begin resolution?</h4>
+                          <p className="text-[11px] text-blue-800 dark:text-blue-300">
+                            Click Start Task to transition this work order into active execution and reveal resolution proof controls.
                           </p>
                         </div>
+                        <button
+                          id="btn-detail-start-task"
+                          type="button"
+                          onClick={handleStartWorkFromDetail}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+                        >
+                          <PlayCircle className="w-4 h-4" />
+                          <span>Start Task</span>
+                        </button>
                       </div>
-                    ) : aiVerificationResult ? (
-                      <div className={`p-3.5 rounded-xl border space-y-1.5 text-xs ${
-                        aiVerificationResult.isVerified
-                          ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
-                          : 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100'
-                      }`}>
+                    )}
+
+                    {/* State 2: Task In Progress -> Resolution Proof Capture */}
+                    {isUnderway && (
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold flex items-center gap-1.5">
-                            {aiVerificationResult.isVerified ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            ) : (
-                              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                            )}
-                            <span>
-                              {aiVerificationResult.isVerified ? 'Gemini AI Verified' : 'Gemini AI Flagged for Audit'}
-                            </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-normal">
-                              {aiVerificationResult.confidence}% confidence
-                            </span>
+                          <label className="block text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                            <Camera className="w-4 h-4 text-emerald-600" />
+                            <span>On-Site Completion Photograph * (Compulsory)</span>
+                          </label>
+                          <span className="text-[10px] font-mono text-stone-400">Resolution Audit Proof</span>
+                        </div>
+
+                        {/* Explanatory note */}
+                        <div className="p-2.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-700 flex items-start gap-2 text-[11px] text-stone-600 dark:text-stone-400">
+                          <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                          <span>
+                            Capture on-site resolution evidence (e.g. cleared waste, repaired surface). Desktop file upload is enabled for workstation testing.
                           </span>
+                        </div>
+
+                        {/* Hidden File Input & Canvas */}
+                        <input
+                          ref={fileInputRef}
+                          id="worker-photo-input"
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handlePhotoUploaded}
+                          className="hidden"
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+
+                        {/* Live Camera Viewfinder */}
+                        {isCameraActive && (
+                          <div className="relative rounded-xl overflow-hidden bg-black border-2 border-emerald-500 shadow-md">
+                            <video
+                              ref={videoRef}
+                              autoPlay
+                              playsInline
+                              muted
+                              className="w-full h-56 object-cover"
+                            />
+                            <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-center gap-3">
+                              <button
+                                type="button"
+                                onClick={captureFrameFromLiveVideo}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-md active:scale-95 cursor-pointer"
+                              >
+                                <Camera className="w-4 h-4" />
+                                <span>Take Photo</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={stopLiveCamera}
+                                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-stone-800 text-white cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {cameraError && (
+                          <p className="text-xs text-amber-600">{cameraError}</p>
+                        )}
+
+                        {/* Photo Preview Card with Civic Mesh AI Status */}
+                        {pendingPhotoPreview ? (
+                          <div className="space-y-3">
+                            <div className="relative rounded-xl overflow-hidden border-2 border-emerald-500/50 max-h-52 bg-stone-950 group">
+                              <img
+                                src={pendingPhotoPreview}
+                                alt="Work completed evidence"
+                                className="w-full h-48 object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPendingPhotoPreview(null);
+                                    setAiVerificationResult(null);
+                                  }}
+                                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm cursor-pointer"
+                                >
+                                  Remove / Retake
+                                </button>
+                              </div>
+                              <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/75 text-white text-[10px] font-mono flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Evidence Attached</span>
+                              </div>
+                            </div>
+
+                            {/* Civic Mesh AI Verification Feedback Display */}
+                            {isVerifyingWithAI ? (
+                              <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3 text-xs text-blue-900 dark:text-blue-200 animate-pulse">
+                                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                                <div className="space-y-0.5">
+                                  <p className="font-bold flex items-center gap-1">
+                                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                    <span>Civic Mesh AI Analyzing Resolution Photo...</span>
+                                  </p>
+                                  <p className="text-[11px] text-blue-700 dark:text-blue-300">
+                                    Auditing civic scene authenticity and verifying category resolution proof.
+                                  </p>
+                                </div>
+                              </div>
+                            ) : aiVerificationResult ? (
+                              <div className={`p-3.5 rounded-xl border space-y-1.5 text-xs ${
+                                aiVerificationResult.isVerified
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
+                                  : 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-100'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold flex items-center gap-1.5">
+                                    {aiVerificationResult.isVerified ? (
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    ) : (
+                                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                    )}
+                                    <span>
+                                      {aiVerificationResult.isVerified ? 'Civic Mesh AI Verified' : 'Civic Mesh AI Flagged for Audit'}
+                                    </span>
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-normal">
+                                      {aiVerificationResult.confidence}% confidence
+                                    </span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => selectedDetailTask && triggerCivicMeshAiVerification(pendingPhotoPreview, selectedDetailTask)}
+                                    className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                                    title="Re-run verification"
+                                  >
+                                    <Sparkles className="w-3 h-3" />
+                                    <span>Re-run</span>
+                                  </button>
+                                </div>
+                                <p className="text-[11px]">
+                                  <strong>Subject:</strong> {aiVerificationResult.detectedSubject}
+                                </p>
+                                <p className="text-[11px] opacity-90">
+                                  {aiVerificationResult.reason}
+                                </p>
+                                {!aiVerificationResult.isVerified && (
+                                  <p className="text-[10px] text-amber-800 dark:text-amber-300/90 pt-1 border-t border-amber-200 dark:border-amber-800/60 font-medium">
+                                    * Task will be recorded as <em>Completed (Unverified)</em> and forwarded to supervisors, unless Administrative Override is enabled below.
+                                  </p>
+                                )}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <button
+                              type="button"
+                              onClick={startLiveCamera}
+                              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+                            >
+                              <Video className="w-4 h-4" />
+                              <span>Click Photo (Camera)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium text-stone-700 dark:text-stone-300 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 cursor-pointer"
+                            >
+                              <Upload className="w-4 h-4 text-stone-500" />
+                              <span>Upload Photo</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* ADMINISTRATIVE COMPLETION OVERRIDE */}
+                        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl space-y-1.5">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              id="worker-admin-override-toggle"
+                              checked={adminOverrideEnabled}
+                              onChange={(e) => setAdminOverrideEnabled(e.target.checked)}
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                              <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                              <span>Administrative Completion (Force Verified Mode)</span>
+                            </span>
+                          </label>
+                          <p className="text-[11px] text-amber-900 dark:text-amber-300 pl-6 leading-tight">
+                            {adminOverrideEnabled ? (
+                              <span>
+                                <strong>Mode: Override Active.</strong> Resolution will be marked as <em>Verified &amp; Completed</em> regardless of image subject matter (enabled for testing).
+                              </span>
+                            ) : (
+                              <span>
+                                <strong>Mode: Strict AI Verification.</strong> If the photo contains an unverified subject (such as an unrelated photo or selfie), system flags the task as <em>Completed (Unverified - Flagged for Audit)</em>.
+                              </span>
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Action Buttons inside In Progress */}
+                        <div className="flex items-center justify-end gap-3 pt-2">
                           <button
                             type="button"
-                            onClick={() => activeResolvingIssue && triggerGeminiVerification(pendingPhotoPreview, activeResolvingIssue)}
-                            className="text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                            title="Re-run verification"
+                            onClick={handleCloseTaskDetail}
+                            className="px-4 py-2 text-xs font-semibold text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white cursor-pointer"
                           >
-                            <Sparkles className="w-3 h-3" />
-                            <span>Re-run</span>
+                            Close
+                          </button>
+                          <button
+                            id="btn-confirm-complete-work"
+                            type="button"
+                            onClick={handleConfirmResolution}
+                            className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-2 transition-all active:scale-98 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Submit Completion</span>
                           </button>
                         </div>
-                        <p className="text-[11px]">
-                          <strong>Subject:</strong> {aiVerificationResult.detectedSubject}
-                        </p>
-                        <p className="text-[11px] opacity-90">
-                          {aiVerificationResult.reason}
-                        </p>
-                        {!aiVerificationResult.isVerified && (
-                          <p className="text-[10px] text-amber-800 dark:text-amber-300/90 pt-1 border-t border-amber-200 dark:border-amber-800/60 font-medium">
-                            * Task will be recorded as <em>Completed (Unverified)</em> and forwarded to supervisors, unless Administrative Override is enabled below.
+                      </div>
+                    )}
+
+                    {/* State 3: Task Already Resolved */}
+                    {isResolved && (
+                      <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 space-y-3">
+                        <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 text-xs font-bold">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>This work order has been completed and logged in municipal records.</span>
+                        </div>
+                        {selectedDetailTask.resolvedImageUrl && (
+                          <div className="rounded-xl overflow-hidden border border-emerald-300/60 max-h-48">
+                            <img
+                              src={selectedDetailTask.resolvedImageUrl}
+                              alt="Resolution proof"
+                              className="w-full h-40 object-cover"
+                            />
+                          </div>
+                        )}
+                        {selectedDetailTask.resolutionNotes && (
+                          <p className="text-xs text-stone-600 dark:text-stone-300 font-mono bg-white/60 dark:bg-stone-900/60 p-2.5 rounded-lg border border-stone-200 dark:border-stone-800">
+                            {selectedDetailTask.resolutionNotes}
                           </p>
                         )}
                       </div>
-                    ) : null}
+                    )}
                   </div>
-                ) : (
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={startLiveCamera}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                    >
-                      <Video className="w-4 h-4" />
-                      <span>Click Photo (Camera)</span>
-                    </button>
 
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium text-stone-700 dark:text-stone-300 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700"
-                    >
-                      <Upload className="w-4 h-4 text-stone-500" />
-                      <span>Upload Photo</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* ADMINISTRATIVE COMPLETION OVERRIDE (For testing & exceptions) */}
-              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl space-y-1.5">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    id="worker-admin-override-toggle"
-                    checked={adminOverrideEnabled}
-                    onChange={(e) => setAdminOverrideEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    <span>Administrative Completion (Force Verified Mode)</span>
-                  </span>
-                </label>
-                <p className="text-[11px] text-amber-900 dark:text-amber-300 pl-6 leading-tight">
-                  {adminOverrideEnabled ? (
-                    <span>
-                      <strong>Mode: Override Active.</strong> Resolution will be marked as <em>Verified &amp; Completed</em> regardless of image subject matter (enabled for testing).
-                    </span>
-                  ) : (
-                    <span>
-                      <strong>Mode: Strict AI Verification.</strong> If the photo contains an unverified subject (such as a human face/selfie instead of civic site debris), system flags the task as <em>Completed (Unverified - Flagged for Audit)</em>.
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-stone-100 dark:border-stone-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveResolvingIssue(null);
-                    setPendingPhotoPreview(null);
-                    setAiVerificationResult(null);
-                    stopLiveCamera();
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="btn-confirm-complete-work"
-                  type="button"
-                  onClick={handleConfirmResolution}
-                  className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-2 transition-all active:scale-98"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Submit Completion</span>
-                </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Worker Desk Header */}
         <div className="bg-white dark:bg-stone-900 border-2 border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -691,7 +940,16 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                   <div
                     key={task.id}
                     id={`task-card-${task.id}`}
-                    className={`bg-white dark:bg-stone-900 border-2 rounded-2xl p-6 shadow-sm transition-all ${
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleOpenTaskDetail(task)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpenTaskDetail(task);
+                      }
+                    }}
+                    className={`bg-white dark:bg-stone-900 border-2 rounded-2xl p-6 shadow-sm cursor-pointer group hover:shadow-md hover:border-blue-400 dark:hover:border-blue-600 transition-all select-none ${
                       rank === 5
                         ? 'border-rose-400 dark:border-rose-900/90 bg-rose-50/20 dark:bg-rose-950/10'
                         : rank === 4
@@ -732,10 +990,10 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
 
                     {/* Body: Title & Incident Details */}
                     <div className="py-4 space-y-2">
-                      <h2 className="text-lg font-bold text-stone-950 dark:text-white tracking-tight leading-snug">
+                      <h2 className="text-lg font-bold text-stone-950 dark:text-white tracking-tight leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {task.title}
                       </h2>
-                      <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed font-normal">
+                      <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed font-normal line-clamp-2">
                         {task.description}
                       </p>
 
@@ -754,7 +1012,7 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                       </div>
                     </div>
 
-                    {/* Footer: Operator Action Controls */}
+                    {/* Footer: Status and Detail Navigation Callout */}
                     <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-stone-500 dark:text-stone-400">Current State:</span>
@@ -767,29 +1025,9 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        {!isUnderway && (
-                          <button
-                            id={`btn-start-${task.id}`}
-                            type="button"
-                            onClick={() => onUpdateStatus(task.id, 'in_progress', `${workerName} (${workerDepot})`)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-900 dark:text-white text-xs font-bold rounded-xl transition-colors"
-                          >
-                            <PlayCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            <span>Start Work</span>
-                          </button>
-                        )}
-
-                        {/* "Mark Completed" Button */}
-                        <button
-                          id={`btn-complete-${task.id}`}
-                          type="button"
-                          onClick={() => handleInitiateCompletion(task)}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold rounded-xl shadow-sm transition-all active:scale-[0.98]"
-                        >
-                          <Camera className="w-4 h-4 text-amber-300" />
-                          <span>Mark Completed</span>
-                        </button>
+                      <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
+                        <span>View Task Details &amp; Actions</span>
+                        <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
@@ -813,7 +1051,16 @@ export const WorkerDesk: React.FC<WorkerDeskProps> = ({
                 return (
                   <div
                     key={task.id}
-                    className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 opacity-95"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleOpenTaskDetail(task)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpenTaskDetail(task);
+                      }
+                    }}
+                    className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 opacity-95 hover:border-emerald-400 dark:hover:border-emerald-600 cursor-pointer transition-all select-none"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">

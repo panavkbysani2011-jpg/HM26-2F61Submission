@@ -42,7 +42,9 @@ import {
   Copy,
   RotateCcw,
   User,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Layers,
+  AlertCircle
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -81,6 +83,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Ticket table / list filters
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showBufferOnly, setShowBufferOnly] = useState<boolean>(false);
+  const [showQuarantinedOnly, setShowQuarantinedOnly] = useState<boolean>(false);
   const [ledgerSettled, setLedgerSettled] = useState<boolean>(false);
   const [showVoucherModal, setShowVoucherModal] = useState<boolean>(false);
 
@@ -101,6 +104,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Filtered issues calculation for the tracking ledger
   const displayedIssues = issues.filter((issue) => {
+    if (showQuarantinedOnly) {
+      return issue.status === 'quarantined' || Boolean(issue.isQuarantined);
+    }
     if (filterCategory !== 'all' && issue.category !== filterCategory) return false;
     if (showBufferOnly && !isInsideBufferZone(issue.coordinates?.lat, issue.coordinates?.lng, issue.isBufferZone)) return false;
     return true;
@@ -108,6 +114,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const bufferZoneTicketsCount = issues.filter((i) => 
     isInsideBufferZone(i.coordinates?.lat, i.coordinates?.lng, i.isBufferZone)
+  ).length;
+
+  const quarantinedTicketsCount = issues.filter((i) => 
+    i.status === 'quarantined' || Boolean(i.isQuarantined)
   ).length;
 
   const handleReconcileLedger = () => {
@@ -228,7 +238,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         
         {/* Ledger Voucher Confirmation Modal */}
         {showVoucherModal && (
-          <div className="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[50] w-screen h-[100dvh] overflow-hidden backdrop-blur-sm bg-stone-950/80 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
               <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
@@ -269,184 +279,275 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowVoucherModal(false)}
-                  className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-stone-100 text-white dark:text-stone-900 rounded-xl text-xs font-bold"
+                  className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-stone-100 text-white dark:text-stone-900 rounded-xl text-xs font-bold cursor-pointer"
                 >
                   Acknowledge & Close
                 </button>
               </div>
             </div>
           </div>
-        )}        {/* Detailed Incident Inspection & Action Modal */}
-        {inspectingIssue && (
-          <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-hidden">
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-in zoom-in-95 overflow-hidden">
-              
-              {/* Header: Tracking ID, Category, Status, Priority & Close (Fixed at top) */}
-              <div className="p-4 sm:p-6 border-b border-stone-100 dark:border-stone-800 shrink-0 bg-white dark:bg-stone-900 flex items-start justify-between gap-4 z-10">
-                <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Clickable / Copyable Tracking ID */}
-                    <button
-                      type="button"
-                      onClick={() => handleCopyTrackingId(inspectingIssue.trackingId || inspectingIssue.id)}
-                      className="font-mono text-sm font-extrabold px-3 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-700 inline-flex items-center gap-1.5 transition-colors group/copy"
-                      title="Click to copy Tracking ID"
-                    >
-                      <span>{inspectingIssue.trackingId || inspectingIssue.id}</span>
-                      {copiedTrackingId ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-stone-400 group-hover/copy:text-stone-700 dark:group-hover/copy:text-stone-200" />
-                      )}
-                    </button>
+        )}
 
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
-                      {inspectingIssue.category}
-                    </span>
+        {/* Detailed Incident Inspection & Action Modal */}
+        {inspectingIssue && (() => {
+          const allCitizenPhotos = (inspectingIssue.images && inspectingIssue.images.length > 0)
+            ? inspectingIssue.images
+            : (inspectingIssue.imageUrl ? [inspectingIssue.imageUrl] : []);
+          const totalReportsCount = inspectingIssue.reporters?.length || inspectingIssue.reportCount || 1;
+          const isQuarantined = inspectingIssue.status === 'quarantined' || Boolean(inspectingIssue.isQuarantined);
 
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-md border uppercase ${
-                      inspectingIssue.status === 'resolved' 
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200'
-                        : inspectingIssue.status === 'closed'
-                        ? 'bg-stone-200 text-stone-800 border-stone-300 dark:bg-stone-800 dark:text-stone-300'
-                        : inspectingIssue.status === 'in_progress'
-                        ? 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950 dark:text-blue-200'
-                        : 'bg-stone-100 text-stone-800 border-stone-300 dark:bg-stone-800 dark:text-stone-300'
-                    }`}>
-                      {inspectingIssue.status.replace('_', ' ')}
-                    </span>
+          return (
+            <div className="fixed inset-0 z-[50] w-screen h-[100dvh] overflow-hidden backdrop-blur-sm bg-stone-950/80 flex items-center justify-center p-3 sm:p-6">
+              <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-in zoom-in-95 overflow-hidden">
+                
+                {/* Header: Tracking ID, Category, Status, Priority & Close (Fixed at top) */}
+                <div className="p-4 sm:p-6 border-b border-stone-100 dark:border-stone-800 shrink-0 bg-white dark:bg-stone-900 flex items-start justify-between gap-4 z-10">
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Clickable / Copyable Tracking ID */}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyTrackingId(inspectingIssue.trackingId || inspectingIssue.id)}
+                        className="font-mono text-sm font-extrabold px-3 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-700 inline-flex items-center gap-1.5 transition-colors group/copy cursor-pointer"
+                        title="Click to copy Tracking ID"
+                      >
+                        <span>{inspectingIssue.trackingId || inspectingIssue.id}</span>
+                        {copiedTrackingId ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-stone-400 group-hover/copy:text-stone-700 dark:group-hover/copy:text-stone-200" />
+                        )}
+                      </button>
 
-                    <span className="text-xs font-bold px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
-                      Rank {inspectingIssue.severityRank || 3}/5 Priority
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-stone-900 dark:text-white pt-1">
-                    {inspectingIssue.title}
-                  </h3>
-
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
-                    <span className="inline-flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-stone-400" />
-                      Reported by <strong>{inspectingIssue.reportedBy || 'Mysuru Resident'}</strong>
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-stone-400" />
-                      {inspectingIssue.reportedAt}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                      {inspectingIssue.location}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  id="btn-close-inspect-modal"
-                  onClick={() => setInspectingIssue(null)}
-                  className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors shrink-0"
-                  aria-label="Close dialog"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Scrollable Body: Details, Photos, Actions */}
-              <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 overscroll-contain">
-                {/* Full Issue Details: Location, Corridor, GPS & Telemetry */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
-                  <div>
-                    <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
-                      Corridor & Jurisdiction
-                    </span>
-                    <span className="font-bold text-stone-900 dark:text-white mt-0.5 block">
-                      {inspectingIssue.assignedDepot || 'MCC Zone 3 Jurisdiction'}
-                    </span>
-                    {inspectingIssue.isBufferZone && (
-                      <span className="inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.5 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 rounded border border-amber-300 dark:border-amber-800">
-                        Buffer Corridor Zone
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
+                        {inspectingIssue.category}
                       </span>
-                    )}
-                  </div>
 
-                  <div>
-                    <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
-                      GPS Coordinates
-                    </span>
-                    <span className="font-mono font-bold text-stone-900 dark:text-white mt-0.5 block">
-                      {inspectingIssue.coordinatesStr || (inspectingIssue.coordinates ? `${inspectingIssue.coordinates.lat.toFixed(4)}, ${inspectingIssue.coordinates.lng.toFixed(4)}` : '12.3025° N, 76.6021° E')}
-                    </span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 inline-block">
-                      ✓ Geotag Verified
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
-                      Inter-Agency Clearing Cost
-                    </span>
-                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
-                      ₹{(inspectingIssue.clearingCost || 3500).toLocaleString('en-IN')}
-                    </span>
-                    <span className="text-[10px] text-stone-500 dark:text-stone-400 mt-1 inline-block">
-                      Municipal Treasury Clearing Rate
-                    </span>
-                  </div>
-                </div>
-
-                {/* Photos & Photographic Evidence Comparison Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 1. Citizen Uploaded Photo Proof */}
-                  <div className="space-y-2 p-4 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
-                        <Camera className="w-4 h-4 text-emerald-600" />
-                        <span>Citizen On-Site Intake Photo</span>
+                      {/* Total Reports Badge (Aggregated View) */}
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200 border border-purple-300 dark:border-purple-800 flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-purple-600" />
+                        <span>Total Reports: {totalReportsCount}</span>
                       </span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
-                        INTAKE VERIFIED
+
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-md border uppercase ${
+                        isQuarantined
+                          ? 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950 dark:text-rose-200'
+                          : inspectingIssue.status === 'resolved' 
+                          ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200'
+                          : inspectingIssue.status === 'closed'
+                          ? 'bg-stone-200 text-stone-800 border-stone-300 dark:bg-stone-800 dark:text-stone-300'
+                          : inspectingIssue.status === 'in_progress'
+                          ? 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950 dark:text-blue-200'
+                          : 'bg-stone-100 text-stone-800 border-stone-300 dark:bg-stone-800 dark:text-stone-300'
+                      }`}>
+                        {inspectingIssue.status.replace('_', ' ')}
+                      </span>
+
+                      <span className="text-xs font-bold px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                        Rank {inspectingIssue.severityRank || 3}/5 Priority
                       </span>
                     </div>
 
-                    {inspectingIssue.imageUrl ? (
-                      <div className="relative rounded-xl overflow-hidden border border-stone-300 dark:border-stone-700 bg-black aspect-video flex items-center justify-center group/img">
-                        <img
-                          src={inspectingIssue.imageUrl}
-                          alt="Citizen proof"
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white font-mono text-[9px]">
-                          GEO: {inspectingIssue.coordinatesStr || '12.3025, 76.6021'}
+                    <h3 className="text-xl font-bold text-stone-900 dark:text-white pt-1">
+                      {inspectingIssue.title}
+                    </h3>
+
+                    {/* List of All Reporter Names */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+                      <span className="inline-flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-stone-400" />
+                        <span>
+                          Reported by: <strong>
+                            {inspectingIssue.reporters && inspectingIssue.reporters.length > 0
+                              ? inspectingIssue.reporters.map((r) => r.name).join(', ')
+                              : inspectingIssue.reportedBy || 'Mysuru Resident'}
+                          </strong>
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-stone-400" />
+                        {inspectingIssue.reportedAt}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                        {inspectingIssue.location}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    id="btn-close-inspect-modal"
+                    onClick={() => setInspectingIssue(null)}
+                    className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors shrink-0 cursor-pointer"
+                    aria-label="Close dialog"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Scrollable Body: Details, Photos, Actions */}
+                <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 overscroll-contain">
+                  {/* Quarantine Alert Banner */}
+                  {isQuarantined && (
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-200 flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <strong>QUARANTINED BY CONTENT MODERATION:</strong>
+                          <p className="mt-0.5 text-rose-800 dark:text-rose-300">
+                            {inspectingIssue.quarantineReason || 'Flagged for abusive content, gibberish or promotional spam. Excluded from public lists and capacity matrix.'}
+                          </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setLightboxImage({
-                            url: inspectingIssue.imageUrl!,
-                            title: `Citizen On-Site Photo: ${inspectingIssue.trackingId || inspectingIssue.id}`,
-                            subtitle: inspectingIssue.location
-                          })}
-                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white text-xs opacity-80 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer"
-                          title="Enlarge photo"
-                        >
-                          <Maximize2 className="w-3.5 h-3.5" />
-                          <span className="text-[10px]">Zoom</span>
-                        </button>
                       </div>
-                    ) : (
-                      <div className="h-44 rounded-xl border-2 border-dashed border-stone-300 dark:border-stone-700 flex flex-col items-center justify-center text-stone-400 p-4 text-center text-xs">
-                        <Camera className="w-8 h-8 mb-2 opacity-50" />
-                        <span>No citizen photo attached with report</span>
-                      </div>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          adminUpdateIssue(inspectingIssue.id, {
+                            status: 'reported',
+                            adminNotes: 'Admin cleared ticket from quarantine after manual review.',
+                          });
+                          onUpdateStatus(inspectingIssue.id, 'reported');
+                          setInspectingIssue({
+                            ...inspectingIssue,
+                            status: 'reported',
+                            isQuarantined: false,
+                          });
+                          setModalFeedback('Ticket approved from quarantine and queued for dispatch.');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shrink-0 cursor-pointer shadow-xs"
+                      >
+                        Approve & Dispatch
+                      </button>
+                    </div>
+                  )}
 
-                    <div className="text-[11px] text-stone-600 dark:text-stone-300 pt-1">
-                      <strong className="text-stone-900 dark:text-white">Resident Description:</strong>
-                      <p className="mt-0.5 italic leading-relaxed text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-900 p-2 rounded-lg border border-stone-200 dark:border-stone-800">
-                        "{inspectingIssue.description}"
-                      </p>
+                  {/* Full Issue Details: Location, Corridor, GPS & Telemetry */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
+                    <div>
+                      <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
+                        Corridor & Jurisdiction
+                      </span>
+                      <span className="font-bold text-stone-900 dark:text-white mt-0.5 block">
+                        {inspectingIssue.assignedDepot || 'MCC Zone 3 Jurisdiction'}
+                      </span>
+                      {inspectingIssue.isBufferZone && (
+                        <span className="inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.5 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 rounded border border-amber-300 dark:border-amber-800">
+                          Buffer Corridor Zone
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
+                        GPS Coordinates
+                      </span>
+                      <span className="font-mono font-bold text-stone-900 dark:text-white mt-0.5 block">
+                        {inspectingIssue.coordinatesStr || (inspectingIssue.coordinates ? `${inspectingIssue.coordinates.lat.toFixed(4)}, ${inspectingIssue.coordinates.lng.toFixed(4)}` : '12.3025° N, 76.6021° E')}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 inline-block">
+                        ✓ Geotag Verified
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider block">
+                        Inter-Agency Clearing Cost
+                      </span>
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
+                        ₹{(inspectingIssue.clearingCost || 3500).toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-[10px] text-stone-500 dark:text-stone-400 mt-1 inline-block">
+                        Municipal Treasury Clearing Rate
+                      </span>
                     </div>
                   </div>
+
+                  {/* Photos & Photographic Evidence Comparison Section */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 1. Citizen Uploaded Photo Proof & Gallery */}
+                    <div className="space-y-2 p-4 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
+                          <Camera className="w-4 h-4 text-emerald-600" />
+                          <span>Citizen Evidence Photo ({allCitizenPhotos.length} Total)</span>
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">
+                          INTAKE VERIFIED
+                        </span>
+                      </div>
+
+                      {allCitizenPhotos.length > 0 ? (
+                        <div className="space-y-2">
+                          <div className="relative rounded-xl overflow-hidden border border-stone-300 dark:border-stone-700 bg-black aspect-video flex items-center justify-center group/img">
+                            <img
+                              src={allCitizenPhotos[0]}
+                              alt="Citizen proof"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white font-mono text-[9px]">
+                              PRIMARY EVIDENCE • GEO: {inspectingIssue.coordinatesStr || '12.3025, 76.6021'}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage({
+                                url: allCitizenPhotos[0],
+                                title: `Citizen Primary Evidence: ${inspectingIssue.trackingId || inspectingIssue.id}`,
+                                subtitle: inspectingIssue.location
+                              })}
+                              className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white text-xs opacity-80 group-hover/img:opacity-100 transition-opacity flex items-center gap-1 cursor-pointer"
+                              title="Enlarge photo"
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span className="text-[10px]">Zoom</span>
+                            </button>
+                          </div>
+
+                          {/* Scrollable Row of All Submitted Photos */}
+                          {allCitizenPhotos.length > 1 && (
+                            <div className="pt-1">
+                              <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 block mb-1">
+                                All Submitted Incident Photos ({allCitizenPhotos.length}):
+                              </span>
+                              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                                {allCitizenPhotos.map((img, idx) => {
+                                  const rep = inspectingIssue.reporters?.[idx];
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => setLightboxImage({
+                                        url: img,
+                                        title: `Evidence Photo #${idx + 1} • ${inspectingIssue.trackingId || inspectingIssue.id}`,
+                                        subtitle: rep ? `Reported by ${rep.name} (${rep.timestamp})` : inspectingIssue.location
+                                      })}
+                                      className="relative shrink-0 w-20 h-14 rounded-lg overflow-hidden border-2 border-stone-300 dark:border-stone-700 hover:border-emerald-500 transition-all cursor-pointer group/thumb"
+                                    >
+                                      <img src={img} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover" />
+                                      <span className="absolute bottom-0.5 right-0.5 text-[8px] font-bold px-1 rounded bg-black/70 text-white">
+                                        #{idx + 1}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="h-44 rounded-xl border-2 border-dashed border-stone-300 dark:border-stone-700 flex flex-col items-center justify-center text-stone-400 p-4 text-center text-xs">
+                          <Camera className="w-8 h-8 mb-2 opacity-50" />
+                          <span>No citizen photo attached with report</span>
+                        </div>
+                      )}
+
+                      <div className="text-[11px] text-stone-600 dark:text-stone-300 pt-1">
+                        <strong className="text-stone-900 dark:text-white">Resident Description:</strong>
+                        <p className="mt-0.5 italic leading-relaxed text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-900 p-2 rounded-lg border border-stone-200 dark:border-stone-800">
+                          "{inspectingIssue.description}"
+                        </p>
+                      </div>
+                    </div>
 
                   {/* 2. Field Worker Resolution & Audit Proof */}
                   <div className="space-y-2 p-4 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700">
@@ -685,7 +786,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             </div>
           </div>
-        )}
+        );
+      })()}
 
         {/* Admin Header - Cleaned up to Admin Dashboard with NO officer references */}
         <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1005,14 +1107,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowBufferOnly(!showBufferOnly)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors ${
+                onClick={() => {
+                  setShowBufferOnly(!showBufferOnly);
+                  if (!showBufferOnly) setShowQuarantinedOnly(false);
+                }}
+                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
                   showBufferOnly
                     ? 'bg-amber-600 text-white font-semibold'
                     : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
                 }`}
               >
                 Buffer Zone Only ({bufferZoneTicketsCount})
+              </button>
+
+              <button
+                type="button"
+                id="btn-filter-quarantined"
+                onClick={() => {
+                  setShowQuarantinedOnly(!showQuarantinedOnly);
+                  if (!showQuarantinedOnly) setShowBufferOnly(false);
+                }}
+                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
+                  showQuarantinedOnly
+                    ? 'bg-rose-600 text-white font-semibold'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                }`}
+              >
+                Quarantined / Audit ({quarantinedTicketsCount})
               </button>
 
               <select
@@ -1251,7 +1372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* High-Resolution Image Lightbox Modal */}
         {lightboxImage && (
           <div 
-            className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+            className="fixed inset-0 z-[60] w-screen h-[100dvh] overflow-hidden bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
             onClick={() => setLightboxImage(null)}
           >
             <div 

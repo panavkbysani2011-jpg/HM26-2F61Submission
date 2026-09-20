@@ -20,6 +20,7 @@ import {
 } from '../mockDatabase';
 import { MysuruLeafletMap } from './MysuruLeafletMap';
 import { compressImage } from '../utils/imageCompressor';
+import { moderateCitizenSubmission } from '../utils/geminiVerification';
 import { 
   signInCitizenWithGoogle, 
   signInCitizenWithNameAndEmail, 
@@ -510,6 +511,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Submission Status & Feedback
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'info' | 'success'>('success');
   const [submittedResult, setSubmittedResult] = useState<SubmitReportResult | null>(null);
@@ -812,55 +814,75 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     e.preventDefault();
     setFormError(null);
 
-    // Fallback photographic evidence if user has not uploaded or camera was unavailable
-    let finalImageUrl = imagePreview;
-    if (!finalImageUrl) {
-      if (category === 'Potholes' || category === 'Roads & Pavement') {
-        finalImageUrl = SAMPLE_POTHOLE_PHOTO;
-      } else if (category === 'Debris' || category === 'Garbage Dump' || category === 'Waste & Sanitation') {
-        finalImageUrl = SAMPLE_DEBRIS_PHOTO;
-      } else {
-        finalImageUrl = SAMPLE_DRAINAGE_PHOTO;
-      }
-    } else if (!finalImageUrl.startsWith('data:image/svg') && finalImageUrl.length > 50000) {
-      finalImageUrl = await compressImage(finalImageUrl, 800, 600, 0.6);
-    }
-
     if (!description.trim()) {
       setFormError('Please enter an incident description.');
       return;
     }
 
-    const formattedCoordsStr = `${selectedCoords.lat.toFixed(5)}, ${selectedCoords.lng.toFixed(5)}`;
-    
-    // Auto-detect jurisdiction automatically based on location & coordinates
-    const autoDetectedDepot = detectJurisdiction(locationName, selectedCoords);
+    setIsSubmitting(true);
+    try {
+      // Fallback photographic evidence if user has not uploaded or camera was unavailable
+      let finalImageUrl = imagePreview;
+      if (!finalImageUrl) {
+        if (category === 'Potholes' || category === 'Roads & Pavement') {
+          finalImageUrl = SAMPLE_POTHOLE_PHOTO;
+        } else if (category === 'Debris' || category === 'Garbage Dump' || category === 'Waste & Sanitation') {
+          finalImageUrl = SAMPLE_DEBRIS_PHOTO;
+        } else {
+          finalImageUrl = SAMPLE_DRAINAGE_PHOTO;
+        }
+      } else if (!finalImageUrl.startsWith('data:image/svg') && finalImageUrl.length > 50000) {
+        finalImageUrl = await compressImage(finalImageUrl, 800, 600, 0.6);
+      }
 
-    const result = submitCitizenReport({
-      category,
-      description: description.trim(),
-      location: locationName,
-      coordinates: selectedCoords,
-      coordinatesStr: formattedCoordsStr,
-      reportedBy: currentResidentName,
-      severityRank: autoAssessedSeverity,
-      imageUrl: finalImageUrl,
-      assignedDepot: autoDetectedDepot,
-    });
+      const formattedCoordsStr = `${selectedCoords.lat.toFixed(5)}, ${selectedCoords.lng.toFixed(5)}`;
+      
+      // Auto-detect jurisdiction automatically based on location & coordinates
+      const autoDetectedDepot = detectJurisdiction(locationName, selectedCoords);
 
-    onRefreshIssues();
+      // AI Abuse, Spam & Gibberish Moderation check
+      const moderationResult = await moderateCitizenSubmission(description.trim(), category, finalImageUrl || undefined);
+      const isQuarantined = !moderationResult.allowed;
+      const quarantineReason = moderationResult.reason;
 
-    if (result.grouped) {
-      setToastType('info');
-      setToastMessage('Your report has been logged and grouped with an existing active issue in the area.');
-      setTimeout(() => setToastMessage(null), 6000);
-    } else {
-      setToastType('success');
-      setToastMessage(`Issue lodged successfully with Tracking ID: ${result.trackingId}`);
-      setTimeout(() => setToastMessage(null), 6000);
+      const result = submitCitizenReport({
+        category,
+        description: description.trim(),
+        location: locationName,
+        coordinates: selectedCoords,
+        coordinatesStr: formattedCoordsStr,
+        reportedBy: currentResidentName,
+        reporterEmail: currentResidentEmail || undefined,
+        severityRank: autoAssessedSeverity,
+        imageUrl: finalImageUrl,
+        assignedDepot: autoDetectedDepot,
+        isQuarantined,
+        quarantineReason,
+      });
+
+      onRefreshIssues();
+
+      if (isQuarantined) {
+        setToastType('info');
+        setToastMessage(`Submission Flagged: Your report has been quarantined for administrative review due to content safety policy (${quarantineReason}).`);
+        setTimeout(() => setToastMessage(null), 8000);
+      } else if (result.grouped) {
+        setToastType('info');
+        setToastMessage('Your report has been logged and grouped with an existing active issue in the area.');
+        setTimeout(() => setToastMessage(null), 6000);
+      } else {
+        setToastType('success');
+        setToastMessage(`Issue lodged successfully with Tracking ID: ${result.trackingId}`);
+        setTimeout(() => setToastMessage(null), 6000);
+      }
+
+      setSubmittedResult(result);
+    } catch (err) {
+      console.error('Submission handling error:', err);
+      setFormError('An error occurred while lodging the report. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setSubmittedResult(result);
   };
 
   const handleResetForm = () => {
@@ -879,15 +901,29 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
   const coordinatesDisplay = `${selectedCoords.lat.toFixed(5)}, ${selectedCoords.lng.toFixed(5)}`;
 
-  // Filter My Submissions (matching citizen name or email)
-  const mySubmissions = issues.filter(
-    (issue) => 
-      !currentResidentName ||
-      (issue.reportedBy && issue.reportedBy.trim().toLowerCase() === currentResidentName.trim().toLowerCase()) ||
-      issue.reportedBy === currentResidentName ||
-      issue.reportedBy === 'Raghavendra Rao' || 
-      issue.reportedBy === 'Ananya Gowda'
-  );
+  // Filter My Submissions (matching citizen name or email in reporters array or reportedBy)
+  const mySubmissions = issues.filter((issue) => {
+    const userEmailLower = (currentResidentEmail || '').toLowerCase().trim();
+    const userNameLower = (currentResidentName || '').toLowerCase().trim();
+
+    const matchesEmail = userEmailLower
+      ? Boolean(issue.reporters && issue.reporters.some((r) => r.email && r.email.toLowerCase() === userEmailLower))
+      : false;
+
+    const matchesName = userNameLower
+      ? Boolean(
+          (issue.reportedBy && issue.reportedBy.toLowerCase() === userNameLower) ||
+          (issue.reporters && issue.reporters.some((r) => r.name && r.name.toLowerCase() === userNameLower))
+        )
+      : false;
+
+    const matchesDemoSeed =
+      !userEmailLower && !userNameLower
+        ? true
+        : issue.reportedBy === 'Raghavendra Rao' || issue.reportedBy === 'Ananya Gowda';
+
+    return matchesEmail || matchesName || matchesDemoSeed;
+  });
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const localMatches = MYSURU_PLACES.filter((loc) => {
@@ -918,7 +954,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
         {/* RESIDENT AUTHENTICATION MODAL (Compulsory upon entry) */}
         {showResidentLogin && (
-          <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-xs overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-4">
+          <div className="fixed inset-0 z-[50] w-screen h-[100dvh] overflow-hidden backdrop-blur-sm bg-stone-950/80 flex items-center justify-center p-3 sm:p-4">
             <div className="relative my-auto bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in zoom-in-95">
               
               {/* Header with Title and Dismiss/Back Action */}
@@ -1551,7 +1587,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           setLocationName(autoLoc);
                           setSearchQuery(autoLoc);
                         }}
-                        existingIssues={issues}
+                        existingIssues={issues.filter((i) => i.status !== 'quarantined' && !i.isQuarantined)}
                         isDark={isDark}
                       />
                     </div>
@@ -1776,10 +1812,20 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     <button
                       id="submit-civic-report"
                       type="submit"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md transition-all active:scale-98"
+                      disabled={isSubmitting}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md transition-all active:scale-98 disabled:opacity-60 cursor-pointer"
                     >
-                      <Send className="w-4 h-4" />
-                      <span>Submit Civic Report</span>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                          <span>Civic Mesh AI Auditing & Lodging...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Submit Civic Report</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
@@ -1835,10 +1881,28 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   const severityConfig = SEVERITY_LEVELS[rank];
                   const inBuffer = isInsideBufferZone(ticket.coordinates?.lat, ticket.coordinates?.lng, ticket.isBufferZone);
 
+                  // STRICT PRIVACY RULE:
+                  // Find the active citizen's own entry inside reporters array.
+                  // NEVER render or expose other co-reporters' names, emails, or photos to this citizen!
+                  const userReporter = ticket.reporters?.find((r) => {
+                    const userEmailLower = (currentResidentEmail || '').toLowerCase().trim();
+                    const userNameLower = (currentResidentName || '').toLowerCase().trim();
+                    if (userEmailLower && r.email && r.email.toLowerCase() === userEmailLower) return true;
+                    if (userNameLower && r.name && r.name.toLowerCase() === userNameLower) return true;
+                    return false;
+                  }) || ticket.reporters?.[0];
+
+                  const myEvidencePhoto = userReporter?.imageUrl || ticket.imageUrl;
+                  const myReporterName = userReporter?.name || currentResidentName || ticket.reportedBy;
+                  const isQuarantined = ticket.status === 'quarantined' || Boolean(ticket.isQuarantined);
+
                   let statusBadgeText = 'Received';
                   let statusBadgeClass = 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:border-stone-700';
 
-                  if (ticket.status === 'resolved') {
+                  if (isQuarantined) {
+                    statusBadgeText = 'Quarantined (Audit)';
+                    statusBadgeClass = 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800';
+                  } else if (ticket.status === 'resolved') {
                     statusBadgeText = ticket.verificationStatus === 'flagged_unverified' 
                       ? 'Completed (Audit Pending)' 
                       : 'Resolved & Verified';
@@ -1880,15 +1944,26 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         {/* Status Badge */}
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusBadgeClass}`}>
-                            {statusBadgeText.includes('Resolved') && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                            {statusBadgeText.includes('Audit') && <Info className="w-3.5 h-3.5 text-amber-600" />}
-                            {statusBadgeText.includes('In Progress') && <Clock className="w-3.5 h-3.5 text-blue-600" />}
-                            {statusBadgeText === 'Assigned' && <Clock className="w-3.5 h-3.5 text-indigo-600" />}
-                            {statusBadgeText === 'Received' && <Layers className="w-3.5 h-3.5 text-stone-600" />}
+                            {isQuarantined && <Info className="w-3.5 h-3.5 text-rose-600" />}
+                            {!isQuarantined && statusBadgeText.includes('Resolved') && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                            {!isQuarantined && statusBadgeText.includes('Audit') && <Info className="w-3.5 h-3.5 text-amber-600" />}
+                            {!isQuarantined && statusBadgeText.includes('In Progress') && <Clock className="w-3.5 h-3.5 text-blue-600" />}
+                            {!isQuarantined && statusBadgeText === 'Assigned' && <Clock className="w-3.5 h-3.5 text-indigo-600" />}
+                            {!isQuarantined && statusBadgeText === 'Received' && <Layers className="w-3.5 h-3.5 text-stone-600" />}
                             <span>{statusBadgeText}</span>
                           </span>
                         </div>
                       </div>
+
+                      {/* Quarantine Notice */}
+                      {isQuarantined && (
+                        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2">
+                          <Info className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                          <span>
+                            <strong>Flagged by Content Policy:</strong> {ticket.quarantineReason || 'Quarantined for administrative review prior to dispatch.'}
+                          </span>
+                        </div>
+                      )}
 
                       <div className="space-y-1">
                         <h3 className="text-sm font-bold text-stone-900 dark:text-white">{ticket.title}</h3>
@@ -1908,27 +1983,27 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           </span>
                         </div>
 
-                        {ticket.assignedCrew && (
+                        {ticket.assignedCrew && !isQuarantined && (
                           <span className="text-[11px] text-stone-600 dark:text-stone-300">
                             Assigned Crew: <strong>{ticket.assignedCrew}</strong>
                           </span>
                         )}
                       </div>
 
-                      {/* Attached Photographic Evidence Thumbnails */}
-                      {(ticket.imageUrl || ticket.resolvedImageUrl) && (
+                      {/* Attached Photographic Evidence Thumbnails (Strictly Citizen's Own Photo) */}
+                      {(myEvidencePhoto || ticket.resolvedImageUrl) && (
                         <div className="flex items-center gap-3 pt-2 border-t border-stone-100 dark:border-stone-800">
-                          {ticket.imageUrl && (
+                          {myEvidencePhoto && (
                             <div>
-                              <span className="text-[10px] text-stone-400 block mb-1">Citizen On-Site Photo</span>
+                              <span className="text-[10px] text-stone-400 block mb-1">Your On-Site Photo</span>
                               <img
-                                src={ticket.imageUrl}
-                                alt="Reported evidence"
+                                src={myEvidencePhoto}
+                                alt="Your reported evidence"
                                 className="w-16 h-12 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
                               />
                             </div>
                           )}
-                          {ticket.resolvedImageUrl && (
+                          {ticket.resolvedImageUrl && !isQuarantined && (
                             <div>
                               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mb-1">
                                 Worker Completion Proof

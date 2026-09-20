@@ -313,3 +313,178 @@ Respond strictly with valid JSON conforming to this schema (no markdown fences, 
     };
   }
 };
+
+export interface ModerationResult {
+  isFlagged: boolean;
+  allowed: boolean;
+  category: 'clean' | 'profanity' | 'abusive' | 'spam' | 'gibberish';
+  reason: string;
+  sanitizedText: string;
+}
+
+const PROFANITY_AND_ABUSE_WORDS = [
+  'idiot', 'stupid', 'damn', 'fool', 'cheat', 'bastard', 'bloody', 
+  'bitch', 'asshole', 'crap', 'bullshit', 'fraudster', 'scam', 
+  'kill', 'murder', 'die', 'threat', 'corrupt pigs', 'nonsense'
+];
+
+/**
+ * Evaluates citizen grievance description for abusive language, profanity,
+ * blatant spam, promotional links, or keyboard-mash gibberish.
+ * Uses fast deterministic rules with Gemini AI multimodal/text analysis fallback.
+ */
+export const moderateCitizenSubmission = async (
+  description: string,
+  category?: string,
+  location?: string
+): Promise<ModerationResult> => {
+  const text = (description || '').trim();
+
+  // Rule 1: Empty or trivially short nonsense
+  if (text.length < 5) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'gibberish',
+      reason: 'Description is too brief or contains no meaningful detail.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 2: Profanity and Abusive Lexicon Check
+  let sanitized = text;
+  let hasAbuse = false;
+  let detectedWord = '';
+
+  for (const word of PROFANITY_AND_ABUSE_WORDS) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    if (regex.test(sanitized)) {
+      hasAbuse = true;
+      detectedWord = word;
+      sanitized = sanitized.replace(regex, '***');
+    }
+  }
+
+  if (hasAbuse) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'profanity',
+      reason: `Inappropriate or abusive language detected ("${detectedWord}"). Routed to audit queue.`,
+      sanitizedText: sanitized,
+    };
+  }
+
+  // Rule 3: Repetitive Character Spam (e.g. "aaaaaaa", "xxxxxxxxx")
+  if (/(.)\1{6,}/i.test(text)) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'spam',
+      reason: 'Repetitive character spam detected.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 4: Repetitive Words Pattern (e.g. "test test test test")
+  if (/\b(\w+)\b(\s+\1\b){3,}/i.test(text)) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'spam',
+      reason: 'Repetitive phrase spam detected.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 5: Promotional Spam / External Hyperlinks
+  if (/(https?:\/\/|t\.me\/|bit\.ly\/|www\.|casino|crypto|viagra|telegram)/i.test(text)) {
+    return {
+      isFlagged: true,
+      allowed: false,
+      category: 'spam',
+      reason: 'Unsolicited promotional content or unauthorized links detected.',
+      sanitizedText: text,
+    };
+  }
+
+  // Rule 6: Keyboard Mashing & Gibberish (Long words with no vowels or random clusters)
+  const words = text.split(/\s+/);
+  for (const word of words) {
+    const cleanWord = word.replace(/[^a-zA-Z]/g, '');
+    if (cleanWord.length >= 8 && !/[aeiouy]/i.test(cleanWord)) {
+      return {
+        isFlagged: true,
+        allowed: false,
+        category: 'gibberish',
+        reason: 'Nonsensical text or keyboard-mash pattern detected.',
+        sanitizedText: text,
+      };
+    }
+    if (cleanWord.length > 25) {
+      return {
+        isFlagged: true,
+        allowed: false,
+        category: 'gibberish',
+        reason: 'Abnormally long non-standard word string detected.',
+        sanitizedText: text,
+      };
+    }
+  }
+
+  // Rule 7: Deep AI Moderation using Gemini (when API key is available)
+  if (isGeminiConfigured()) {
+    try {
+      const apiKey = getGeminiApiKey();
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `You are a municipal grievance intake content auditor for Mysuru City Corporation (Civic Mesh).
+Analyze the following citizen grievance report description.
+Identify if it contains:
+1. Abusive language, hate speech, violent threats, or vulgar profanity.
+2. Blatant spam, advertising, or phishing links.
+3. Gibberish, keyboard-mash, or completely nonsensical text with no civic relevance.
+
+Description: "${text}"
+Category: "${category || 'Civic Grievance'}"
+Location: "${location || 'Mysuru'}"
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "isFlagged": boolean,
+  "category": "clean" | "profanity" | "abusive" | "spam" | "gibberish",
+  "reason": "Brief one-sentence explanation"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [prompt],
+      });
+
+      const responseText = response?.text || '';
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.isFlagged) {
+          return {
+            isFlagged: true,
+            allowed: false,
+            category: parsed.category || 'abusive',
+            reason: parsed.reason || 'Flagged by Civic Mesh AI content moderation.',
+            sanitizedText: text,
+          };
+        }
+      }
+    } catch (aiErr) {
+      console.warn('[AI Moderation] Gemini API check bypassed, rule-based check passed:', aiErr);
+    }
+  }
+
+  return {
+    isFlagged: false,
+    allowed: true,
+    category: 'clean',
+    reason: 'Submission verified as clean civic grievance.',
+    sanitizedText: text,
+  };
+};
+

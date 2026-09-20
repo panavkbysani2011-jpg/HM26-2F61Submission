@@ -1,6 +1,6 @@
 export type ViewType = 'landing' | 'citizen' | 'worker' | 'admin-login' | 'admin';
 
-export type IssueStatus = 'reported' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+export type IssueStatus = 'reported' | 'assigned' | 'in_progress' | 'resolved' | 'closed' | 'quarantined';
 
 export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
@@ -30,6 +30,13 @@ export interface MysuruJurisdiction {
   centerCoords?: { lat: number; lng: number };
 }
 
+export interface ReporterInfo {
+  name: string;
+  email: string;
+  timestamp: string;
+  imageUrl?: string;
+}
+
 export interface CivicIssue {
   id: string;
   trackingId?: string;
@@ -45,15 +52,27 @@ export interface CivicIssue {
   priority: IssuePriority;
   severityRank: SeverityRank; // Strict 1 to 5
   status: IssueStatus;
+
+  // Primary single reporter string (retained for backward compatibility)
   reportedBy: string;
+
+  // Array-based reporter records
+  reporters?: ReporterInfo[];
+
+  // Array-based photographic evidence
+  images?: string[];
+
   assignedCrew?: string;
   assignedVehicle?: string;
   reportedAt: string;
   updatedAt: string;
   loadWeight: number; // 1 to 5
   isBufferZone?: boolean;
+  targetJurisdictionId?: string; // e.g., 'mcc-zone-3' for live buffer load delegation
   isFlagged?: boolean;
-  verificationStatus?: 'verified' | 'flagged_unverified' | 'pending';
+  isQuarantined?: boolean;
+  quarantineReason?: string;
+  verificationStatus?: 'verified' | 'flagged_unverified' | 'pending' | 'quarantined';
   reportCount?: number;
   imageUrl?: string;
   assignedDepot?: string;

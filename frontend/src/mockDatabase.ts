@@ -381,6 +381,15 @@ const INITIAL_ISSUES: CivicIssue[] = [
     severityRank: 5,
     status: 'assigned',
     reportedBy: 'Raghavendra Rao',
+    reporters: [
+      {
+        name: 'Raghavendra Rao',
+        email: 'raghavendra.rao@mysuru.gov.in',
+        timestamp: '2026-09-19 07:15',
+        imageUrl: SAMPLE_BOGADI_DEBRIS_PHOTO,
+      },
+    ],
+    images: [SAMPLE_BOGADI_DEBRIS_PHOTO],
     assignedCrew: 'Manjunatha S. (MCC Depot 3)',
     assignedVehicle: 'Canter KA-09-G-4412',
     assignedDepot: 'Bogadi Town Panchayat',
@@ -390,6 +399,7 @@ const INITIAL_ISSUES: CivicIssue[] = [
     loadWeight: 6,
     reportCount: 8,
     isBufferZone: true,
+    targetJurisdictionId: 'mcc-zone-3',
     isFlagged: false,
     imageUrl: SAMPLE_BOGADI_DEBRIS_PHOTO,
   },
@@ -407,6 +417,15 @@ const INITIAL_ISSUES: CivicIssue[] = [
     severityRank: 5,
     status: 'reported',
     reportedBy: 'Ananya Gowda',
+    reporters: [
+      {
+        name: 'Ananya Gowda',
+        email: 'ananya.gowda@mysuru.gov.in',
+        timestamp: '2026-09-19 08:00',
+        imageUrl: SAMPLE_BOGADI_POTHOLE_PHOTO,
+      },
+    ],
+    images: [SAMPLE_BOGADI_POTHOLE_PHOTO],
     assignedCrew: 'Bogadi Road Maintenance Crew',
     assignedVehicle: 'Tractor KA-09-EA-1092',
     assignedDepot: 'Bogadi Town Panchayat',
@@ -433,6 +452,15 @@ const INITIAL_ISSUES: CivicIssue[] = [
     severityRank: 4,
     status: 'reported',
     reportedBy: 'Karthik Somanna',
+    reporters: [
+      {
+        name: 'Karthik Somanna',
+        email: 'karthik.somanna@mysuru.gov.in',
+        timestamp: '2026-09-19 08:45',
+        imageUrl: SAMPLE_BOGADI_DRAINAGE_PHOTO,
+      },
+    ],
+    images: [SAMPLE_BOGADI_DRAINAGE_PHOTO],
     assignedCrew: 'Bogadi Drain Response Team',
     assignedVehicle: 'Jetting Unit KA-09-J-3301',
     assignedDepot: 'Bogadi Town Panchayat',
@@ -442,6 +470,7 @@ const INITIAL_ISSUES: CivicIssue[] = [
     loadWeight: 5,
     reportCount: 4,
     isBufferZone: true,
+    targetJurisdictionId: 'mcc-zone-3',
     isFlagged: false,
     imageUrl: SAMPLE_BOGADI_DRAINAGE_PHOTO,
   },
@@ -459,6 +488,15 @@ const INITIAL_ISSUES: CivicIssue[] = [
     severityRank: 4,
     status: 'in_progress',
     reportedBy: 'Sunil Kumar',
+    reporters: [
+      {
+        name: 'Sunil Kumar',
+        email: 'sunil.kumar@mysuru.gov.in',
+        timestamp: '2026-09-19 09:10',
+        imageUrl: SAMPLE_BOGADI_WASTE_PHOTO,
+      },
+    ],
+    images: [SAMPLE_BOGADI_WASTE_PHOTO],
     assignedCrew: 'Bogadi Sanitation Unit 1',
     assignedVehicle: 'Tipper KA-09-EA-2104',
     assignedDepot: 'Bogadi Town Panchayat',
@@ -485,6 +523,15 @@ const INITIAL_ISSUES: CivicIssue[] = [
     severityRank: 5,
     status: 'in_progress',
     reportedBy: 'Raghavendra Rao',
+    reporters: [
+      {
+        name: 'Raghavendra Rao',
+        email: 'raghavendra.rao@mysuru.gov.in',
+        timestamp: '2026-09-18 16:20',
+        imageUrl: SAMPLE_MCC3_WATERMAIN_PHOTO,
+      },
+    ],
+    images: [SAMPLE_MCC3_WATERMAIN_PHOTO],
     assignedCrew: 'Manjunatha S. (MCC Depot 3)',
     assignedVehicle: 'Canter KA-09-G-4412',
     assignedDepot: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)',
@@ -511,6 +558,15 @@ const INITIAL_ISSUES: CivicIssue[] = [
     severityRank: 4,
     status: 'assigned',
     reportedBy: 'Dr. Suresh V.',
+    reporters: [
+      {
+        name: 'Dr. Suresh V.',
+        email: 'suresh.v@mysuru.gov.in',
+        timestamp: '2026-09-19 08:15',
+        imageUrl: SAMPLE_MCC3_POTHOLE_PHOTO,
+      },
+    ],
+    images: [SAMPLE_MCC3_POTHOLE_PHOTO],
     assignedCrew: 'MCC Zone 3 Rapid Response',
     assignedVehicle: 'Patch Truck KA-09-M-7711',
     assignedDepot: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)',
@@ -606,14 +662,29 @@ export const calculateDynamicCapacities = (issues: CivicIssue[]): DynamicJurisdi
     const jurNameLower = jur.name.toLowerCase();
     const jurId = jur.id;
 
-    // Filter issues belonging to this jurisdiction that are still active (not resolved and not closed)
+    // Filter issues belonging to this jurisdiction that are still active (not resolved, closed, or quarantined)
     const activeIssues = issues.filter((iss) => {
-      if (iss.status === 'resolved' || iss.status === 'closed') return false;
+      if (
+        iss.status === 'resolved' || 
+        iss.status === 'closed' || 
+        iss.status === 'quarantined' || 
+        iss.isQuarantined || 
+        iss.verificationStatus === 'quarantined'
+      ) {
+        return false;
+      }
       const depot = (iss.assignedDepot || '').toLowerCase();
       const loc = (iss.location || '').toLowerCase();
 
+      // Buffer Zone Sync: When a ticket is placed in a Buffer Zone, explicitly add its Load Units to the target jurisdictionId (e.g., MCC Zone 3)
+      if (jurId === 'mcc-zone-3' && iss.isBufferZone && (iss.targetJurisdictionId === 'mcc-zone-3' || depot.includes('bogadi'))) {
+        if (iss.id !== 'ISS-BOG-001' && iss.id !== 'ISS-BOG-003') {
+          return true;
+        }
+      }
+
       if (jur.type === 'buffer_zone') {
-        if (jurId === 'buf-bogadi-mcc') return depot.includes('buf-bogadi') || depot.includes('bogadi-mcc zone 3 ring road buffer');
+        if (jurId === 'buf-bogadi-mcc') return depot.includes('buf-bogadi') || depot.includes('bogadi-mcc zone 3 ring road buffer') || iss.isBufferZone;
         if (jurId === 'buf-hootagalli-belavadi') return depot.includes('buf-hootagalli') || depot.includes('hootagalli-belavadi');
         if (jurId === 'buf-rammanahalli-prr') return depot.includes('buf-rammanahalli') || depot.includes('rammanahalli prr');
         if (jurId === 'buf-alanahalli-foothills') return depot.includes('buf-alanahalli') || depot.includes('alanahalli-chamundi');
@@ -770,25 +841,38 @@ const compactIssuesForStorage = (issues: CivicIssue[], maxRecentWithFullPhotos =
         ...issue,
         imageUrl: sanitizeImageString(issue.imageUrl, 65000),
         resolvedImageUrl: sanitizeImageString(issue.resolvedImageUrl, 65000),
+        images: (issue.images || []).map((img) => sanitizeImageString(img, 65000)).filter(Boolean) as string[],
+        reporters: (issue.reporters || []).map((r) => ({
+          ...r,
+          imageUrl: sanitizeImageString(r.imageUrl, 65000),
+        })),
       };
     }
 
     // For older archive issues, retain complete metadata and replace large base64 blobs with lightweight SVG proofs
-    const isSvgImg = issue.imageUrl?.startsWith('data:image/svg');
-    const isSvgResolved = issue.resolvedImageUrl?.startsWith('data:image/svg');
+    const isSvgImg = Boolean(issue.imageUrl?.startsWith('data:image/svg'));
+    const isSvgResolved = Boolean(issue.resolvedImageUrl?.startsWith('data:image/svg'));
+    const fallbackSvg: string = isSvgImg
+      ? (issue.imageUrl || SAMPLE_DEBRIS_PHOTO)
+      : (issue.category === 'Potholes' || issue.category === 'Roads & Pavement'
+          ? SAMPLE_POTHOLE_PHOTO
+          : issue.category === 'Drainage' || issue.category === 'Water & Drainage'
+          ? SAMPLE_DRAINAGE_PHOTO
+          : SAMPLE_DEBRIS_PHOTO);
 
     return {
       ...issue,
-      imageUrl: isSvgImg
-        ? issue.imageUrl
-        : (issue.category === 'Potholes' || issue.category === 'Roads & Pavement'
-            ? SAMPLE_POTHOLE_PHOTO
-            : issue.category === 'Drainage' || issue.category === 'Water & Drainage'
-            ? SAMPLE_DRAINAGE_PHOTO
-            : SAMPLE_DEBRIS_PHOTO),
+      imageUrl: fallbackSvg,
       resolvedImageUrl: isSvgResolved
         ? issue.resolvedImageUrl
         : (issue.status === 'resolved' ? SAMPLE_RESOLVED_PHOTO : undefined),
+      images: (issue.images && issue.images.length > 0)
+        ? (issue.images.map((img) => (img.startsWith('data:image/svg') ? img : fallbackSvg)).slice(0, 4) as string[])
+        : [fallbackSvg],
+      reporters: (issue.reporters || []).map((r) => ({
+        ...r,
+        imageUrl: r.imageUrl?.startsWith('data:image/svg') ? r.imageUrl : fallbackSvg,
+      })),
     };
   });
 };
@@ -895,9 +979,12 @@ export const submitCitizenReport = (data: {
   coordinates?: { lat: number; lng: number };
   coordinatesStr?: string;
   reportedBy: string;
+  reporterEmail?: string;
   imageUrl?: string;
   severityRank?: SeverityRank;
   assignedDepot?: string;
+  isQuarantined?: boolean;
+  quarantineReason?: string;
 }): SubmitReportResult => {
   const current = getStoredIssues();
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
@@ -906,25 +993,84 @@ export const submitCitizenReport = (data: {
   const rank: SeverityRank = data.severityRank || getPriorityScore(data.category);
   const cost = SEVERITY_LEVELS[rank]?.defaultCost || 2500;
 
-  // Grouping check: existing active ticket with same category and nearby coordinates
-  const matchingIndex = current.findIndex((issue) => {
-    if (issue.status === 'resolved' || issue.status === 'closed') return false;
-    if (issue.category !== data.category) return false;
-    return isNearby(issue.coordinates, data.coordinates);
-  });
+  const reporterEmail =
+    data.reporterEmail ||
+    (data.reportedBy ? `${data.reportedBy.toLowerCase().replace(/\s+/g, '.')}@mysuru.gov.in` : 'citizen@mysuru.gov.in');
+
+  const newReporterEntry = {
+    name: data.reportedBy,
+    email: reporterEmail,
+    timestamp: now,
+    imageUrl: data.imageUrl,
+  };
+
+  // If flagged by AI moderation or abusive words, quarantine immediately
+  const isQuarantined = Boolean(data.isQuarantined);
+  const quarantineReason = data.quarantineReason || (isFlagged ? 'Flagged by content safety filters' : undefined);
+
+  // Grouping check: existing active ticket with same category and nearby coordinates.
+  // Quarantined reports are NEVER merged into clean public tickets.
+  const matchingIndex = isQuarantined
+    ? -1
+    : current.findIndex((issue) => {
+        if (
+          issue.status === 'resolved' ||
+          issue.status === 'closed' ||
+          issue.status === 'quarantined' ||
+          issue.isQuarantined
+        ) {
+          return false;
+        }
+        if (issue.category !== data.category) return false;
+        return isNearby(issue.coordinates, data.coordinates);
+      });
 
   if (matchingIndex !== -1) {
     const existing = current[matchingIndex];
     const escalatedRank = Math.min(5, (existing.severityRank || 2) + 1) as SeverityRank;
+
+    // Non-overwriting merge: push citizen details & photo into reporters and images arrays
+    const existingReporters =
+      existing.reporters && existing.reporters.length > 0
+        ? [...existing.reporters]
+        : [
+            {
+              name: existing.reportedBy,
+              email: 'citizen@mysuru.gov.in',
+              timestamp: existing.reportedAt,
+              imageUrl: existing.imageUrl,
+            },
+          ];
+
+    // Add new reporter entry
+    existingReporters.push(newReporterEntry);
+
+    const existingImages =
+      existing.images && existing.images.length > 0
+        ? [...existing.images]
+        : existing.imageUrl
+        ? [existing.imageUrl]
+        : [];
+
+    if (data.imageUrl && !existingImages.includes(data.imageUrl)) {
+      existingImages.push(data.imageUrl);
+    }
+
+    const inBuffer = existing.isBufferZone || isInsideBufferZone(data.coordinates?.lat, data.coordinates?.lng);
+
     const updatedTicket: CivicIssue = {
       ...existing,
-      reportCount: (existing.reportCount || 1) + 1,
+      reportCount: existingReporters.length,
       isFlagged: existing.isFlagged || isFlagged,
       updatedAt: now,
       severityRank: escalatedRank,
       priority: escalatedRank >= 5 ? 'critical' : escalatedRank === 4 ? 'high' : 'medium',
       loadWeight: escalatedRank,
-      imageUrl: data.imageUrl || existing.imageUrl,
+      imageUrl: existing.imageUrl || data.imageUrl, // preserve primary photo
+      reporters: existingReporters,
+      images: existingImages,
+      isBufferZone: inBuffer,
+      targetJurisdictionId: existing.targetJurisdictionId || (inBuffer ? 'mcc-zone-3' : undefined),
     };
 
     const updatedList = [...current];
@@ -957,17 +1103,23 @@ export const submitCitizenReport = (data: {
     coordinatesStr: data.coordinatesStr,
     priority: rank >= 5 ? 'critical' : rank === 4 ? 'high' : rank === 3 ? 'medium' : 'low',
     severityRank: rank,
-    status: 'reported',
+    status: isQuarantined ? ('quarantined' as IssueStatus) : 'reported',
     reportedBy: data.reportedBy,
+    reporters: [newReporterEntry],
+    images: data.imageUrl ? [data.imageUrl] : [],
     assignedCrew: 'Manjunatha S. (MCC Depot 3)',
     assignedVehicle: 'Canter KA-09-G-4412',
     assignedDepot,
     clearingCost: cost,
     reportedAt: now,
     updatedAt: now,
-    loadWeight: rank,
+    loadWeight: isQuarantined ? 0 : rank,
     isBufferZone: inBuffer,
-    isFlagged,
+    targetJurisdictionId: inBuffer ? 'mcc-zone-3' : undefined,
+    isFlagged: isFlagged || isQuarantined,
+    isQuarantined,
+    quarantineReason,
+    verificationStatus: isQuarantined ? 'quarantined' : undefined,
     reportCount: 1,
     imageUrl: data.imageUrl,
   };
