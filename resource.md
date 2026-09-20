@@ -74,16 +74,16 @@ Paste the first 16 characters.
 
 | Timestamp | Section |
 |---|---|
-| `00:00` | Part 1: Problem & target users |
-| `00:40` | Part 1: Live demo, core flow |
-| `01:50` | Part 1: Bad-input handling |
-| `02:30` | Part 1: Offline / airplane mode |
-| `03:00` | Part 2: Architecture overview |
-| `04:30` | Part 2: Data model & APIs |
-| `05:30` | Part 2: Key code walkthrough |
-| `07:30` | Part 2: Decisions & trade-offs |
-| `08:30` | Part 2: Scaling & limitations |
-| `09:15` | Part 2: AI usage (see [ai.md](./ai.md)) |
+| 00:00 | Part 1: Problem & target users |
+| 00:40 | Part 1: Live demo, core flow |
+| 01:10 | Part 1: Bad-input handling |
+| 02:27 | Part 1: Offline / airplane mode |
+| 03:25 | Part 2: Architecture overview |
+| 05:06 | Part 2: Data model & APIs |
+| 06:10 | Part 2: Key code walkthrough |
+| 07:12 | Part 2: Decisions & trade-offs |
+| 08:29 | Part 2: Scaling & limitations |
+| 09:30 | Part 2: AI usage (see [ai.md](./ai.md)) |
 
 ---
 
@@ -94,8 +94,8 @@ Paste the first 16 characters.
 | Live URL | `https://civicmesh.vercel.app/` |
 | Platform | Web Platform (React 19 + TypeScript + Vite) |
 | Test login (if any) | Citizen: 1-Click Selection · Worker: 21-Zone Dispatch Roster · Admin: admin / devpass2026 · Language: English / ಕನ್ನಡ Toggle |
-| Sample data loaded? | Yes — Pre-seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity, buffer zones at 0 active tasks) |
-| How to test offline mode | N/A — No offline mode (Civic Mesh runs as an online cloud-synchronized municipal dispatch and inter-agency clearing mesh) |
+| Sample data loaded? | Yes - Pre-seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity, buffer zones at 0 active tasks) |
+| How to test offline mode | N/A - No offline mode (Civic Mesh runs as an online cloud-synchronized municipal dispatch and inter-agency clearing mesh) |
 | If the live link is down | Follow [docs/setup.md](./docs/setup.md) |
 
 ---
@@ -112,7 +112,7 @@ Paste the first 16 characters.
 
 ---
 
-## 7. Declaration(X means agreed)
+## 7. Declaration
 
 - [X] All Drive links open in an incognito window with **Viewer** access (no "Request access").
 - [X] The video is one continuous recording, ≤ 10 minutes, Part 1 then Part 2.
