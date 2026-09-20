@@ -7,10 +7,10 @@ in Mysuru. Be honest: ✅ handled · ⚠️ partial · ❌ not yet. Timestamps p
 
 | # | Constraint | Status | Video |
 |---|---|---|---|
-| 1 | Fake, spam and harassment reports | `✅` | `<mm:ss>` |
-| 2 | Unclear jurisdiction | `✅` | `<...>` |
-| 3 | Prioritisation beyond "most votes" | `✅` | `<...>` |
-| 4 | Bad input (duplicate, fake photo, wrong location, abuse) | `✅` | `<...>` |
+| 1 | Fake, spam and harassment reports | `✅` | `01:10` |
+| 2 | Unclear jurisdiction | `✅` | `02:25` |
+| 3 | Prioritisation beyond "most votes" | `✅` | `00:20` |
+| 4 | Bad input (duplicate, fake photo, wrong location, abuse) | `✅` | `01:43` |
 | 5 | Works without internet | `❌` | `N/A` |
 
 ---
