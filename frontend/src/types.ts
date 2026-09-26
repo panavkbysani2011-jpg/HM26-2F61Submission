@@ -18,7 +18,22 @@ export type CivicCategory =
   | 'Water & Drainage'
   | 'Electrical & Lighting'
   | 'Waste & Sanitation'
-  | 'Parks & Public Spaces';
+  | 'Parks & Public Spaces'
+  // Granular Sub-Categories
+  | 'Crater / Road Subsidence'
+  | 'Missing Manhole Cover'
+  | 'Damaged Footpath / Curb'
+  | 'Storm Drain Silt Overflow'
+  | 'Underground Sewer Burst'
+  | 'Stagnant Vector Hazard'
+  | 'Commercial Waste Blackspot'
+  | 'C&D Construction Debris'
+  | 'Dead Animal Clearance'
+  | 'Dangling / Sparking Live Wire'
+  | 'Street Feeder Blackout'
+  | 'Main Water Pipeline Burst'
+  | 'Contaminated Tap Water'
+  | 'Fallen Tree / Branch Obstruction';
 
 export const CIVIC_CATEGORIES: readonly CivicCategory[] = [
   'Debris',
@@ -31,6 +46,20 @@ export const CIVIC_CATEGORIES: readonly CivicCategory[] = [
   'Electrical & Lighting',
   'Waste & Sanitation',
   'Parks & Public Spaces',
+  'Crater / Road Subsidence',
+  'Missing Manhole Cover',
+  'Damaged Footpath / Curb',
+  'Storm Drain Silt Overflow',
+  'Underground Sewer Burst',
+  'Stagnant Vector Hazard',
+  'Commercial Waste Blackspot',
+  'C&D Construction Debris',
+  'Dead Animal Clearance',
+  'Dangling / Sparking Live Wire',
+  'Street Feeder Blackout',
+  'Main Water Pipeline Burst',
+  'Contaminated Tap Water',
+  'Fallen Tree / Branch Obstruction',
 ] as const;
 
 export type JurisdictionType = 'mcc_zone' | 'town_panchayat' | 'gram_panchayat' | 'buffer_zone';
@@ -111,6 +140,19 @@ export interface CivicIssue {
   ratedAt?: string;
   resolvedAt?: string | number;
   jurisdictionId?: string;
+  isEmergencyOverride?: boolean;
+  slaDeadline?: string | number;
+  assignedCrewCount?: number;
+  reopenReason?: string;
+  isSpillover?: boolean;
+  routingRationale?: string;
+  dHash?: string; // 64-bit perceptual hash for visual duplicate detection
+  dynamicPriorityScore?: number; // Real-time decay and context-evaluated priority score
+  escalationRationale?: string; // Explains contextual boost (e.g., Near KR Hospital)
+  escalationRationaleKn?: string;
+  clusterSimilarity?: number; // Visual match % with existing cluster
+  geotagAccuracy?: number; // Mobile GPS accuracy radius in meters
+  tourOrder?: number; // TSP optimized sequence stop order
   aiAuditDetails?: {
     isApproved?: boolean;
     explanation?: string;

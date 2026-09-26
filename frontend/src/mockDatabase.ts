@@ -1,6 +1,7 @@
 import { CivicIssue, DepartmentCapacity, UserSession, CivicCategory, SeverityRank, MysuruJurisdiction, IssueStatus, IssuePriority, WorkerRosterEntry } from './types';
 import { sanitizeImageString } from './utils/imageCompressor';
 import { syncIssueToFirestore } from './firebase';
+import { findVisualDuplicate } from './utils/perceptualHash';
 
 export const ISSUES_STORAGE_KEY = 'civic_mesh_issues_v4';
 export const DEPARTMENTS_STORAGE_KEY = 'civic_mesh_departments_v4';
@@ -77,26 +78,269 @@ export const SEVERITY_LEVELS: Record<SeverityRank, SeverityMeta> = {
   },
 };
 
-// Priority & Severity mapping based on Category
+// Priority & Severity mapping based on Category (Covering all Core & Granular Sub-Categories)
 export const getPriorityScore = (category: CivicCategory | string): SeverityRank => {
   switch (category) {
     case 'Debris':
+    case 'Crater / Road Subsidence':
+    case 'Missing Manhole Cover':
+    case 'Dangling / Sparking Live Wire':
+    case 'Main Water Pipeline Burst':
       return 5;
     case 'Potholes':
     case 'Roads & Pavement':
+    case 'Street Feeder Blackout':
+    case 'Underground Sewer Burst':
       return 4;
     case 'Drainage':
     case 'Water & Drainage':
+    case 'Storm Drain Silt Overflow':
+    case 'Commercial Waste Blackspot':
+    case 'C&D Construction Debris':
+    case 'Contaminated Tap Water':
+    case 'Fallen Tree / Branch Obstruction':
       return 3;
     case 'Garbage Dump':
     case 'Waste & Sanitation':
+    case 'Damaged Footpath / Curb':
+    case 'Stagnant Vector Hazard':
+    case 'Dead Animal Clearance':
       return 2;
     case 'Streetlights':
     case 'Electrical & Lighting':
+    case 'Parks & Public Spaces':
       return 1;
     default:
       return 3;
   }
+};
+
+// Sensitive Mysuru Municipal Landmarks for Contextual Escalation
+export interface SensitiveLandmark {
+  name: string;
+  nameKn: string;
+  type: 'hospital' | 'school' | 'transit' | 'heritage';
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  boostPoints: number;
+  sensitiveCategories: CivicCategory[];
+}
+
+export const SENSITIVE_MYSURU_LANDMARKS: SensitiveLandmark[] = [
+  // Hospitals - high boost for sewage, drainage, live wires, craters (emergency access)
+  {
+    name: 'K.R. Hospital (Mysore Medical College)',
+    nameKn: 'ಕೆ.ಆರ್. ಆಸ್ಪತ್ರೆ (ಮೈಸೂರು ವೈದ್ಯಕೀಯ ಕಾಲೇಜು)',
+    type: 'hospital',
+    lat: 12.3140,
+    lng: 76.6500,
+    radiusMeters: 450,
+    boostPoints: 25,
+    sensitiveCategories: [
+      'Underground Sewer Burst',
+      'Drainage',
+      'Crater / Road Subsidence',
+      'Dangling / Sparking Live Wire',
+      'Main Water Pipeline Burst',
+      'Potholes',
+      'Water & Drainage'
+    ],
+  },
+  {
+    name: 'Apollo BGS Hospital (Kuvempunagar)',
+    nameKn: 'ಅಪೊಲೊ ಬಿಜಿಎಸ್ ಆಸ್ಪತ್ರೆ (ಕುವೆಂಪುನಗರ)',
+    type: 'hospital',
+    lat: 12.2880,
+    lng: 76.6270,
+    radiusMeters: 400,
+    boostPoints: 25,
+    sensitiveCategories: [
+      'Underground Sewer Burst',
+      'Drainage',
+      'Crater / Road Subsidence',
+      'Dangling / Sparking Live Wire',
+      'Potholes'
+    ],
+  },
+  {
+    name: 'Kamakshi Hospital (Saraswathipuram)',
+    nameKn: 'ಕಾಮಾಕ್ಷಿ ಆಸ್ಪತ್ರೆ (ಸರಸ್ವತಿಪುರಂ)',
+    type: 'hospital',
+    lat: 12.3010,
+    lng: 76.6280,
+    radiusMeters: 350,
+    boostPoints: 22,
+    sensitiveCategories: ['Drainage', 'Potholes', 'Dangling / Sparking Live Wire'],
+  },
+  // Schools & Colleges - high boost for open manholes, craters, live wires, garbage
+  {
+    name: 'Saraswathipuram Education Enclave (Marimallappa & Sadvidya)',
+    nameKn: 'ಸರಸ್ವತಿಪುರಂ ಶಿಕ್ಷಣ ವಲಯ',
+    type: 'school',
+    lat: 12.3040,
+    lng: 76.6340,
+    radiusMeters: 350,
+    boostPoints: 20,
+    sensitiveCategories: [
+      'Missing Manhole Cover',
+      'Dangling / Sparking Live Wire',
+      'Crater / Road Subsidence',
+      'Commercial Waste Blackspot',
+      'Potholes'
+    ],
+  },
+  {
+    name: 'Maharaja & Yuvaraja College Campus',
+    nameKn: 'ಮಹಾರಾಜ ಮತ್ತು ಯುವರಾಜ ಕಾಲೇಜು ಆವರಣ',
+    type: 'school',
+    lat: 12.3080,
+    lng: 76.6430,
+    radiusMeters: 400,
+    boostPoints: 18,
+    sensitiveCategories: ['Missing Manhole Cover', 'Dangling / Sparking Live Wire', 'Potholes'],
+  },
+  // Transit & Heritage Hubs - high boost for road collapse, fallen tree, feeder blackout
+  {
+    name: 'Mysuru City Suburban Bus Stand (KSRTC)',
+    nameKn: 'ಮೈಸೂರು ಉಪನಗರ ಬಸ್ ನಿಲ್ದಾಣ',
+    type: 'transit',
+    lat: 12.3110,
+    lng: 76.6560,
+    radiusMeters: 400,
+    boostPoints: 20,
+    sensitiveCategories: ['Crater / Road Subsidence', 'Main Water Pipeline Burst', 'Debris', 'Street Feeder Blackout', 'Roads & Pavement'],
+  },
+  {
+    name: 'Mysore Palace Heritage Perimeter',
+    nameKn: 'ಮೈಸೂರು ಅರಮನೆ ಪಾರಂಪರಿಕ ವಲಯ',
+    type: 'heritage',
+    lat: 12.3050,
+    lng: 76.6550,
+    radiusMeters: 500,
+    boostPoints: 15,
+    sensitiveCategories: ['Debris', 'C&D Construction Debris', 'Commercial Waste Blackspot', 'Streetlights'],
+  },
+  {
+    name: 'Bogadi Outer Ring Road Corridor',
+    nameKn: 'ಬೋಗಾದಿ ಹೊರ ವರ್ತುಲ ರಸ್ತೆ ವಲಯ',
+    type: 'transit',
+    lat: 12.3020,
+    lng: 76.6180,
+    radiusMeters: 450,
+    boostPoints: 18,
+    sensitiveCategories: ['Crater / Road Subsidence', 'Potholes', 'Storm Drain Silt Overflow', 'Debris'],
+  },
+];
+
+export interface DynamicPriorityResult {
+  score: number; // 0-100 normalized score
+  escalationRationale: string;
+  escalationRationaleKn: string;
+  boostFactors: {
+    basePoints: number;
+    landmarkBoost: number;
+    slaDecayBoost: number;
+    corroborationBoost: number;
+  };
+}
+
+export const computeDynamicPriorityScore = (issue: Partial<CivicIssue>): DynamicPriorityResult => {
+  const rank = issue.severityRank || 3;
+  // 1. Base Points from rank (1: 20, 2: 38, 3: 56, 4: 74, 5: 90)
+  const basePoints = rank === 5 ? 90 : rank === 4 ? 74 : rank === 3 ? 56 : rank === 2 ? 38 : 20;
+
+  let landmarkBoost = 0;
+  let landmarkName = '';
+  let landmarkNameKn = '';
+
+  // 2. Geospatial Proximity to Sensitive Mysuru Landmarks
+  if (issue.coordinates?.lat && issue.coordinates?.lng) {
+    const { lat, lng } = issue.coordinates;
+    for (const lm of SENSITIVE_MYSURU_LANDMARKS) {
+      const dLat = (lat - lm.lat) * 111000;
+      const dLng = (lng - lm.lng) * 111000 * Math.cos((lat * Math.PI) / 180);
+      const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+
+      if (dist <= lm.radiusMeters) {
+        const isTargetCategory = issue.category && lm.sensitiveCategories.includes(issue.category as CivicCategory);
+        const factor = 1 - (dist / lm.radiusMeters);
+        const boost = Math.round(lm.boostPoints * (isTargetCategory ? 1.0 : factor * 0.7));
+        if (boost > landmarkBoost) {
+          landmarkBoost = boost;
+          landmarkName = `${lm.name} (~${Math.round(dist)}m)`;
+          landmarkNameKn = `${lm.nameKn} (~${Math.round(dist)}ಮೀ)`;
+        }
+      }
+    }
+  }
+
+  // 3. Multi-Factor SLA Elapsed Decay Escalation
+  let slaDecayBoost = 0;
+  let slaReason = '';
+  let slaReasonKn = '';
+  if (issue.reportedAt) {
+    const reportedTime = new Date(issue.reportedAt.replace(' ', 'T')).getTime();
+    if (!isNaN(reportedTime)) {
+      const elapsedHours = (Date.now() - reportedTime) / (3600 * 1000);
+      const maxSlaHours = (rank === 5 || issue.isEmergencyOverride) ? 4 : (rank >= 3 ? 24 : 48);
+      const elapsedRatio = elapsedHours / maxSlaHours;
+
+      if (elapsedRatio >= 1.0) {
+        slaDecayBoost = 25;
+        slaReason = `SLA Overdue (${Math.round(elapsedHours)}h elapsed vs ${maxSlaHours}h SLA)`;
+        slaReasonKn = `SLA ಮೀರಿದೆ (${Math.round(elapsedHours)} ಗಂ)`;
+      } else if (elapsedRatio >= 0.70) {
+        slaDecayBoost = 15;
+        slaReason = `SLA Expiry Approaching (${Math.round(elapsedRatio * 100)}% elapsed)`;
+        slaReasonKn = `SLA ಗಡುವು ಸಮೀಪಿಸಿದೆ (${Math.round(elapsedRatio * 100)}%)`;
+      } else if (elapsedRatio >= 0.40) {
+        slaDecayBoost = 8;
+      }
+    }
+  }
+
+  // 4. Citizen Corroboration / Duplicate Clustering Boost
+  const reportCount = issue.reportCount || (issue.reporters ? issue.reporters.length : 1);
+  const corroborationBoost = Math.min(24, Math.max(0, (reportCount - 1) * 8));
+
+  // Sum & Clamp Score (10 - 100)
+  const totalRaw = basePoints + landmarkBoost + slaDecayBoost + corroborationBoost;
+  const score = Math.min(100, Math.max(10, totalRaw));
+
+  // Synthesize Rationale strings
+  const rationaleParts: string[] = [];
+  const rationalePartsKn: string[] = [];
+
+  if (landmarkBoost > 0) {
+    rationaleParts.push(`Sensitive Zone: ${landmarkName} (+${landmarkBoost} pts)`);
+    rationalePartsKn.push(`ಸೂಕ್ಷ್ಮ ವಲಯ: ${landmarkNameKn} (+${landmarkBoost})`);
+  }
+  if (slaReason) {
+    rationaleParts.push(slaReason + ` (+${slaDecayBoost} pts)`);
+    rationalePartsKn.push(slaReasonKn + ` (+${slaDecayBoost})`);
+  }
+  if (corroborationBoost > 0) {
+    rationaleParts.push(`Corroborated by ${reportCount} Citizens (+${corroborationBoost} pts)`);
+    rationalePartsKn.push(`${reportCount} ನಾಗರಿಕರಿಂದ ದೃಢೀಕರಣ (+${corroborationBoost})`);
+  }
+
+  if (rationaleParts.length === 0) {
+    rationaleParts.push(`Standard SLA baseline (Rank ${rank})`);
+    rationalePartsKn.push(`ಸಾಮಾನ್ಯ SLA ಮಾನದಂಡ (ಹಂತ ${rank})`);
+  }
+
+  return {
+    score,
+    escalationRationale: rationaleParts.join(' • '),
+    escalationRationaleKn: rationalePartsKn.join(' • '),
+    boostFactors: {
+      basePoints,
+      landmarkBoost,
+      slaDecayBoost,
+      corroborationBoost,
+    },
+  };
 };
 
 export const getEscalationInfo = (rank: SeverityRank) => {
@@ -400,15 +644,35 @@ export const detectBufferZoneId = (locationStr: string, coords?: { lat: number; 
   return null;
 };
 
-// Universal Dynamic Routing: Route buffer zone ticket to the adjacent jurisdiction with lower real-time load
+// Universal Dynamic Routing: Fully Automated Elastic Load-Balancing Engine
+export interface DynamicRoutingResult {
+  targetJurisdictionId: string;
+  targetJurisdictionName: string;
+  isSpillover: boolean;
+  rationale: string;
+  primaryJurisdictionId: string;
+  primaryJurisdictionName: string;
+  primaryCapacityPercent: number;
+  targetCapacityPercent: number;
+  corridorName?: string;
+}
+
 export const routeBufferZoneTicket = (
   bufferZoneId: string,
   currentIssues: CivicIssue[]
-): { targetJurisdictionId: string; targetJurisdictionName: string } => {
+): DynamicRoutingResult => {
   const adjacentIds = BUFFER_ZONE_ADJACENCY[bufferZoneId];
   if (!adjacentIds) {
-    // Fallback: default to MCC Zone 3
-    return { targetJurisdictionId: 'mcc-zone-3', targetJurisdictionName: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)' };
+    return {
+      targetJurisdictionId: 'mcc-zone-3',
+      targetJurisdictionName: 'MCC Zone 3 (Saraswathipuram / Chamarajapuram)',
+      isSpillover: false,
+      rationale: 'Assigned to central municipal dispatch depot.',
+      primaryJurisdictionId: 'mcc-zone-3',
+      primaryJurisdictionName: 'MCC Zone 3',
+      primaryCapacityPercent: 45,
+      targetCapacityPercent: 45,
+    };
   }
 
   const capacities = calculateDynamicCapacities(currentIssues);
@@ -418,14 +682,50 @@ export const routeBufferZoneTicket = (
 
   const loadA = capA?.capacityPercent ?? 0;
   const loadB = capB?.capacityPercent ?? 0;
+  const jurA = MYSURU_JURISDICTIONS.find(j => j.id === idA);
+  const jurB = MYSURU_JURISDICTIONS.find(j => j.id === idB);
+  const bufferCorridor = MYSURU_JURISDICTIONS.find(j => j.id === bufferZoneId);
 
-  // Route to whichever adjacent jurisdiction has the LOWER current load percentage
+  // Automated Elastic Balancing: If primary authority (idA) is overloaded (>100%) and neighbor has headroom
+  if (loadA > 100 && loadB < 100) {
+    return {
+      targetJurisdictionId: idB,
+      targetJurisdictionName: jurB?.name || idB,
+      isSpillover: true,
+      rationale: `${jurA?.name || 'Primary Authority'} is operating at ${loadA}% capacity. Under the Mysuru Cross-Boundary Civic Accord, automated spillover delegates this work order to ${jurB?.name || 'Adjacent Authority'} (${loadB}% capacity) for rapid clearing.`,
+      primaryJurisdictionId: idA,
+      primaryJurisdictionName: jurA?.name || idA,
+      primaryCapacityPercent: loadA,
+      targetCapacityPercent: loadB,
+      corridorName: bufferCorridor?.name || bufferZoneId,
+    };
+  }
+
+  // Otherwise route to whichever adjacent jurisdiction has the lower current load percentage
   if (loadA <= loadB) {
-    const jur = MYSURU_JURISDICTIONS.find(j => j.id === idA);
-    return { targetJurisdictionId: idA, targetJurisdictionName: jur?.name || idA };
+    return {
+      targetJurisdictionId: idA,
+      targetJurisdictionName: jurA?.name || idA,
+      isSpillover: false,
+      rationale: `Operating within normal load (${loadA}% capacity). Assigned directly to primary authority ${jurA?.name || idA}.`,
+      primaryJurisdictionId: idA,
+      primaryJurisdictionName: jurA?.name || idA,
+      primaryCapacityPercent: loadA,
+      targetCapacityPercent: loadA,
+      corridorName: bufferCorridor?.name || bufferZoneId,
+    };
   } else {
-    const jur = MYSURU_JURISDICTIONS.find(j => j.id === idB);
-    return { targetJurisdictionId: idB, targetJurisdictionName: jur?.name || idB };
+    return {
+      targetJurisdictionId: idB,
+      targetJurisdictionName: jurB?.name || idB,
+      isSpillover: loadA > 100,
+      rationale: `Cross-boundary balancing active. Assigned to ${jurB?.name || idB} (${loadB}% capacity vs ${loadA}%).`,
+      primaryJurisdictionId: idA,
+      primaryJurisdictionName: jurA?.name || idA,
+      primaryCapacityPercent: loadA,
+      targetCapacityPercent: loadB,
+      corridorName: bufferCorridor?.name || bufferZoneId,
+    };
   }
 };
 
@@ -1188,10 +1488,23 @@ export const getStoredIssues = (): CivicIssue[] => {
     const loadedList = Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ISSUES;
     // Guarantee that pre-loaded tickets are strictly assigned to core Bogadi Town Panchayat and buffer zones launch at 0%
     const sanitized = loadedList.map((item: CivicIssue) => {
+      let dynScore = item.dynamicPriorityScore;
+      let escRat = item.escalationRationale;
+      let escRatKn = item.escalationRationaleKn;
+      if (dynScore == null) {
+        const res = computeDynamicPriorityScore(item);
+        dynScore = res.score;
+        escRat = res.escalationRationale;
+        escRatKn = res.escalationRationaleKn;
+      }
+
       const seed = INITIAL_ISSUES.find((s) => s.id === item.id);
       if (seed && item.id.startsWith('ISS-BOG-')) {
         return {
           ...item,
+          dynamicPriorityScore: dynScore,
+          escalationRationale: escRat,
+          escalationRationaleKn: escRatKn,
           isBufferZone: false,
           targetJurisdictionId: undefined,
           assignedDepot: 'Bogadi Town Panchayat',
@@ -1205,11 +1518,19 @@ export const getStoredIssues = (): CivicIssue[] => {
       if (seed && item.id.startsWith('ISS-MCC3-')) {
         return {
           ...item,
+          dynamicPriorityScore: dynScore,
+          escalationRationale: escRat,
+          escalationRationaleKn: escRatKn,
           isBufferZone: false,
           targetJurisdictionId: undefined,
         };
       }
-      return item;
+      return {
+        ...item,
+        dynamicPriorityScore: dynScore,
+        escalationRationale: escRat,
+        escalationRationaleKn: escRatKn,
+      };
     });
     inMemoryIssuesCache = sanitized;
     return inMemoryIssuesCache;
@@ -1277,6 +1598,57 @@ export const saveStoredIssues = (issues: CivicIssue[]) => {
   }
 };
 
+export interface RoutingPreviewInfo {
+  isBuffer: boolean;
+  corridorName: string | null;
+  targetJurisdictionId: string;
+  targetJurisdictionName: string;
+  isSpillover: boolean;
+  rationale: string;
+  capacityStatus: 'optimal' | 'moderate' | 'overloaded';
+  capacityPercent: number;
+}
+
+export const getPreSubmissionRoutingPreview = (
+  locationStr: string,
+  coords?: { lat: number; lng: number }
+): RoutingPreviewInfo => {
+  const current = getStoredIssues();
+  const inBuffer = isInsideBufferZone(coords?.lat, coords?.lng);
+  const bufferZoneId = inBuffer ? detectBufferZoneId(locationStr, coords) : null;
+
+  if (inBuffer && bufferZoneId) {
+    const route = routeBufferZoneTicket(bufferZoneId, current);
+    return {
+      isBuffer: true,
+      corridorName: route.corridorName || 'Perimeter Buffer Corridor',
+      targetJurisdictionId: route.targetJurisdictionId,
+      targetJurisdictionName: route.targetJurisdictionName,
+      isSpillover: route.isSpillover,
+      rationale: route.rationale,
+      capacityStatus: route.targetCapacityPercent > 100 ? 'overloaded' : route.targetCapacityPercent > 65 ? 'moderate' : 'optimal',
+      capacityPercent: route.targetCapacityPercent,
+    };
+  }
+
+  const jurId = detectJurisdictionId(locationStr, coords);
+  const jur = MYSURU_JURISDICTIONS.find(j => j.id === jurId);
+  const capacities = calculateDynamicCapacities(current);
+  const cap = capacities.find(c => c.jurisdiction.id === jurId);
+  const capPercent = cap?.capacityPercent ?? 45;
+
+  return {
+    isBuffer: false,
+    corridorName: null,
+    targetJurisdictionId: jurId,
+    targetJurisdictionName: jur?.name || 'Local Municipal Ward',
+    isSpillover: false,
+    rationale: `Operating under normal municipal allocation (${capPercent}% current workload). Dispatched directly to ${jur?.name || 'Local Ward'}.`,
+    capacityStatus: capPercent > 100 ? 'overloaded' : capPercent > 65 ? 'moderate' : 'optimal',
+    capacityPercent: capPercent,
+  };
+};
+
 export interface SubmitReportResult {
   grouped: boolean;
   ticket: CivicIssue;
@@ -1292,10 +1664,13 @@ export const submitCitizenReport = (data: {
   reportedBy: string;
   reporterEmail?: string;
   imageUrl?: string;
+  images?: string[];
   severityRank?: SeverityRank;
   assignedDepot?: string;
   isQuarantined?: boolean;
   quarantineReason?: string;
+  dHash?: string;
+  geotagAccuracy?: number;
 }): SubmitReportResult => {
   const current = getStoredIssues();
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
@@ -1303,6 +1678,13 @@ export const submitCitizenReport = (data: {
   const { sanitizedText, isFlagged } = filterAbusiveContent(data.description);
   const rank: SeverityRank = data.severityRank || getPriorityScore(data.category);
   const cost = SEVERITY_LEVELS[rank]?.defaultCost || 2500;
+
+  // Emergency Severity-5 Fast-Path SLA Escalator Check
+  const isEmergencyKeyword = /crater|live wire|sparking|pipeline burst|burst|cave-in|hazard|major accident/i.test(data.description);
+  const isEmergency = rank === 5 || isEmergencyKeyword;
+  const slaDeadline = isEmergency
+    ? Date.now() + 4 * 3600 * 1000 // Strict 4-Hour Emergency SLA
+    : Date.now() + 24 * 3600 * 1000; // Standard 24-Hour Municipal SLA
 
   const reporterEmail =
     data.reporterEmail ||
@@ -1319,22 +1701,33 @@ export const submitCitizenReport = (data: {
   const isQuarantined = Boolean(data.isQuarantined);
   const quarantineReason = data.quarantineReason || (isFlagged ? 'Flagged by content safety filters' : undefined);
 
-  // Grouping check: existing active ticket with same category and nearby coordinates.
-  // Quarantined reports are NEVER merged into clean public tickets.
-  const matchingIndex = isQuarantined
-    ? -1
-    : current.findIndex((issue) => {
-      if (
-        issue.status === 'resolved' ||
-        issue.status === 'closed' ||
-        issue.status === 'quarantined' ||
-        issue.isQuarantined
-      ) {
-        return false;
-      }
-      if (issue.category !== data.category) return false;
-      return isNearby(issue.coordinates, data.coordinates);
-    });
+  // Visual Perceptual Hash match check (150m radius, hamming <= 10)
+  let visualDuplicateMatch: { issue: CivicIssue; similarityPercent: number } | null = null;
+  if (!isQuarantined && data.dHash) {
+    visualDuplicateMatch = findVisualDuplicate(data.dHash, data.coordinates, current, 150, 10);
+  }
+
+  // Multi-Citizen Incident Clustering: check for open non-quarantined tickets nearby or visual hash match
+  let matchingIndex = -1;
+  if (!isQuarantined) {
+    if (visualDuplicateMatch) {
+      matchingIndex = current.findIndex(iss => iss.id === visualDuplicateMatch?.issue.id);
+    }
+    if (matchingIndex === -1) {
+      matchingIndex = current.findIndex((issue) => {
+        if (
+          issue.status === 'resolved' ||
+          issue.status === 'closed' ||
+          issue.status === 'quarantined' ||
+          issue.isQuarantined
+        ) {
+          return false;
+        }
+        if (issue.category !== data.category) return false;
+        return isNearby(issue.coordinates, data.coordinates);
+      });
+    }
+  }
 
   if (matchingIndex !== -1) {
     const existing = current[matchingIndex];
@@ -1363,9 +1756,12 @@ export const submitCitizenReport = (data: {
           ? [existing.imageUrl]
           : [];
 
-    if (data.imageUrl && !existingImages.includes(data.imageUrl)) {
-      existingImages.push(data.imageUrl);
-    }
+    const incomingImages = data.images && data.images.length > 0 ? data.images : (data.imageUrl ? [data.imageUrl] : []);
+    incomingImages.forEach((img) => {
+      if (img && !existingImages.includes(img)) {
+        existingImages.push(img);
+      }
+    });
 
     const inBuffer = existing.isBufferZone || isInsideBufferZone(data.coordinates?.lat, data.coordinates?.lng);
     const targetJurisdictionId = existing.targetJurisdictionId || (inBuffer ? (() => {
@@ -1376,24 +1772,51 @@ export const submitCitizenReport = (data: {
     const assignedJurisdictionId = targetJurisdictionId || existing.assignedJurisdictionId || detectJurisdictionId(existing.location, existing.coordinates);
     const assignedWorker = WORKER_ROSTER[assignedJurisdictionId] || WORKER_ROSTER['mcc-zone-3'];
 
+    // Dynamic Worker Multi-Dispatch Scaling based on cluster size
+    const totalReports = existingReporters.length;
+    const assignedCrewCount = Math.min(3, Math.max(1, Math.ceil(totalReports / 2)));
+    const assignedCrewText = assignedCrewCount > 1
+      ? `${assignedWorker.name} + ${assignedCrewCount - 1} Operators (Multi-Crew Cluster Dispatch)`
+      : existing.assignedCrew || `${assignedWorker.name} (${assignedWorker.jurisdictionName.split(' (')[0]})`;
+
+    // Compute Dynamic Multi-Factor Priority Score & Rationale
+    const dynamicScoreResult = computeDynamicPriorityScore({
+      ...existing,
+      reportCount: totalReports,
+      severityRank: escalatedRank,
+      category: data.category || existing.category,
+      coordinates: existing.coordinates || data.coordinates,
+      reportedAt: existing.reportedAt,
+      isEmergencyOverride: existing.isEmergencyOverride || isEmergency,
+    });
+
     const updatedTicket: CivicIssue = {
       ...existing,
-      reportCount: existingReporters.length,
+      reportCount: totalReports,
       isFlagged: existing.isFlagged || isFlagged,
       updatedAt: now,
       severityRank: escalatedRank,
-      priority: escalatedRank >= 5 ? 'critical' : escalatedRank === 4 ? 'high' : 'medium',
+      priority: (isEmergency || dynamicScoreResult.score >= 85) ? 'critical' : dynamicScoreResult.score >= 65 ? 'high' : 'medium',
       loadWeight: escalatedRank,
-      imageUrl: existing.imageUrl || data.imageUrl, // preserve primary photo
+      imageUrl: existing.imageUrl || (incomingImages[0] || undefined),
       reporters: existingReporters,
       images: existingImages,
       isBufferZone: inBuffer,
       targetJurisdictionId,
       assignedJurisdictionId,
       assignedCrewLead: existing.assignedCrewLead || assignedWorker.name,
-      assignedCrew: existing.assignedCrew || `${assignedWorker.name} (${assignedWorker.jurisdictionName.split(' (')[0]})`,
+      assignedCrew: assignedCrewText,
+      assignedCrewCount,
       assignedVehicle: existing.assignedVehicle || assignedWorker.vehicle,
       assignedDepot: existing.assignedDepot || assignedWorker.jurisdictionName,
+      isEmergencyOverride: existing.isEmergencyOverride || isEmergency,
+      slaDeadline: existing.slaDeadline || slaDeadline,
+      dHash: data.dHash || existing.dHash,
+      geotagAccuracy: data.geotagAccuracy || existing.geotagAccuracy,
+      dynamicPriorityScore: dynamicScoreResult.score,
+      escalationRationale: dynamicScoreResult.escalationRationale,
+      escalationRationaleKn: dynamicScoreResult.escalationRationaleKn,
+      clusterSimilarity: visualDuplicateMatch?.similarityPercent || existing.clusterSimilarity,
     };
 
     const updatedList = [...current];
@@ -1427,6 +1850,22 @@ export const submitCitizenReport = (data: {
   const assignedCrew = `${assignedWorker.name} (${assignedWorker.jurisdictionName.split(' (')[0]})`;
   const assignedDepot = assignedWorker.jurisdictionName;
 
+  const photoList = data.images && data.images.length > 0
+    ? data.images
+    : data.imageUrl
+      ? [data.imageUrl]
+      : [];
+
+  // Compute Dynamic Multi-Factor Priority Score for new ticket
+  const dynamicScoreResult = computeDynamicPriorityScore({
+    severityRank: rank,
+    category: data.category,
+    coordinates: data.coordinates,
+    reportedAt: now,
+    reportCount: 1,
+    isEmergencyOverride: isEmergency,
+  });
+
   const newTicket: CivicIssue = {
     id: newId,
     trackingId: newTrackingId,
@@ -1436,14 +1875,15 @@ export const submitCitizenReport = (data: {
     location: data.location,
     coordinates: data.coordinates,
     coordinatesStr: data.coordinatesStr,
-    priority: rank >= 5 ? 'critical' : rank === 4 ? 'high' : rank === 3 ? 'medium' : 'low',
+    priority: isEmergency ? 'critical' : dynamicScoreResult.score >= 85 ? 'critical' : dynamicScoreResult.score >= 65 ? 'high' : rank === 3 ? 'medium' : 'low',
     severityRank: rank,
     status: isQuarantined ? ('quarantined' as IssueStatus) : 'reported',
     reportedBy: data.reportedBy,
     reporters: [newReporterEntry],
-    images: data.imageUrl ? [data.imageUrl] : [],
+    images: photoList,
     assignedCrew,
     assignedCrewLead,
+    assignedCrewCount: 1,
     assignedVehicle,
     assignedDepot,
     assignedJurisdictionId,
@@ -1453,12 +1893,21 @@ export const submitCitizenReport = (data: {
     loadWeight: isQuarantined ? 0 : rank,
     isBufferZone: inBuffer,
     targetJurisdictionId: inBuffer ? assignedJurisdictionId : undefined,
+    isSpillover: dynamicRoute?.isSpillover || false,
+    routingRationale: dynamicRoute?.rationale || undefined,
+    isEmergencyOverride: isEmergency,
+    slaDeadline,
     isFlagged: isFlagged || isQuarantined,
     isQuarantined,
     quarantineReason,
     verificationStatus: isQuarantined ? 'quarantined' : undefined,
     reportCount: 1,
-    imageUrl: data.imageUrl,
+    imageUrl: photoList[0] || data.imageUrl,
+    dHash: data.dHash,
+    geotagAccuracy: data.geotagAccuracy,
+    dynamicPriorityScore: dynamicScoreResult.score,
+    escalationRationale: dynamicScoreResult.escalationRationale,
+    escalationRationaleKn: dynamicScoreResult.escalationRationaleKn,
   };
 
   const updated = [newTicket, ...current];

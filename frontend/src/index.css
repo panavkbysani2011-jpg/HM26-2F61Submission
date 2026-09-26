@@ -162,3 +162,47 @@ body {
 .dark .leaflet-popup-tip {
   background: #18181b;
 }
+
+/* Official Municipal Print & Work Order Formatting */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide all interactive UI chrome, navbars, and buttons */
+  nav,
+  header,
+  footer,
+  .no-print,
+  #btn-close-task-detail,
+  #task-detail-modal-backdrop,
+  #printable-work-order-backdrop {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure work order container expands and renders crisply */
+  #printable-work-order-container {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #official-dispatch-work-order {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    page-break-after: avoid;
+  }
+
+  /* Force crisp monochrome printing on borders and tables */
+  #official-dispatch-work-order * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

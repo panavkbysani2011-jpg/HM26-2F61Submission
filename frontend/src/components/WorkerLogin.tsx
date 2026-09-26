@@ -235,10 +235,10 @@ export const WorkerLogin: React.FC<WorkerLoginProps> = ({
                     <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${badgeBg}`}>
                       {typeLabel}
                     </span>
-                    <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full flex items-center gap-1 ${
+                    <span className={`px-2 py-0.5 text-[11px] font-bold font-mono rounded-md border flex items-center gap-1.5 ${
                       activeTasks > 0
-                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-mono'
-                        : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400 font-mono'
+                        ? 'bg-rose-50 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                        : 'bg-stone-50 text-stone-600 dark:bg-stone-800/80 dark:text-stone-400 border-stone-200 dark:border-stone-700'
                     }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${activeTasks > 0 ? 'bg-rose-500 animate-pulse' : 'bg-stone-400'}`} />
                       <span>{activeTasks} Active {activeTasks === 1 ? 'Task' : 'Tasks'}</span>
