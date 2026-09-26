@@ -3,7 +3,7 @@
 > HackMysuru 1.0 · Phase 1 · Civic Governance & Clean Mysuru
 > Team `SyntaxError-404` (`HM26-2F61`)
 
-| 📎 Submission links | 📋 Templates | 🏗️ Architecture | 🛡️ Hard constraints | ⚙️ Setup | 🤖 AI usage | ⚠️ Limitations |
+| Submission links | Templates | Architecture | Hard constraints | Setup | AI usage | Limitations |
 |---|---|---|---|---|---|---|
 | [resource.md](./resource.md) | [resource-templates/](./resource-templates/) | [docs/architecture.md](./docs/architecture.md) | [docs/constraints.md](./docs/constraints.md) | [docs/setup.md](./docs/setup.md) | [ai.md](./ai.md) | [docs/limitations.md](./docs/limitations.md) |
 
@@ -48,13 +48,13 @@ Core flow:
 4. `The field worker logs into their specific jurisdiction from the 21-zone roster, accesses their Active Work Orders, travels to the site, and closes the ticket using GPS-locked camera capture (verified by Gemini 3.6 Flash vision audit).`
 5. `Citizen receives a real-time update that the issue is resolved with photo proof, and submits satisfaction feedback via a 5-star rating and text review. The review is pre-moderated by Gemini 3.6 Flash into a clean, professional summary and displayed to both the Admin Command Dashboard and the assigned Worker.`
 
-Screenshots: `<2–4 images under docs/images/, each < 1 MB>`
+Screenshots: `3 images under docs/images/`
 
 ## 4. Architecture
 
 A client-side progressive web application integrating interactive Leaflet GIS mapping, a deterministic Geo-Elastic Routing Engine (G-ERE), bilingual English/Kannada localization, and Google Gemini 3.6 Flash multimodal vision verification & review moderation backed by real-time state synchronization.
 
-➡️ Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
+Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
 
 ## 5. Tech Stack & AI Usage
 
@@ -63,17 +63,17 @@ Stack: `React 19 · TypeScript · Tailwind CSS · Leaflet GIS · Google Gemini 3
 AI tools used in development: `Gemini, Antigravity, Google AI Studio, Google Julius`
 AI inside the product: `Google Gemini 3.6 Flash via @google/genai for field worker resolution photo verification, intake moderation, and pre-save citizen review sanitization & restructuring`
 
-➡️ Full disclosure: **[ai.md](./ai.md)**
+Full disclosure: **[ai.md](./ai.md)**
 
 ## 6. Decision Log (Summary)
 
 <!-- The full 1-page Decision Log is a PDF on Google Drive, linked in resource.md. ≤ 3 lines here. -->
 
-- Chose: `Dynamic capacity-based spillover with an automated Inter-Agency Clearing Ledger`, over: `Rigid point-in-polygon assignment`
-- Because: `Strict administrative borders cause boundary complaints to be rejected due to local equipment and fuel budget exhaustion`
-- First thing to break at city scale: `Live Firestore socket listeners across 10,000+ simultaneous connections (mitigated by paginated queries and ticket caching)`
+- Chose: `A capacity‑based routing engine that uses a 500‑meter border buffer zone and an inter‑agency ledger. This engine automatically routes tickets to depots that are underloaded when a home office goes beyond one hundred percent capacity.`, over: `Rigid point-in-polygon assignment`
+- Because: `Strict administrative borders cause boundary complaints to be rejected due to local equipment and fuel budget exhaustion, it speeds up cleanup and avoids disputes. It uses nearby trucks so it tackles public health risks faster.`
+- First thing to break at city scale: `The first thing that may break at city scale is system‑wide capacity saturation during a city‑wide waste spike, such, as Dasara. If adjacent zones all hit one hundred percent capacity at the time the spillover logic could loop forever.`
 
-➡️ Full decision log: **[resource.md](./resource.md#4-submission-artifacts-google-drive)** · Template: **[decision-log-template.md](./resource-templates/decision-log-template.md)**
+Full decision log: **[resource.md](./resource.md#4-submission-artifacts-google-drive)** · Template: **[decision-log-template.md](./resource-templates/decision-log-template.md)**
 
 ## 7. Setup & Run
 
@@ -82,7 +82,7 @@ git clone https://github.com/panavkbysani2011-jpg/HM26-2F61Submission.git && cd 
 npm install --legacy-peer-deps && npm run dev
 ```
 
-➡️ Prerequisites, environment variables, seed data and offline testing: **[docs/setup.md](./docs/setup.md)**
+Prerequisites, environment variables, seed data and offline testing: **[docs/setup.md](./docs/setup.md)**
 
 ## 8. Known Limitations
 
@@ -90,7 +90,7 @@ npm install --legacy-peer-deps && npm run dev
 - `The capacity calculation relies on Zonal Officers accurately reporting their active, non-broken equipment (tippers, etc) in the system.`
 - `The 50-meter radius requirement for field workers to close a task may face failures due to multiple factors such as, dense tree cover or poor weather, requiring a manual override end task option.`
 
-➡️ Full list, edge cases and scaling roadmap: **[docs/limitations.md](./docs/limitations.md)**
+Full list, edge cases and scaling roadmap: **[docs/limitations.md](./docs/limitations.md)**
 
 ---
 
@@ -98,8 +98,8 @@ npm install --legacy-peer-deps && npm run dev
 
 | Name | Role | GitHub |
 |---|---|---|
-| `Panav K Bysani` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture` | `@panavkbysani2011-jpg` |
-| `Achalesh Ramana Kiral Kooloth` | `Co-Developer · Field Worker UI & Data Model Verification` | `@agnidevaraja` |
+| `Panav K Bysani` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture & Field Worker UI` | `@panavkbysani2011-jpg` |
+| `Achalesh Ramana Kiral Kooloth` | `Co-Developer · Data Model Verification & Backend devoloper` | `@agnidevaraja` |
 
 ## License
 

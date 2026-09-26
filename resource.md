@@ -28,8 +28,8 @@ HOW TO FILL THIS FILE
 
 | # | Member | Program & Year | GitHub Handle | Primary Role |
 |---|---|---|---|---|
-| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture` |
-| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `Co-Developer · Field Worker UI & Data Model Verification` |
+| 1 | `Panav K Bysani` (Lead) | `IB-MYP-5(Grade 10)` | `@panavkbysani2011-jpg` | `Team Lead · Full-Stack & Geo-Elastic Routing Architecture & Field Worker UI` |
+| 2 | `Achalesh Ramana Kiral Kooloth` | `IB-MYP-5(Grade 10)` | `@agnidevaraja` | `Co-Developer · Data Model Verification & Backend devoloper` |
 
 ---
 
@@ -59,9 +59,9 @@ HOW TO FILL THIS FILE
 
 | # | Artifact | Google Drive Link | File Name | SHA-256 (first 16 chars) |
 |---|---|---|---|---|
-| 1 | [Pitch + Code Walkthrough Video](./resource-templates/video-guide.md) (≤ 10 min, MP4) | `<https://drive.google.com/file/d/.../view>` | `<TeamID>_video.mp4` | `<a1b2c3d4e5f60718>` |
+| 1 | [Pitch + Code Walkthrough Video](./resource-templates/video-guide.md) (≤ 10 min, MP4) | `https://drive.google.com/file/d/1hzMyY53bdbpqPNgUIfUuwwHlkevJNm-O/view?usp=sharing` | `HM26-2F61-Video_submission .mp4` | `96F0F2246AAFCCFC` |
 | 2 | [Decision Log](./resource-templates/decision-log-template.md) (1 page, PDF) | `https://drive.google.com/file/d/1oIYLrhtufzGANXFGIlYpQyVJX4IQqlkN/view?usp=sharing` | `HM26-2F61_Decision_Log.pdf` | `FB99E85A35D2F6CD` |
-| 3 | [Presentation](./resource-templates/presentation-template.md) (≤ 10 slides, PDF) | `<https://drive.google.com/file/d/.../view>` | `<TeamID>_presentation.pdf` | `<...>` |
+| 3 | [Presentation](./resource-templates/presentation-template.md) (≤ 10 slides, PDF) | `https://drive.google.com/file/d/1bvnGhHIBM5CBMaFYnR-pffOg4qeFVzFv/view?usp=sharing` | `HM26-2F61_presentation.pdf ` | `c5e1a320b94f066` |
 
 <!--
 Get the hash:
@@ -74,16 +74,16 @@ Paste the first 16 characters.
 
 | Timestamp | Section |
 |---|---|
-| `00:00` | Part 1: Problem & target users |
-| `00:40` | Part 1: Live demo, core flow |
-| `01:50` | Part 1: Bad-input handling |
-| `02:30` | Part 1: Offline / airplane mode |
-| `03:00` | Part 2: Architecture overview |
-| `04:30` | Part 2: Data model & APIs |
-| `05:30` | Part 2: Key code walkthrough |
-| `07:30` | Part 2: Decisions & trade-offs |
-| `08:30` | Part 2: Scaling & limitations |
-| `09:15` | Part 2: AI usage (see [ai.md](./ai.md)) |
+| 00:00 | Part 1: Problem & target users |
+| 00:40 | Part 1: Live demo, core flow |
+| 01:10 | Part 1: Bad-input handling |
+| 02:27 | Part 1: Offline / airplane mode |
+| 03:25 | Part 2: Architecture overview |
+| 05:06 | Part 2: Data model & APIs |
+| 06:10 | Part 2: Key code walkthrough |
+| 07:12 | Part 2: Decisions & trade-offs |
+| 08:29 | Part 2: Scaling & limitations |
+| 09:30 | Part 2: AI usage (see [ai.md](./ai.md)) |
 
 ---
 
@@ -91,11 +91,11 @@ Paste the first 16 characters.
 
 | Field | Value |
 |---|---|
-| Live URL | `<https://...>` |
+| Live URL | `https://civicmesh.vercel.app/` |
 | Platform | Web Platform (React 19 + TypeScript + Vite) |
 | Test login (if any) | Citizen: 1-Click Selection · Worker: 21-Zone Dispatch Roster · Admin: admin / devpass2026 · Language: English / ಕನ್ನಡ Toggle |
-| Sample data loaded? | Yes — Pre-seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity, buffer zones at 0 active tasks) |
-| How to test offline mode | N/A — No offline mode (Civic Mesh runs as an online cloud-synchronized municipal dispatch and inter-agency clearing mesh) |
+| Sample data loaded? | Yes - Pre-seeded municipal work orders across Mysuru jurisdictions (Bogadi Town Panchayat initialized at 110% capacity, MCC Zone 3 at 43% capacity, buffer zones at 0 active tasks) |
+| How to test offline mode | N/A - No offline mode (Civic Mesh runs as an online cloud-synchronized municipal dispatch and inter-agency clearing mesh) |
 | If the live link is down | Follow [docs/setup.md](./docs/setup.md) |
 
 ---
@@ -114,11 +114,11 @@ Paste the first 16 characters.
 
 ## 7. Declaration
 
-- [ ] All Drive links open in an incognito window with **Viewer** access (no "Request access").
-- [ ] The video is one continuous recording, ≤ 10 minutes, Part 1 then Part 2.
-- [ ] The decision log is one page and written by us in our own words.
-- [ ] All AI tools used (development and in-product) are disclosed in [`ai.md`](./ai.md).
-- [ ] No code specific to this challenge was written before 18 Sept 2026, 00:00 IST.
-- [ ] We will not modify or replace any linked file after 20 Sept 2026, 23:59 IST.
+- [X] All Drive links open in an incognito window with **Viewer** access (no "Request access").
+- [X] The video is one continuous recording, ≤ 10 minutes, Part 1 then Part 2.
+- [X] The decision log is one page and written by us in our own words.
+- [X] All AI tools used (development and in-product) are disclosed in [`ai.md`](./ai.md).
+- [X] No code specific to this challenge was written before 18 Sept 2026, 00:00 IST.
+- [X] We will not modify or replace any linked file after 20 Sept 2026, 23:59 IST.
 
 Submitted by: `Panav K Bysani` · Date/Time (IST): `<20-09-2026 21:40>`
